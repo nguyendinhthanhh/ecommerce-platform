@@ -15,7 +15,7 @@ _Built for the SWD392 Capstone Project at FPT University._
 
 <br/>
 
-[🚀 Getting Started](#-getting-started) • [📸 Screenshots](#-screenshots) • [🛠️ Tech Stack](#%EF%B8%8F-tech-stack) • [📚 API Docs](#-api-documentation)
+[🚀 Getting Started](#-getting-started) • [✨ Key Features](#-key-features) • [🛠️ Tech Stack](#%EF%B8%8F-tech-stack) • [📚 API Docs](#-api-documentation)
 
 </div>
 
@@ -30,19 +30,16 @@ _Built for the SWD392 Capstone Project at FPT University._
       <img src="https://ui-avatars.com/api/?name=Phan+Van+Huy&background=4F46E5&color=fff&size=64&bold=true&rounded=true" alt="Phan Văn Huy"/><br/>
       <b>Phan Văn Huy</b><br/>
       <code>SE184969</code><br/>
-      <a href="mailto:huypvse184969@fpt.edu.vn" title="Send Email">📧</a>
     </td>
     <td align="center" width="160">
       <img src="https://ui-avatars.com/api/?name=Tran+Quoc+Cong&background=7C3AED&color=fff&size=64&bold=true&rounded=true" alt="Trần Quốc Công"/><br/>
       <b>Trần Quốc Công</b><br/>
       <code>SE180709</code><br/>
-      <a href="mailto:congtqse180709@fpt.edu.vn" title="Send Email">📧</a>
     </td>
     <td align="center" width="160">
       <img src="https://ui-avatars.com/api/?name=Tran+Nhat+Huy&background=EC4899&color=fff&size=64&bold=true&rounded=true" alt="Trần Nhật Huy"/><br/>
       <b>Trần Nhật Huy</b><br/>
       <code>SE180369</code><br/>
-      <a href="mailto:huytnse180369@fpt.edu.vn" title="Send Email">📧</a>
     </td>
   </tr>
   <tr>
@@ -50,19 +47,16 @@ _Built for the SWD392 Capstone Project at FPT University._
       <img src="https://ui-avatars.com/api/?name=Duong+Xuan+Son&background=F59E0B&color=fff&size=64&bold=true&rounded=true" alt="Dương Xuân Sơn"/><br/>
       <b>Dương Xuân Sơn</b><br/>
       <code>SE181792</code><br/>
-      <a href="mailto:sondxse181792@fpt.edu.vn" title="Send Email">📧</a>
     </td>
     <td align="center" width="160">
       <img src="https://ui-avatars.com/api/?name=Nguyen+Trung+Tin&background=10B981&color=fff&size=64&bold=true&rounded=true" alt="Nguyễn Trung Tín"/><br/>
       <b>Nguyễn Trung Tín</b><br/>
       <code>SE181711</code><br/>
-      <a href="mailto:tinnntse181711@fpt.edu.vn" title="Send Email">📧</a>
     </td>
     <td align="center" width="160">
       <img src="https://ui-avatars.com/api/?name=Nguyen+Dinh+Thanh&background=06B6D4&color=fff&size=64&bold=true&rounded=true" alt="Nguyễn Đình Thanh"/><br/>
       <b>Nguyễn Đình Thanh</b><br/>
       <code>SE182854</code><br/>
-      <a href="mailto:thanhndse182854@fpt.edu.vn" title="Send Email">📧</a>
     </td>
   </tr>
 </table>
@@ -74,99 +68,125 @@ _Built for the SWD392 Capstone Project at FPT University._
 
 The **E-Commerce Platform** is a comprehensive solution designed to simulate a real-world online marketplace. It facilitates interaction between three key actors: **Admins**, **Sellers**, and **Customers**.
 
-Key highlights include:
+### 🌟 Project Highlights
 
-- 🤖 **AI Integration**: Support for product classification and automated customer support chat.
-- 💳 **Payments**: Integrated simulation for VNPay and Momo.
-- 🔒 **Security**: Robust JWT-based authentication and role-based access control.
-
----
-
-## 📸 Screenshots
-
-<!--
-    TODO: Replace the placeholder URLs below with your actual project screenshots.
-    You can upload images to the repository or an image hosting service.
--->
-
-|                                             Landing Page                                              |                                              Product Detail                                               |
-| :---------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------: |
-| <img src="https://placehold.co/600x400/e0e0e0/333?text=Landing+Page" alt="Landing Page" width="400"/> | <img src="https://placehold.co/600x400/e0e0e0/333?text=Product+Detail" alt="Product Detail" width="400"/> |
-
-|                                               Seller Dashboard                                                |                                               Admin Analytics                                               |
-| :-----------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------: |
-| <img src="https://placehold.co/600x400/e0e0e0/333?text=Seller+Dashboard" alt="Seller Dashboard" width="400"/> | <img src="https://placehold.co/600x400/e0e0e0/333?text=Admin+Analytics" alt="Admin Analytics" width="400"/> |
+- **🛍️ Complete Marketplace**: Full lifecycle of product listing, searching, cart management, and checkout.
+- **🤖 Artificial Intelligence**:
+  - **Product Classification**: Automatically categorizes products uploaded by sellers using Natural Language Processing (NLP).
+  - **Smart Recommendations**: Suggests products to customers based on their browsing and purchase history.
+  - **Support Chatbot**: 24/7 AI assistant to handle common customer queries instantly.
+- **💳 Integrated Payments**:
+  - Seamless simulated integration with **VNPay** and **Momo** wallets.
+  - Secure transaction processing flow.
+- **🛡️ Advanced Security**:
+  - Role-Based Access Control (RBAC) ensuring data privacy.
+  - JWT Authentication for secure stateless sessions.
+- **📊 Interactive Dashboards**:
+  - Real-time sales analytics for Sellers.
+  - System health and user management statistics for Admins.
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Backend
+<div align="center">
 
-![Java](https://img.shields.io/badge/Java-21-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.x-%236DB33F.svg?style=for-the-badge&logo=spring-boot&logoColor=white)
-![Spring Security](https://img.shields.io/badge/Spring_Security-%236DB33F.svg?style=for-the-badge&logo=spring-security&logoColor=white)
-![Spring Data JPA](https://img.shields.io/badge/Spring_Data_JPA-%236DB33F.svg?style=for-the-badge&logo=spring&logoColor=white)
-![SQL Server](https://img.shields.io/badge/SQL_Server-2022-%23CC2927.svg?style=for-the-badge&logo=microsoft-sql-server&logoColor=white)
+| **Category** | **Technologies**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| :----------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Backend**  | ![Java](https://img.shields.io/badge/Java-21-%23ED8B00.svg?style=flat-square&logo=openjdk&logoColor=white) ![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.x-%236DB33F.svg?style=flat-square&logo=spring-boot&logoColor=white) ![Spring Security](https://img.shields.io/badge/Spring_Security-%236DB33F.svg?style=flat-square&logo=spring-security&logoColor=white) ![Spring Data JPA](https://img.shields.io/badge/Spring_Data_JPA-%236DB33F.svg?style=flat-square&logo=spring&logoColor=white) ![SQL Server](https://img.shields.io/badge/SQL_Server-2022-%23CC2927.svg?style=flat-square&logo=microsoft-sql-server&logoColor=white) |
+| **Frontend** | ![React](https://img.shields.io/badge/React-18-%2320232a.svg?style=flat-square&logo=react&logoColor=%2361DAFB) ![Vite](https://img.shields.io/badge/Vite-5.x-%23646CFF.svg?style=flat-square&logo=vite&logoColor=white) ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-%2338B2AC.svg?style=flat-square&logo=tailwind-css&logoColor=white) ![Axios](https://img.shields.io/badge/Axios-%235A29E4.svg?style=flat-square&logo=axios&logoColor=white)                                                                                                                                                                                       |
+|  **DevOps**  | ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-%232088FF.svg?style=flat-square&logo=github-actions&logoColor=white) ![Maven](https://img.shields.io/badge/Maven-%23C71A36.svg?style=flat-square&logo=apache-maven&logoColor=white) ![Git](https://img.shields.io/badge/Git-%23F05032.svg?style=flat-square&logo=git&logoColor=white)                                                                                                                                                                                                                                                                                               |
 
-### Frontend
-
-![React](https://img.shields.io/badge/React-18-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
-![Vite](https://img.shields.io/badge/Vite-5.x-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)
-![TaiwlindCSS](https://img.shields.io/badge/Tailwind_CSS-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
-![Axios](https://img.shields.io/badge/Axios-%235A29E4.svg?style=for-the-badge&logo=axios&logoColor=white)
-
-### Infrastructure & Tools
-
-![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-%232088FF.svg?style=for-the-badge&logo=github-actions&logoColor=white)
-![Maven](https://img.shields.io/badge/Maven-%23C71A36.svg?style=for-the-badge&logo=apache-maven&logoColor=white)
-![Git](https://img.shields.io/badge/Git-%23F05032.svg?style=for-the-badge&logo=git&logoColor=white)
+</div>
 
 ---
 
-## ✨ Key Features
+## 🧩 Actors & Functional Requirements
 
-### 🛍️ Customer
+The system is designed around **15 primary use cases**, ensuring a complete e-commerce flow supported by AI and secure payments.
 
-- **Smart Search**: Filter products by category, price, and rating.
-- **AI Recommendations**: Personalized suggestions based on history.
-- **Order Tracking**: Real-time status updates from placed to delivered.
+### 👤 Customer
+
+> _Authentication, Shopping, and Interaction_
+
+- **Manage Account**: Personal profile and address management.
+- **Browse Products**: Search, filter, and view details. _Includes: `Recommend Products` (AI)_.
+- **Manage Shopping Cart**: Add, update, or remove items.
+- **Place Order**: Complete checkout flow. _Includes: `Make Online Payment`_.
+- **Order Tracking**: Monitor status (`Placed` → `Confirmed` → `Shipped` → `Delivered`).
+- **Rate & Review**: Leave feedback for products.
+- **Receive Support**: 24/7 assistance. _Includes: `Provide Chatbot Support` (AI)_.
 
 ### 🏪 Seller
 
-- **Shop Management**: Customize profile and branding.
-- **Inventory Control**: Add/edit products with **AI auto-classification**.
-- **Sales Analytics**: Visual reports on revenue and orders.
+> _Shop & Inventory Management_
 
-### 👨‍💼 Admin
+- **Manage Shop**: Setup and update shop information.
+- **Manage Products**: CRUD operations for inventory. _Includes: `Classify Products` (AI)_.
+- **Manage Orders**: Confirm and ship customer orders.
+- **View Sales Reports**: Track revenue and order statistics.
 
-- **User Oversight**: Manage accounts and role permissions.
-- **Content Moderation**: Review reported products and feedback.
+### 🛠 Admin
+
+> _System Oversight_
+
+- **Manage User Accounts**: Control platform access and roles.
+- **Moderate Content**: Review and moderate products and user reviews.
+- **View System Reports**: Monitor platform health and metrics.
 
 ---
 
-## 🏗️ Architecture
+## ⚙️ Subsystems & Integrations
 
-The system utilizes a **Monorepo** structure with clear separation of concerns.
+The core platform integrates with specialized subsystems to enhance functionality without cluttering key business logic.
+
+### 🤖 AI Subsystem
+
+_A dedicated module for intelligence features._
+
+- **Classify Products**: Auto-categorize products based on description.
+- **Recommend Products**: Personalized suggestions engine.
+- **Provide Chatbot Support**: NLP-driven customer assistance.
+- **Analyze Customer Behavior**: Data processing for better UX.
+
+### 💳 Payment Gateway
+
+_Simulated financial transaction processor._
+
+- **Process Online Payment**: Handle transactions via simulated VNPay/Momo.
+- **Process Refund**: Manage reversals and cancelled orders.
+
+---
+
+## 🏗️ Architecture & Workflows
+
+### System Architecture
+
+The application follows a clean **Client-Server-Database** tier model with external service integrations.
 
 ```mermaid
-graph TD
-    Client[📱 Frontend Client] -->|REST API| API[🛡️ Spring Boot Backend]
-    API -->|Read/Write| DB[(🗄️ SQL Server)]
-    API <-->|Analyze| AI[🤖 AI Service]
-    API <-->|Transact| Payment[💳 Payment Gateway]
+graph LR
+    User([👤 User]) <--> Client[React Frontend]
+    Client <--> API[Spring Boot Backend]
+    API <--> DB[(SQL Server)]
+
+    subgraph Services
+        API -.-> AI[🤖 AI Service]
+        API -.-> Pay[💳 Payment Gateway]
+    end
 ```
 
----
+### Order Process Flow
 
-## 🔄 Order Lifecycle
+A visualized journey of an order through the system.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Placed: Customer Checkouts
-    Placed --> Confirmed: Seller Approves
-    Confirmed --> Shipped: Handed to Shipping
-    Shipped --> Delivered: Customer Receives
+    direction LR
+    [*] --> Placed: User orders
+    Placed --> Confirmed: Seller accepts
+    Confirmed --> Shipped: Seller ships
+    Shipped --> Delivered: User receives
     Delivered --> [*]
 ```
 
