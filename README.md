@@ -9,24 +9,37 @@ The platform supports multiple roles such as **Customer**, **Seller**, and **Adm
 
 ---
 
-## 2. Project Objectives
+## 2. Team Members
+
+| No. | Full Name         | Student ID | Email                      |
+| --: | ----------------- | ---------- | -------------------------- |
+|   1 | Phan Văn Huy      | SE184969   | huypvse184969@fpt.edu.vn   |
+|   2 | Trần Quốc Công    | SE180709   | congtqse180709@fpt.edu.vn  |
+|   3 | Trần Nhật Huy     | SE180369   | huytnse180369@fpt.edu.vn   |
+|   4 | Dương Xuân Sơn    | SE181792   | sondxse181792@fpt.edu.vn   |
+|   5 | Nguyễn Trung Tín  | SE181711   | tinnntse181711@fpt.edu.vn  |
+|   6 | Nguyễn Đình Thanh | SE182854   | thanhndse182854@fpt.edu.vn |
+
+---
+
+## 3. Project Objectives
 
 The main objectives of this project are:
 
 - Design and implement a modern e-commerce web application
 - Apply software engineering principles such as UML use case modeling
-- Separate frontend and backend for better scalability
+- Separate frontend and backend for better scalability and maintainability
 - Integrate supporting systems such as online payment and AI services
-- Practice teamwork, Git workflow, and CI configuration
+- Practice teamwork, Git workflow, and Continuous Integration (CI)
 
 ---
 
-## 3. System Features
+## 4. System Features
 
-### 3.1 Customer Features
+### 4.1 Customer Features
 
 - Browse and search products
-- View product details and recommendations
+- View product details and AI-based recommendations
 - Manage shopping cart
 - Place orders
 - Make online payments (VNPay / Momo – simulated)
@@ -34,99 +47,120 @@ The main objectives of this project are:
 - Rate and review products
 - Receive customer support via AI chatbot
 
-### 3.2 Seller Features
+### 4.2 Seller Features
 
 - Manage shop information
 - Manage products (AI-assisted product classification)
 - Manage orders and update order status
 - View sales reports
 
-### 3.3 Admin Features
+### 4.3 Admin Features
 
 - Manage user accounts
-- Moderate product content and reviews
+- Moderate product content and customer reviews
 - View system reports and statistics
 
 ---
 
-## 4. System Architecture
+## 5. System Architecture
 
 The system follows a **monorepo architecture** with separated frontend and backend:
 
+```
 ecommerce-platform/
-├── backend/ # Spring Boot backend
-├── frontend/ # React frontend
-├── docs/ # UML diagrams and documentation
-├── .github/ # CI configuration
+├── backend/        # Spring Boot backend
+├── frontend/       # React frontend
+├── docs/           # UML diagrams and documentation
+├── .github/        # CI configuration
 └── README.md
+```
 
-### Architecture Overview
+Architecture Overview
 
-- **Frontend**: Handles user interface and user interactions
-- **Backend**: Handles business logic, authentication, and data persistence
-- **AI System**: Internal supporting system for product classification, recommendation, and chatbot
-- **Payment Gateway**: Supporting system for processing online payments
+Frontend: Handles user interface and user interactions
 
----
+Backend: Handles business logic, authentication, and data persistence
 
-## 5. Technology Stack
+AI System: Internal supporting system for product classification, recommendation, and chatbot
 
-### Backend
+Payment Gateway: Supporting system for processing online payments (simulated)
 
-- Java 17
-- Spring Boot
-- Spring Data JPA
-- Spring Security (JWT Authentication)
-- MySQL
-- Maven
+6. Technology Stack
+   Backend
 
-### Frontend
+Java 21
 
-- React
-- React Router
-- Axios
-- Modern UI libraries (MUI / Ant Design / Tailwind)
+Spring Boot 4.x
 
-### AI & Payment (Supporting Systems)
+Spring Data JPA
 
-- AI features implemented as internal services or mocked logic
-- Online payment simulated for VNPay / Momo integration
+Spring Security (JWT Authentication)
 
-### DevOps
+SQL Server / MySQL
 
-- Git & GitHub
-- GitHub Actions (CI)
+Maven
 
----
+Frontend
 
-## 6. Use Case Summary
+React
+
+React Router
+
+Axios
+
+Vite
+
+Modern UI libraries (MUI / Ant Design / Tailwind CSS)
+
+AI & Payment (Supporting Systems)
+
+AI features implemented as internal services or mocked logic
+
+Online payment simulated for VNPay / Momo integration
+
+DevOps
+
+Git & GitHub
+
+GitHub Actions (Continuous Integration)
+
+7. Use Case Summary
 
 The system is designed based on high-level UML use cases.
 
-### Actors
+Actors
 
-- Customer
-- Seller
-- Admin
+Customer
 
-### Main Use Cases
+Seller
 
-- Browse Products
-- Manage Shopping Cart
-- Place Order
-- Make Online Payment
-- Track Order
-- Rate and Review Products
-- Manage Products
-- Manage Orders
-- Moderate Content
-- View System Reports
+Admin
 
-AI and Payment Gateway are modeled as **supporting systems**, not external actors.
+Main Use Cases
 
----
+Browse Products
 
-## 7. Order Status Flow
+Manage Shopping Cart
+
+Place Order
+
+Make Online Payment
+
+Track Order
+
+Rate and Review Products
+
+Manage Products
+
+Manage Orders
+
+Moderate Content
+
+View System Reports
+
+AI System and Payment Gateway are modeled as supporting systems, not external actors.
+
+8. Order Status Flow
 
 The order tracking feature follows this status flow:
 
@@ -138,31 +172,35 @@ Shipped
 ↓
 Delivered
 
-- Order status is updated by the system or seller
-- Customers can track the current order status at any time
+Order status is updated by the system or seller
 
----
+Customers can track the current order status at any time
 
-## 8. Continuous Integration (CI)
+9. Continuous Integration (CI)
 
-This project uses **GitHub Actions** for Continuous Integration:
+This project uses GitHub Actions for Continuous Integration:
 
-- Automatically builds backend and frontend on each push
-- Ensures code quality and build consistency
-- Helps detect errors early during development
+Automatically builds backend and frontend on each push or pull request
 
-CI configuration is located at:
+Ensures build consistency across environments
+
+Helps detect errors early during development
+
+CI configuration file:
 
 .github/workflows/ci.yml
 
----
+10. How to Run the Project
+    10.1 Backend
+    cd backend
+    mvn clean install
+    mvn spring-boot:run
 
-## 9. How to Run the Project
+Backend will be available at:
 
-### Backend
+http://localhost:8080
 
-```bash
-cd backend
-mvn clean install
-mvn spring-boot:run
-```
+10.2 Frontend
+cd frontend
+npm install
+npm run dev
