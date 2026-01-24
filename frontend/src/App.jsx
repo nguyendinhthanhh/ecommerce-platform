@@ -1,35 +1,61 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import HomePage from './pages/HomePage'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminUsers from './pages/admin/AdminUsers'
+import SellerDashboard from './pages/seller/SellerDashboard'
+import SellerOrders from './pages/seller/SellerOrders'
+import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        
+        {/* Admin Routes - Only accessible by ADMIN role */}
+        <Route 
+          path="/admin/dashboard" 
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/users" 
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminUsers />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Seller Routes - Only accessible by SELLER role */}
+        <Route 
+          path="/seller/dashboard" 
+          element={
+            <ProtectedRoute allowedRoles={['SELLER']}>
+              <SellerDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/seller/orders" 
+          element={
+            <ProtectedRoute allowedRoles={['SELLER']}>
+              <SellerOrders />
+            </ProtectedRoute>
+          } 
+        />
+      </Routes>
+    </Router>
   )
 }
 
 export default App
+
