@@ -20,6 +20,9 @@ public class Payment {
     
     @Column(unique = true)
     private String transactionId;
+
+    @Column(unique = true)
+    private String ContenPayment;
     
     @OneToOne
     @JoinColumn(name = "order_id", nullable = false)
