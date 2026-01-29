@@ -518,6 +518,23 @@ const AdminUsers = () => {
               </span>
               Add User
             </button>
+
+            {/* Refresh Button */}
+            <button
+              onClick={() => {
+                userService.invalidateCache();
+                loadUsers();
+              }}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+            >
+              <span
+                className={`material-symbols-outlined text-[18px] ${loading ? "animate-spin" : ""}`}
+              >
+                refresh
+              </span>
+              {loading ? "Loading..." : "Refresh"}
+            </button>
           </div>
         </div>
 

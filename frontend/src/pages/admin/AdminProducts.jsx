@@ -7,6 +7,7 @@ import {
   StatsRowSkeleton,
 } from "../../components/common/LoadingSpinner";
 import productService from "../../services/productService";
+import ImageUrlManager from "../../components/admin/ImageUrlManager";
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
@@ -27,8 +28,28 @@ const AdminProducts = () => {
 
   // Modal states
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Form data
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    price: "",
+    discountPrice: "",
+    stockQuantity: "",
+    thumbnail: "",
+    images: [],
+    categoryId: "",
+    status: "INACTIVE",
+  });
+
+  // Form errors
+  const [formErrors, setFormErrors] = useState({});
 
   // Toast notification
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
@@ -36,6 +57,77 @@ const AdminProducts = () => {
   const showToast = (message, type = "success") => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: "", type: "" }), 3000);
+  };
+
+  const resetFormData = () => {
+    setFormData({
+      name: "",
+      description: "",
+      price: "",
+      discountPrice: "",
+      stockQuantity: "",
+      thumbnail: "",
+      images: [],
+      categoryId: "",
+      status: "INACTIVE",
+    });
+    setFormErrors({});
+  };
+
+  const validateForm = () => {
+    const errors = {};
+
+    // Name validation
+    if (!formData.name.trim()) {
+      errors.name = "Product name is required";
+    }
+
+    // Price validation
+    if (!formData.price || parseFloat(formData.price) < 0.01) {
+      errors.price = "Price must be at least 0.01";
+    }
+
+    // Discount price validation
+    if (formData.discountPrice && parseFloat(formData.discountPrice) < 0) {
+      errors.discountPrice = "Discount price cannot be negative";
+    }
+    if (
+      formData.discountPrice &&
+      parseFloat(formData.discountPrice) >= parseFloat(formData.price)
+    ) {
+      errors.discountPrice = "Discount price must be less than original price";
+    }
+
+    // Stock quantity validation
+    if (!formData.stockQuantity || parseInt(formData.stockQuantity) < 0) {
+      errors.stockQuantity = "Stock quantity must be 0 or greater";
+    }
+    if (parseInt(formData.stockQuantity) > 1073741824) {
+      errors.stockQuantity = "Stock quantity exceeds maximum limit";
+    }
+
+    // Category validation
+    if (!formData.categoryId) {
+      errors.categoryId = "Category is required";
+    }
+
+    // Status validation
+    const validStatuses = ["ACTIVE", "INACTIVE", "PENDING", "REJECTED"];
+    if (!validStatuses.includes(formData.status)) {
+      errors.status = "Status must be ACTIVE, INACTIVE, PENDING or REJECTED";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const loadProducts = useCallback(async () => {
@@ -79,7 +171,7 @@ const AdminProducts = () => {
       }
     } catch (error) {
       console.error("Error loading products:", error);
-      showToast("Không thể tải danh sách sản phẩm", "error");
+      showToast("Failed to load products", "error");
     } finally {
       setLoading(false);
     }
@@ -90,17 +182,153 @@ const AdminProducts = () => {
   }, [loadProducts]);
 
   const handleViewProduct = async (productId) => {
+    // Show modal immediately with loading state
+    setShowDetailModal(true);
+    setLoadingDetail(true);
+    setSelectedProduct(null);
+
     try {
-      setLoadingDetail(true);
       const product = await productService.getProductById(productId);
       setSelectedProduct(product);
-      setShowDetailModal(true);
     } catch (error) {
       console.error("Error loading product details:", error);
-      showToast("Không thể tải chi tiết sản phẩm", "error");
+      showToast("Failed to load product details", "error");
+      setShowDetailModal(false);
     } finally {
       setLoadingDetail(false);
     }
+  };
+
+  const handleCreateProduct = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      showToast("Please fix the validation errors", "error");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const productData = {
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        discountPrice: formData.discountPrice
+          ? parseFloat(formData.discountPrice)
+          : 0,
+        stockQuantity: parseInt(formData.stockQuantity),
+        thumbnail: formData.thumbnail,
+        images: formData.images,
+        categoryId: parseInt(formData.categoryId),
+        status: formData.status,
+      };
+
+      await productService.createProduct(productData);
+      showToast("Product created successfully!");
+      setShowCreateModal(false);
+      resetFormData();
+      loadProducts();
+    } catch (error) {
+      console.error("Error creating product:", error);
+      const errorData = error.response?.data;
+      if (errorData?.message) {
+        showToast(errorData.message, "error");
+      } else if (errorData?.errors) {
+        setFormErrors(errorData.errors);
+        showToast("Please fix the validation errors", "error");
+      } else {
+        showToast("Failed to create product", "error");
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateProduct = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      showToast("Please fix the validation errors", "error");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const productData = {
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        discountPrice: formData.discountPrice
+          ? parseFloat(formData.discountPrice)
+          : 0,
+        stockQuantity: parseInt(formData.stockQuantity),
+        thumbnail: formData.thumbnail,
+        images: formData.images,
+        categoryId: parseInt(formData.categoryId),
+        status: formData.status,
+      };
+
+      await productService.updateProduct(selectedProduct.id, productData);
+      showToast("Product updated successfully!");
+      setShowEditModal(false);
+      resetFormData();
+      setSelectedProduct(null);
+      loadProducts();
+    } catch (error) {
+      console.error("Error updating product:", error);
+      const errorData = error.response?.data;
+      if (errorData?.message) {
+        showToast(errorData.message, "error");
+      } else if (errorData?.errors) {
+        setFormErrors(errorData.errors);
+        showToast("Please fix the validation errors", "error");
+      } else {
+        showToast("Failed to update product", "error");
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteProduct = async () => {
+    try {
+      setSaving(true);
+      await productService.deleteProduct(selectedProduct.id);
+      showToast("Product deleted successfully!");
+      setShowDeleteModal(false);
+      setSelectedProduct(null);
+      loadProducts();
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      showToast(
+        error.response?.data?.message || "Failed to delete product",
+        "error",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditClick = (product) => {
+    setSelectedProduct(product);
+    setFormData({
+      name: product.name || "",
+      description: product.description || "",
+      price: product.price?.toString() || "",
+      discountPrice: product.discountPrice?.toString() || "",
+      stockQuantity: product.stockQuantity?.toString() || "",
+      thumbnail: product.thumbnail || "",
+      images: product.images || [],
+      categoryId: product.categoryId?.toString() || "",
+      status: product.status || "INACTIVE",
+    });
+    setFormErrors({});
+    setShowEditModal(true);
+  };
+
+  const handleDeleteClick = (product) => {
+    setSelectedProduct(product);
+    setShowDeleteModal(true);
   };
 
   const handleFilterChange = (key, value) => {
@@ -125,21 +353,35 @@ const AdminProducts = () => {
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-            Đang bán
+            Active
           </span>
         );
       case "INACTIVE":
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400">
             <span className="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
-            Ngừng bán
+            Inactive
+          </span>
+        );
+      case "PENDING":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+            Pending
+          </span>
+        );
+      case "REJECTED":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+            Rejected
           </span>
         );
       case "OUT_OF_STOCK":
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
             <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-            Hết hàng
+            Out of Stock
           </span>
         );
       default:
@@ -161,18 +403,28 @@ const AdminProducts = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                Quản lý sản phẩm
+                Product Management
               </h1>
               <p className="text-slate-500 dark:text-slate-400 mt-1">
-                Xem và quản lý tất cả sản phẩm trên hệ thống
+                View and manage all products in the system
                 {!loading && (
                   <span className="ml-2 text-primary font-medium">
-                    ({pagination.totalElements} sản phẩm)
+                    ({pagination.totalElements} products)
                   </span>
                 )}
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  resetFormData();
+                  setShowCreateModal(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors"
+              >
+                <span className="material-symbols-outlined text-lg">add</span>
+                Add Product
+              </button>
               <button
                 onClick={() => {
                   productService.invalidateCache();
@@ -186,7 +438,7 @@ const AdminProducts = () => {
                 >
                   refresh
                 </span>
-                {loading ? "Đang tải..." : "Làm mới"}
+                {loading ? "Loading..." : "Refresh"}
               </button>
             </div>
           </div>
@@ -205,7 +457,7 @@ const AdminProducts = () => {
                   </span>
                 </div>
                 <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full">
-                  Tổng
+                  Total
                 </span>
               </div>
               <div className="mt-4">
@@ -213,7 +465,7 @@ const AdminProducts = () => {
                   {pagination.totalElements}
                 </p>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Tổng sản phẩm
+                  Total Products
                 </p>
               </div>
             </div>
@@ -226,7 +478,7 @@ const AdminProducts = () => {
                   </span>
                 </div>
                 <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full">
-                  Đang bán
+                  Active
                 </span>
               </div>
               <div className="mt-4">
@@ -234,7 +486,7 @@ const AdminProducts = () => {
                   {products.filter((p) => p.status === "ACTIVE").length}
                 </p>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Sản phẩm hoạt động
+                  Active Products
                 </p>
               </div>
             </div>
@@ -247,7 +499,7 @@ const AdminProducts = () => {
                   </span>
                 </div>
                 <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-full">
-                  Tồn kho thấp
+                  Low Stock
                 </span>
               </div>
               <div className="mt-4">
@@ -255,7 +507,7 @@ const AdminProducts = () => {
                   {products.filter((p) => p.stockQuantity <= 10).length}
                 </p>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Cần nhập thêm
+                  Need Restock
                 </p>
               </div>
             </div>
@@ -268,7 +520,7 @@ const AdminProducts = () => {
                   </span>
                 </div>
                 <span className="text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-full">
-                  Hết hàng
+                  Out of Stock
                 </span>
               </div>
               <div className="mt-4">
@@ -281,7 +533,7 @@ const AdminProducts = () => {
                   }
                 </p>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Sản phẩm hết
+                  Sold Out
                 </p>
               </div>
             </div>
@@ -302,7 +554,7 @@ const AdminProducts = () => {
                   </span>
                   <input
                     type="text"
-                    placeholder="Tìm kiếm sản phẩm..."
+                    placeholder="Search products..."
                     value={filters.keyword}
                     onChange={(e) =>
                       handleFilterChange("keyword", e.target.value)
@@ -318,10 +570,12 @@ const AdminProducts = () => {
                 onChange={(e) => handleFilterChange("status", e.target.value)}
                 className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               >
-                <option value="all">Tất cả trạng thái</option>
-                <option value="ACTIVE">Đang bán</option>
-                <option value="INACTIVE">Ngừng bán</option>
-                <option value="OUT_OF_STOCK">Hết hàng</option>
+                <option value="all">All Status</option>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+                <option value="PENDING">Pending</option>
+                <option value="REJECTED">Rejected</option>
+                <option value="OUT_OF_STOCK">Out of Stock</option>
               </select>
 
               {/* Sort */}
@@ -334,13 +588,13 @@ const AdminProducts = () => {
                 }}
                 className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               >
-                <option value="createdAt-desc">Mới nhất</option>
-                <option value="createdAt-asc">Cũ nhất</option>
-                <option value="name-asc">Tên A-Z</option>
-                <option value="name-desc">Tên Z-A</option>
-                <option value="price-asc">Giá thấp đến cao</option>
-                <option value="price-desc">Giá cao đến thấp</option>
-                <option value="soldCount-desc">Bán chạy nhất</option>
+                <option value="createdAt-desc">Newest</option>
+                <option value="createdAt-asc">Oldest</option>
+                <option value="name-asc">Name A-Z</option>
+                <option value="name-desc">Name Z-A</option>
+                <option value="price-asc">Price Low to High</option>
+                <option value="price-desc">Price High to Low</option>
+                <option value="soldCount-desc">Best Selling</option>
               </select>
             </div>
           </div>
@@ -353,31 +607,28 @@ const AdminProducts = () => {
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                   <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Sản phẩm
+                    Product
                   </th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Danh mục
+                    Category
                   </th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Giá
+                    Price
                   </th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Kho
+                    Stock
                   </th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Đã bán
+                    Sold
                   </th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Đánh giá
+                    Rating
                   </th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Trạng thái
-                  </th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Shop
+                    Status
                   </th>
                   <th className="text-right px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Thao tác
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -392,7 +643,7 @@ const AdminProducts = () => {
                           inventory_2
                         </span>
                         <p className="text-slate-500 dark:text-slate-400">
-                          Không tìm thấy sản phẩm nào
+                          No products found
                         </p>
                       </div>
                     </td>
@@ -506,23 +757,34 @@ const AdminProducts = () => {
                         {getStatusBadge(product.status)}
                       </td>
 
-                      {/* Shop */}
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600 dark:text-slate-300 truncate max-w-[120px] block">
-                          {product.shopName || "N/A"}
-                        </span>
-                      </td>
-
                       {/* Actions */}
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleViewProduct(product.id)}
                             className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                            title="Xem chi tiết"
+                            title="View Details"
                           >
                             <span className="material-symbols-outlined text-lg">
                               visibility
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => handleEditClick(product)}
+                            className="p-2 text-slate-400 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-lg transition-colors"
+                            title="Edit"
+                          >
+                            <span className="material-symbols-outlined text-lg">
+                              edit
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(product)}
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <span className="material-symbols-outlined text-lg">
+                              delete
                             </span>
                           </button>
                         </div>
@@ -538,7 +800,7 @@ const AdminProducts = () => {
           {!loading && products.length > 0 && (
             <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Hiển thị{" "}
+                Showing{" "}
                 <span className="font-medium text-slate-700 dark:text-slate-200">
                   {pagination.page * pagination.size + 1}
                 </span>{" "}
@@ -549,11 +811,11 @@ const AdminProducts = () => {
                     pagination.totalElements,
                   )}
                 </span>{" "}
-                trong{" "}
+                of{" "}
                 <span className="font-medium text-slate-700 dark:text-slate-200">
                   {pagination.totalElements}
                 </span>{" "}
-                sản phẩm
+                products
               </p>
 
               <div className="flex items-center gap-2">
@@ -631,7 +893,7 @@ const AdminProducts = () => {
         </div>
 
         {/* Product Detail Modal */}
-        {showDetailModal && selectedProduct && (
+        {showDetailModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div
               className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -647,7 +909,7 @@ const AdminProducts = () => {
                         inventory_2
                       </span>
                     </div>
-                    <h3 className="text-lg font-bold">Chi tiết sản phẩm</h3>
+                    <h3 className="text-lg font-bold">Product Details</h3>
                   </div>
                   <button
                     onClick={() => setShowDetailModal(false)}
@@ -662,9 +924,47 @@ const AdminProducts = () => {
 
               {/* Modal Body */}
               <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-                {loadingDetail ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                {loadingDetail || !selectedProduct ? (
+                  <div className="space-y-6 animate-pulse">
+                    {/* Skeleton: Product Image & Basic Info */}
+                    <div className="flex gap-6">
+                      <div className="w-40 h-40 rounded-xl bg-slate-200 dark:bg-slate-700 flex-shrink-0"></div>
+                      <div className="flex-1 space-y-3">
+                        <div>
+                          <div className="h-7 w-48 bg-slate-200 dark:bg-slate-700 rounded-lg mb-2"></div>
+                          <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="h-6 w-20 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+                          <div className="h-6 w-24 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+                        </div>
+                        <div className="h-8 w-32 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+                      </div>
+                    </div>
+
+                    {/* Skeleton: Description */}
+                    <div>
+                      <div className="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded mb-3"></div>
+                      <div className="space-y-2">
+                        <div className="h-4 w-full bg-slate-200 dark:bg-slate-700 rounded"></div>
+                        <div className="h-4 w-4/5 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                        <div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                      </div>
+                    </div>
+
+                    {/* Skeleton: Stats Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div
+                          key={i}
+                          className="bg-slate-100 dark:bg-slate-800 rounded-xl p-4 flex flex-col items-center"
+                        >
+                          <div className="w-8 h-8 bg-slate-200 dark:bg-slate-700 rounded-full mb-2"></div>
+                          <div className="h-6 w-12 bg-slate-200 dark:bg-slate-700 rounded mb-1"></div>
+                          <div className="h-3 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -737,10 +1037,10 @@ const AdminProducts = () => {
                     {/* Description */}
                     <div>
                       <h5 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2">
-                        Mô tả sản phẩm
+                        Product Description
                       </h5>
                       <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">
-                        {selectedProduct.description || "Không có mô tả"}
+                        {selectedProduct.description || "No description"}
                       </p>
                     </div>
 
@@ -753,7 +1053,7 @@ const AdminProducts = () => {
                         <p className="text-2xl font-bold text-slate-900 dark:text-white">
                           {selectedProduct.stockQuantity}
                         </p>
-                        <p className="text-xs text-slate-500">Tồn kho</p>
+                        <p className="text-xs text-slate-500">In Stock</p>
                       </div>
                       <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 text-center">
                         <span className="material-symbols-outlined text-2xl text-green-500 mb-1">
@@ -762,7 +1062,7 @@ const AdminProducts = () => {
                         <p className="text-2xl font-bold text-slate-900 dark:text-white">
                           {selectedProduct.soldCount || 0}
                         </p>
-                        <p className="text-xs text-slate-500">Đã bán</p>
+                        <p className="text-xs text-slate-500">Sold</p>
                       </div>
                       <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 text-center">
                         <span className="material-symbols-outlined text-2xl text-yellow-500 mb-1">
@@ -771,7 +1071,7 @@ const AdminProducts = () => {
                         <p className="text-2xl font-bold text-slate-900 dark:text-white">
                           {selectedProduct.averageRating?.toFixed(1) || "0.0"}
                         </p>
-                        <p className="text-xs text-slate-500">Đánh giá</p>
+                        <p className="text-xs text-slate-500">Rating</p>
                       </div>
                       <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 text-center">
                         <span className="material-symbols-outlined text-2xl text-purple-500 mb-1">
@@ -780,29 +1080,7 @@ const AdminProducts = () => {
                         <p className="text-2xl font-bold text-slate-900 dark:text-white">
                           {selectedProduct.totalReviews || 0}
                         </p>
-                        <p className="text-xs text-slate-500">Nhận xét</p>
-                      </div>
-                    </div>
-
-                    {/* Shop Info */}
-                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4">
-                      <h5 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-3">
-                        Thông tin Shop
-                      </h5>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="material-symbols-outlined text-primary">
-                            storefront
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium text-slate-900 dark:text-white">
-                            {selectedProduct.shopName}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            Shop ID: {selectedProduct.shopId}
-                          </p>
-                        </div>
+                        <p className="text-xs text-slate-500">Reviews</p>
                       </div>
                     </div>
 
@@ -811,26 +1089,737 @@ const AdminProducts = () => {
                       selectedProduct.images.length > 0 && (
                         <div>
                           <h5 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-3">
-                            Hình ảnh khác
+                            Additional Images ({selectedProduct.images.length})
                           </h5>
                           <div className="flex gap-2 flex-wrap">
                             {selectedProduct.images.map((img, index) => (
                               <div
                                 key={index}
-                                className="w-20 h-20 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800"
+                                className="w-20 h-20 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                                onClick={() => window.open(img, "_blank")}
+                                title="Click to view full image"
                               >
                                 <img
                                   src={img}
                                   alt={`${selectedProduct.name} - ${index + 1}`}
                                   className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src =
+                                      "https://via.placeholder.com/80?text=Error";
+                                  }}
                                 />
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
+
+                    {/* Seller Information */}
+                    {selectedProduct.shopName && (
+                      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-indigo-100 dark:border-indigo-800">
+                        <h5 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
+                          <span className="material-symbols-outlined text-indigo-500 text-lg">
+                            storefront
+                          </span>
+                          Seller Information
+                        </h5>
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-indigo-600 dark:text-indigo-400">
+                              store
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900 dark:text-white">
+                              {selectedProduct.shopName}
+                            </p>
+                            {selectedProduct.shopId && (
+                              <p className="text-xs text-slate-500">
+                                Shop ID: {selectedProduct.shopId}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Timestamps */}
+                    <div className="grid grid-cols-2 gap-4">
+                      {selectedProduct.createdAt && (
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="material-symbols-outlined text-slate-400 text-lg">
+                              calendar_today
+                            </span>
+                            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                              Created At
+                            </span>
+                          </div>
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                            {new Date(
+                              selectedProduct.createdAt,
+                            ).toLocaleDateString("vi-VN", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      )}
+                      {selectedProduct.updatedAt && (
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="material-symbols-outlined text-slate-400 text-lg">
+                              update
+                            </span>
+                            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                              Last Updated
+                            </span>
+                          </div>
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                            {new Date(
+                              selectedProduct.updatedAt,
+                            ).toLocaleDateString("vi-VN", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        onClick={() => {
+                          setShowDetailModal(false);
+                          handleEditClick(selectedProduct);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 rounded-xl hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors font-medium"
+                      >
+                        <span className="material-symbols-outlined text-lg">
+                          edit
+                        </span>
+                        Edit Product
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowDetailModal(false);
+                          handleDeleteClick(selectedProduct);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors font-medium"
+                      >
+                        <span className="material-symbols-outlined text-lg">
+                          delete
+                        </span>
+                        Delete Product
+                      </button>
+                    </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Create Product Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setShowCreateModal(false)}
+            ></div>
+            <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden animate-scale-in">
+              {/* Modal Header */}
+              <div className="px-6 py-5 bg-gradient-to-r from-green-500/10 to-transparent border-b border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-500/10 rounded-xl">
+                      <span className="material-symbols-outlined text-green-500">
+                        add_circle
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-bold">Create New Product</h3>
+                  </div>
+                  <button
+                    onClick={() => setShowCreateModal(false)}
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-slate-400">
+                      close
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <form
+                onSubmit={handleCreateProduct}
+                className="p-6 overflow-y-auto max-h-[calc(90vh-160px)]"
+              >
+                <div className="space-y-4">
+                  {/* Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Product Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
+                        formErrors.name
+                          ? "border-red-500"
+                          : "border-slate-200 dark:border-slate-700"
+                      } bg-slate-50 dark:bg-slate-800`}
+                      placeholder="Enter product name"
+                    />
+                    {formErrors.name && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {formErrors.name}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      rows={3}
+                      className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      placeholder="Enter product description"
+                    />
+                  </div>
+
+                  {/* Price & Discount Price */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Price <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        step="0.01"
+                        min="0.01"
+                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
+                          formErrors.price
+                            ? "border-red-500"
+                            : "border-slate-200 dark:border-slate-700"
+                        } bg-slate-50 dark:bg-slate-800`}
+                        placeholder="0.00"
+                      />
+                      {formErrors.price && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {formErrors.price}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Discount Price
+                      </label>
+                      <input
+                        type="number"
+                        name="discountPrice"
+                        value={formData.discountPrice}
+                        onChange={handleInputChange}
+                        step="0.01"
+                        min="0"
+                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
+                          formErrors.discountPrice
+                            ? "border-red-500"
+                            : "border-slate-200 dark:border-slate-700"
+                        } bg-slate-50 dark:bg-slate-800`}
+                        placeholder="0.00"
+                      />
+                      {formErrors.discountPrice && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {formErrors.discountPrice}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Stock & Category */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Stock Quantity <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="stockQuantity"
+                        value={formData.stockQuantity}
+                        onChange={handleInputChange}
+                        min="0"
+                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
+                          formErrors.stockQuantity
+                            ? "border-red-500"
+                            : "border-slate-200 dark:border-slate-700"
+                        } bg-slate-50 dark:bg-slate-800`}
+                        placeholder="0"
+                      />
+                      {formErrors.stockQuantity && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {formErrors.stockQuantity}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Category ID <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="categoryId"
+                        value={formData.categoryId}
+                        onChange={handleInputChange}
+                        min="1"
+                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
+                          formErrors.categoryId
+                            ? "border-red-500"
+                            : "border-slate-200 dark:border-slate-700"
+                        } bg-slate-50 dark:bg-slate-800`}
+                        placeholder="Enter category ID"
+                      />
+                      {formErrors.categoryId && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {formErrors.categoryId}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Thumbnail */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Thumbnail URL
+                    </label>
+                    <input
+                      type="text"
+                      name="thumbnail"
+                      value={formData.thumbnail}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
+
+                  {/* Images - Create Modal */}
+                  <ImageUrlManager
+                    images={formData.images}
+                    onImagesChange={(newImages) =>
+                      setFormData((prev) => ({ ...prev, images: newImages }))
+                    }
+                  />
+
+                  {/* Status */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Status <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
+                        formErrors.status
+                          ? "border-red-500"
+                          : "border-slate-200 dark:border-slate-700"
+                      } bg-slate-50 dark:bg-slate-800`}
+                    >
+                      <option value="ACTIVE">Active</option>
+                      <option value="INACTIVE">Inactive</option>
+                      <option value="PENDING">Pending</option>
+                      <option value="REJECTED">Rejected</option>
+                    </select>
+                    {formErrors.status && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {formErrors.status}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-lg">
+                          add
+                        </span>
+                        Create Product
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Product Modal */}
+        {showEditModal && selectedProduct && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setShowEditModal(false)}
+            ></div>
+            <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden animate-scale-in">
+              {/* Modal Header */}
+              <div className="px-6 py-5 bg-gradient-to-r from-yellow-500/10 to-transparent border-b border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-500/10 rounded-xl">
+                      <span className="material-symbols-outlined text-yellow-500">
+                        edit
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-bold">Edit Product</h3>
+                  </div>
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-slate-400">
+                      close
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <form
+                onSubmit={handleUpdateProduct}
+                className="p-6 overflow-y-auto max-h-[calc(90vh-160px)]"
+              >
+                <div className="space-y-4">
+                  {/* Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Product Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
+                        formErrors.name
+                          ? "border-red-500"
+                          : "border-slate-200 dark:border-slate-700"
+                      } bg-slate-50 dark:bg-slate-800`}
+                      placeholder="Enter product name"
+                    />
+                    {formErrors.name && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {formErrors.name}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      rows={3}
+                      className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      placeholder="Enter product description"
+                    />
+                  </div>
+
+                  {/* Price & Discount Price */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Price <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        step="0.01"
+                        min="0.01"
+                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
+                          formErrors.price
+                            ? "border-red-500"
+                            : "border-slate-200 dark:border-slate-700"
+                        } bg-slate-50 dark:bg-slate-800`}
+                        placeholder="0.00"
+                      />
+                      {formErrors.price && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {formErrors.price}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Discount Price
+                      </label>
+                      <input
+                        type="number"
+                        name="discountPrice"
+                        value={formData.discountPrice}
+                        onChange={handleInputChange}
+                        step="0.01"
+                        min="0"
+                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
+                          formErrors.discountPrice
+                            ? "border-red-500"
+                            : "border-slate-200 dark:border-slate-700"
+                        } bg-slate-50 dark:bg-slate-800`}
+                        placeholder="0.00"
+                      />
+                      {formErrors.discountPrice && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {formErrors.discountPrice}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Stock & Category */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Stock Quantity <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="stockQuantity"
+                        value={formData.stockQuantity}
+                        onChange={handleInputChange}
+                        min="0"
+                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
+                          formErrors.stockQuantity
+                            ? "border-red-500"
+                            : "border-slate-200 dark:border-slate-700"
+                        } bg-slate-50 dark:bg-slate-800`}
+                        placeholder="0"
+                      />
+                      {formErrors.stockQuantity && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {formErrors.stockQuantity}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Category ID <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="categoryId"
+                        value={formData.categoryId}
+                        onChange={handleInputChange}
+                        min="1"
+                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
+                          formErrors.categoryId
+                            ? "border-red-500"
+                            : "border-slate-200 dark:border-slate-700"
+                        } bg-slate-50 dark:bg-slate-800`}
+                        placeholder="Enter category ID"
+                      />
+                      {formErrors.categoryId && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {formErrors.categoryId}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Thumbnail */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Thumbnail URL
+                    </label>
+                    <input
+                      type="text"
+                      name="thumbnail"
+                      value={formData.thumbnail}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
+
+                  {/* Images - Edit Modal */}
+                  <ImageUrlManager
+                    images={formData.images}
+                    onImagesChange={(newImages) =>
+                      setFormData((prev) => ({ ...prev, images: newImages }))
+                    }
+                  />
+
+                  {/* Status */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Status <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
+                        formErrors.status
+                          ? "border-red-500"
+                          : "border-slate-200 dark:border-slate-700"
+                      } bg-slate-50 dark:bg-slate-800`}
+                    >
+                      <option value="ACTIVE">Active</option>
+                      <option value="INACTIVE">Inactive</option>
+                      <option value="PENDING">Pending</option>
+                      <option value="REJECTED">Rejected</option>
+                    </select>
+                    {formErrors.status && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {formErrors.status}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 transition-colors disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-lg">
+                          save
+                        </span>
+                        Save Changes
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && selectedProduct && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setShowDeleteModal(false)}
+            ></div>
+            <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
+              {/* Modal Header */}
+              <div className="px-6 py-5 bg-gradient-to-r from-red-500/10 to-transparent border-b border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-500/10 rounded-xl">
+                      <span className="material-symbols-outlined text-red-500">
+                        delete
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-bold">Delete Product</h3>
+                  </div>
+                  <button
+                    onClick={() => setShowDeleteModal(false)}
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-slate-400">
+                      close
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6">
+                <p className="text-slate-600 dark:text-slate-300">
+                  Are you sure you want to delete the product{" "}
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    "{selectedProduct.name}"
+                  </span>
+                  ? This action cannot be undone.
+                </p>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-700">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteProduct}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50"
+                >
+                  {saving ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-lg">
+                        delete
+                      </span>
+                      Delete Product
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>

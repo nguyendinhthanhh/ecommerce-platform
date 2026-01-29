@@ -33,6 +33,11 @@ const AdminLayout = ({ children }) => {
       icon: "inventory_2",
       label: "Product Moderation",
     },
+    {
+      path: "/admin/categories",
+      icon: "category",
+      label: "Category Management",
+    },
     { path: "/admin/reviews", icon: "chat", label: "Content Reviews" },
     { path: "/admin/reports", icon: "bar_chart", label: "System Reports" },
   ];

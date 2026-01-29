@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShopAI Product Detail Page</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2513ec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#121022",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .dark .glass-card {
+            background: rgba(18, 16, 34, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#0f0d1b] dark:text-white min-h-screen">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#e8e7f3] dark:border-[#2d2b3d] px-10 py-3 bg-white dark:bg-background-dark sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-primary">
+<div class="size-6">
+<svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_6_330)">
+<path clip-rule="evenodd" d="M24 0.757355L47.2426 24L24 47.2426L0.757355 24L24 0.757355ZM21 35.7574V12.2426L9.24264 24L21 35.7574Z" fill="currentColor" fill-rule="evenodd"></path>
+</g>
+<defs><clipPath id="clip0_6_330"><rect fill="white" height="48" width="48"></rect></clipPath></defs>
+</svg>
+</div>
+<h2 class="text-[#0f0d1b] dark:text-white text-xl font-bold leading-tight tracking-[-0.015em]">ShopAI</h2>
+</div>
+<label class="flex flex-col min-w-40 !h-10 max-w-64">
+<div class="flex w-full flex-1 items-stretch rounded-xl h-full">
+<div class="text-[#524c9a] dark:text-[#a19dbd] flex border-none bg-[#e8e7f3] dark:bg-[#2d2b3d] items-center justify-center pl-4 rounded-l-xl border-r-0">
+<span class="material-symbols-outlined text-xl">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-[#0f0d1b] dark:text-white focus:outline-0 focus:ring-0 border-none bg-[#e8e7f3] dark:bg-[#2d2b3d] focus:border-none h-full placeholder:text-[#524c9a] dark:placeholder:text-[#a19dbd] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal" placeholder="Ask AI about a product..." value=""/>
+</div>
+</label>
+</div>
+<div class="flex flex-1 justify-end gap-8 items-center">
+<div class="flex items-center gap-9">
+<a class="text-[#0f0d1b] dark:text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Electronics</a>
+<a class="text-[#0f0d1b] dark:text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Fashion</a>
+<a class="text-[#0f0d1b] dark:text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Home</a>
+<a class="text-[#0f0d1b] dark:text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Deals</a>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center justify-center rounded-xl h-10 w-10 bg-[#e8e7f3] dark:bg-[#2d2b3d] text-[#0f0d1b] dark:text-white">
+<span class="material-symbols-outlined text-xl">shopping_cart</span>
+</button>
+<button class="flex items-center justify-center rounded-xl h-10 w-10 bg-[#e8e7f3] dark:bg-[#2d2b3d] text-[#0f0d1b] dark:text-white">
+<span class="material-symbols-outlined text-xl">person</span>
+</button>
+</div>
+</div>
+</header>
+<main class="max-w-[1280px] mx-auto px-6 py-6">
+<div class="flex flex-wrap gap-2 py-4">
+<a class="text-primary text-sm font-medium leading-normal flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-sm">home</span> Home
+        </a>
+<span class="text-[#524c9a] dark:text-[#a19dbd] text-sm font-medium leading-normal">/</span>
+<a class="text-primary text-sm font-medium leading-normal" href="#">Electronics</a>
+<span class="text-[#524c9a] dark:text-[#a19dbd] text-sm font-medium leading-normal">/</span>
+<a class="text-primary text-sm font-medium leading-normal" href="#">Audio</a>
+<span class="text-[#524c9a] dark:text-[#a19dbd] text-sm font-medium leading-normal">/</span>
+<span class="text-[#0f0d1b] dark:text-white text-sm font-medium leading-normal">Premium Headphones</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-10 mt-4">
+<div class="lg:col-span-7 flex flex-col gap-6">
+<div class="relative group">
+<div class="w-full bg-center bg-no-repeat bg-cover rounded-xl aspect-square bg-[#f8f8fc] dark:bg-[#1a1831] border border-[#e8e7f3] dark:border-[#2d2b3d]" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBFaNYEkWXC0tCbaHra4vftcy97kNy1eTTwYKdh-N2Bp9vhwix-H4dI8Eb31oFhFi3-gRI3WUQRPHA3GSeyFWCq2QbKqDDUHCZJJf0R_c9RS47_Uz3LYlgFzITx0kxURGUugbzzQlt271lXF8nc5xBk1zgDi1YUPaEMoslu0tLiPvOQIxd40DG4OMFxAqTBy-sv4zT5Lo_9esCvnN9D1T-eh1IPDDnSfoAAoS-jHv_8djASu6cO5bK_9sZG-yt2Zy-KrbqptxoDv9k");'>
+</div>
+<div class="absolute top-4 left-4 bg-primary/90 text-white px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-bold tracking-wide shadow-lg backdrop-blur-sm">
+<span class="material-symbols-outlined text-sm">verified</span>
+                    AI VISION VERIFIED
+                </div>
+</div>
+<div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+<div class="w-24 h-24 rounded-lg bg-center bg-cover border-2 border-primary cursor-pointer shrink-0" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBshmefinm_6SyQXeZegWCYNliW9poid4kxRJg023UWiLS01M7rOEKuJVeIcdeFxOwvmZaXne1gwCvGcbIn4YzEogPkhCaZg3heDbMBZTERr7JTLNNqQT1PhOvkKkfOhyRAtydnANdqBUiy89L2UZFHWR7ErCHAwT_fnqc5CAeUfqgc2_wC2lFzo-7g1lvn8QYSlAEHYcU2Md-eMLFHdMs9ct8ANWmTTV1YaEclSB6S2nBnGo6TR5FDuhopAQvyi4BnwcY5v9fT_CE");'></div>
+<div class="w-24 h-24 rounded-lg bg-center bg-cover border border-[#e8e7f3] dark:border-[#2d2b3d] cursor-pointer shrink-0 opacity-70 hover:opacity-100 transition-opacity" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBT6Wd2iYivE5eQRW3-RkJj2MJKCENOduJ4pswgNl_dNpFdT216p7fxu574xwg1U25ro15KLjdarMBbI9Q83m3WnxFRqWGMmLblXUTTa9ZlqqhvkFxCo4Y3vC2_DVlV35ajrHoEu_kydgt-Ig8Ym28p8nBPYfqKMDU-pCUikhcH8u9Igt2WUC42jtMK5lf3sC0asXgVzayOzLZ6E7Tj0Ygo09NbLqBhwJzpOtMzbUyuFtM2ZSX2CEt7-oAA_dl3bnqDs6qaEFZv6oM");'></div>
+<div class="w-24 h-24 rounded-lg bg-center bg-cover border border-[#e8e7f3] dark:border-[#2d2b3d] cursor-pointer shrink-0 opacity-70 hover:opacity-100 transition-opacity" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCns7McNF8CQ1MdN2Q1RktHoehhdmVmp4R329Sm0jGcFyqFKYftKtbhl9T4drCH3BX6LTN0WeX7s3BB-AgUrauAoY__fiDr2UK99VgM921IBgeGQFhGb6hQG-ojG4ob6EdmSJG5FSzjCZk6qxdX7aDDbjyLVlGb4De3xT447fS1gLn3LyI3fLi5XTfeH41akqDxAWLU0vnUHpuF_7V8zurEvqOzhBG9VX_l9sFGMC0H7_zu9Mf6cMX-Oxrc8hm1allRt-78xiKGyfk");'></div>
+<div class="w-24 h-24 rounded-lg bg-center bg-cover border border-[#e8e7f3] dark:border-[#2d2b3d] cursor-pointer shrink-0 opacity-70 hover:opacity-100 transition-opacity" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBrC-me4vv65PkoWAkeQvW3UebJcpn5ng85_KezWsAZpK8zWDdQ5n9lW3civmeplhQWsFOXv8TXpmRvH2gZVK7oOv9iLUFafpsPv_VhF0bQn4gQhPXLv8fZb3gb8XFbzfhv9Jzr2Nf6AM7TS0o7a2Tx_5t7jn8Nd1me0A-vtDmGCd7A_KmCXOEvy6T4FajLlhX3Q6-_kby0C4xGw29zn172uW_pMkbYtzabQhuAW4rwNAliTMPYQ3v-iDqCKgIJEDyTP5UNN8Dtidc");'></div>
+<div class="w-24 h-24 rounded-lg bg-center bg-cover border border-[#e8e7f3] dark:border-[#2d2b3d] cursor-pointer shrink-0 opacity-70 hover:opacity-100 transition-opacity" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCp9gAYQ5pteUdkRd6Ueht2yBXMhZzMkayDSNkMhAQJ-neaO11b4tL-wug3xxCSJzP-5hgAmPacIetGPJ33f_useBNfUXHma-UylcuL5Z16f0FFXCiRWG5jvLvBINM_b3jB3K8Ms2n59zp9dn_2Jfwk19ofhY5OWx5n-XSXTkZq35-9o_8QW6SGuDFyRxCXus35p6IV2hkBUuLQiI0I6ht7uhh5jwjm-vIQliAMYlFbnY9BjMkN1kyH0eiUrKPJWAxl07sgN5FPy6g");'></div>
+</div>
+</div>
+<div class="lg:col-span-5 flex flex-col gap-8">
+<div>
+<div class="flex items-center gap-3 mb-3">
+<div class="flex bg-primary/10 dark:bg-primary/20 text-primary px-3 py-1 rounded-full items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] fill-1">bolt</span>
+<span class="text-xs font-bold uppercase tracking-wider">98% AI Match</span>
+</div>
+<div class="flex items-center text-yellow-500 gap-0.5">
+<span class="material-symbols-outlined text-sm fill-1">star</span>
+<span class="material-symbols-outlined text-sm fill-1">star</span>
+<span class="material-symbols-outlined text-sm fill-1">star</span>
+<span class="material-symbols-outlined text-sm fill-1">star</span>
+<span class="material-symbols-outlined text-sm">star_half</span>
+<span class="text-[#524c9a] dark:text-[#a19dbd] text-sm font-medium ml-1">4.8 (2,450)</span>
+</div>
+</div>
+<h1 class="text-3xl font-black leading-tight tracking-tight text-[#0f0d1b] dark:text-white mb-2">Premium Wireless Noise-Cancelling Headphones</h1>
+<p class="text-[#524c9a] dark:text-[#a19dbd] text-base">Model: ShopAI-Elite X1 | Professional Grade Audio</p>
+</div>
+<div class="flex items-end justify-between p-6 rounded-xl bg-white dark:bg-[#1a1831] border border-[#e8e7f3] dark:border-[#2d2b3d]">
+<div class="flex flex-col gap-1">
+<span class="text-xs font-bold text-[#524c9a] dark:text-[#a19dbd] uppercase tracking-widest">Current Price</span>
+<div class="flex items-baseline gap-2">
+<span class="text-4xl font-black text-[#0f0d1b] dark:text-white">$299.00</span>
+<span class="text-[#524c9a] dark:text-[#a19dbd] line-through text-lg">$349.00</span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-2">
+<span class="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-widest flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_down</span> 14% OFF
+                    </span>
+<div class="flex items-end gap-0.5 h-8">
+<div class="w-1 bg-primary/20 rounded-full h-4"></div>
+<div class="w-1 bg-primary/20 rounded-full h-6"></div>
+<div class="w-1 bg-primary/20 rounded-full h-5"></div>
+<div class="w-1 bg-primary/30 rounded-full h-7"></div>
+<div class="w-1 bg-primary/40 rounded-full h-8"></div>
+<div class="w-1 bg-primary rounded-full h-4"></div>
+</div>
+<span class="text-[10px] text-[#524c9a] dark:text-[#a19dbd] font-medium uppercase">Price Stability: High</span>
+</div>
+</div>
+<div class="glass-card rounded-xl p-6 shadow-sm relative overflow-hidden">
+<div class="absolute top-0 right-0 p-3 opacity-10">
+<span class="material-symbols-outlined text-6xl">auto_awesome</span>
+</div>
+<h3 class="flex items-center gap-2 text-[#0f0d1b] dark:text-white font-bold text-lg mb-4">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+                    Why you might like this
+                </h3>
+<ul class="space-y-4">
+<li class="flex gap-3">
+<span class="material-symbols-outlined text-green-500 text-xl">check_circle</span>
+<div>
+<p class="text-sm font-bold text-[#0f0d1b] dark:text-white leading-none mb-1">Superior ANC</p>
+<p class="text-xs text-[#524c9a] dark:text-[#a19dbd]">AI analysis confirms these block 95% of ambient commuter noise.</p>
+</div>
+</li>
+<li class="flex gap-3">
+<span class="material-symbols-outlined text-green-500 text-xl">check_circle</span>
+<div>
+<p class="text-sm font-bold text-[#0f0d1b] dark:text-white leading-none mb-1">Battery Longevity</p>
+<p class="text-xs text-[#524c9a] dark:text-[#a19dbd]">User reports consistently match the 40-hour advertised battery life.</p>
+</div>
+</li>
+<li class="flex gap-3">
+<span class="material-symbols-outlined text-green-500 text-xl">check_circle</span>
+<div>
+<p class="text-sm font-bold text-[#0f0d1b] dark:text-white leading-none mb-1">Perfect for Work</p>
+<p class="text-xs text-[#524c9a] dark:text-[#a19dbd]">Optimized for the video calls you frequently attend.</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-3">
+<p class="text-sm font-bold text-[#0f0d1b] dark:text-white">Select Color</p>
+<div class="flex gap-3">
+<button class="w-10 h-10 rounded-full bg-[#1a1a1a] border-2 border-primary ring-2 ring-primary/20"></button>
+<button class="w-10 h-10 rounded-full bg-[#e8e7f3] border-2 border-transparent hover:border-primary/50 transition-all"></button>
+<button class="w-10 h-10 rounded-full bg-[#2513ec] border-2 border-transparent hover:border-primary/50 transition-all"></button>
+</div>
+</div>
+<div class="flex flex-col gap-3">
+<p class="text-sm font-bold text-[#0f0d1b] dark:text-white">Storage Case</p>
+<div class="flex gap-3">
+<button class="px-4 py-2 rounded-lg border-2 border-primary bg-primary/5 text-primary text-sm font-bold">Hard Shell</button>
+<button class="px-4 py-2 rounded-lg border-2 border-[#e8e7f3] dark:border-[#2d2b3d] text-[#524c9a] dark:text-[#a19dbd] text-sm font-medium">Soft Pouch</button>
+</div>
+</div>
+</div>
+<div class="flex gap-4 pt-4">
+<button class="flex-1 bg-primary text-white h-14 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-primary/30 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">shopping_bag</span>
+                    Add to Cart
+                </button>
+<button class="flex-1 border-2 border-primary text-primary h-14 rounded-xl font-bold text-lg hover:bg-primary/5 transition-all">
+                    Buy Now
+                </button>
+</div>
+</div>
+</div>
+<div class="mt-20">
+<div class="flex border-b border-[#e8e7f3] dark:border-[#2d2b3d] gap-10">
+<button class="pb-4 border-b-2 border-primary text-primary font-bold text-base">AI-Analyzed Reviews</button>
+<button class="pb-4 border-b-2 border-transparent text-[#524c9a] dark:text-[#a19dbd] font-medium text-base hover:text-primary transition-colors">Specifications</button>
+<button class="pb-4 border-b-2 border-transparent text-[#524c9a] dark:text-[#a19dbd] font-medium text-base hover:text-primary transition-colors">Description</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 py-10">
+<div class="md:col-span-1 bg-white dark:bg-[#1a1831] rounded-xl p-6 border border-[#e8e7f3] dark:border-[#2d2b3d]">
+<h4 class="text-xl font-black mb-6">Sentiment Analysis</h4>
+<div class="space-y-6">
+<div>
+<div class="flex justify-between text-sm font-bold mb-2">
+<span>Positive Sentiment</span>
+<span class="text-green-500">92%</span>
+</div>
+<div class="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+<div class="h-full bg-green-500 w-[92%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-sm font-bold mb-2">
+<span>Neutral</span>
+<span class="text-gray-400">5%</span>
+</div>
+<div class="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+<div class="h-full bg-gray-400 w-[5%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-sm font-bold mb-2">
+<span>Negative Sentiment</span>
+<span class="text-red-500">3%</span>
+</div>
+<div class="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+<div class="h-full bg-red-500 w-[3%]"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+<div class="bg-green-50 dark:bg-green-900/10 rounded-xl p-6 border border-green-100 dark:border-green-900/20">
+<div class="flex items-center gap-2 text-green-600 dark:text-green-400 font-bold mb-4">
+<span class="material-symbols-outlined">thumb_up</span>
+                        AI-Distilled Pros
+                    </div>
+<ul class="space-y-3 text-sm text-green-800 dark:text-green-200">
+<li class="flex gap-2">• Exceptional clarity in mid-range frequencies</li>
+<li class="flex gap-2">• Very comfortable for 8+ hour wearing sessions</li>
+<li class="flex gap-2">• Fast charging: 10 mins = 5 hours playback</li>
+<li class="flex gap-2">• Reliable multi-point Bluetooth pairing</li>
+</ul>
+</div>
+<div class="bg-red-50 dark:bg-red-900/10 rounded-xl p-6 border border-red-100 dark:border-red-900/20">
+<div class="flex items-center gap-2 text-red-600 dark:text-red-400 font-bold mb-4">
+<span class="material-symbols-outlined">thumb_down</span>
+                        AI-Distilled Cons
+                    </div>
+<ul class="space-y-3 text-sm text-red-800 dark:text-red-200">
+<li class="flex gap-2">• Accompanying app requires account for EQ</li>
+<li class="flex gap-2">• Included USB-C cable is relatively short</li>
+<li class="flex gap-2">• Touch controls can be overly sensitive</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</main>
+<section class="bg-indigo-50/50 dark:bg-[#1a1831] mt-12 py-16 px-6">
+<div class="max-w-[1280px] mx-auto">
+<div class="flex items-center gap-2 mb-8">
+<span class="material-symbols-outlined text-primary text-3xl">auto_awesome</span>
+<h3 class="text-2xl font-black text-[#0f0d1b] dark:text-white">Similar Products Picked by AI</h3>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+<div class="group bg-white dark:bg-[#252345] rounded-xl overflow-hidden border border-[#e8e7f3] dark:border-[#2d2b3d] hover:shadow-xl transition-all duration-300 flex flex-col">
+<div class="relative aspect-square overflow-hidden bg-[#f8f8fc] dark:bg-[#1a1831]">
+<img alt="Product Image" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9BFe0_Y8YiyuJsNBw585-arx6fmXa6lk9UXX9ik-9ghWZWFzJ0is8PzmSwnCUbeJeHjg7MBseKoAXnRUmiFkc4IJBw_OZrD1STSe6M_ohGoQrxO7yyD3CQnkoD4OeRRmMS5VEFHuLYhfQ6UHZRpsn4OfTyxBs367KwltyMdMEi05NxViCkTaqjOZGQkJxflNaW6F-b5LpweEOxTkLVlke6Co7iss3kOyflq-AJR-f5llMeligEM1UqnYze56tzbK9FJWUtvWyQvk"/>
+<div class="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
+                        95% MATCH
+                    </div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<h4 class="text-sm font-bold text-[#0f0d1b] dark:text-white line-clamp-2 mb-2">Elite Sound Studio Pro Wireless</h4>
+<div class="mt-auto flex items-center justify-between">
+<span class="text-lg font-black text-primary">$249.00</span>
+<button class="bg-[#e8e7f3] dark:bg-[#2d2b3d] hover:bg-primary hover:text-white text-[#0f0d1b] dark:text-white w-9 h-9 rounded-lg flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-xl">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<div class="group bg-white dark:bg-[#252345] rounded-xl overflow-hidden border border-[#e8e7f3] dark:border-[#2d2b3d] hover:shadow-xl transition-all duration-300 flex flex-col">
+<div class="relative aspect-square overflow-hidden bg-[#f8f8fc] dark:bg-[#1a1831]">
+<img alt="Product Image" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZ8bagldBIJeTS0Vjohv7wqrmQmgrksQEkTaiVXsXc-sN07lzY6HVgpnQ04x7VDWEsSekqypl0QptWCnTkGm5WZJnEy4IVE0Rtme05ZvvVOvDQrg5MAJlFZdCQy9pbkWce7dWBSFPgOJoses_iQuutwsLmp1xD-fooDUPpsgqdSJrjz96tsN0rlTio30AWXVBQTi-5JCPssmwH1YKlnjkIpKq5gqe_W5lwF8WPhNqjDDYs4LVTBpMG6WR_EQngLC9sjBRDV8l0iuQ"/>
+<div class="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
+                        95% MATCH
+                    </div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<h4 class="text-sm font-bold text-[#0f0d1b] dark:text-white line-clamp-2 mb-2">VocalMaster Reference X2</h4>
+<div class="mt-auto flex items-center justify-between">
+<span class="text-lg font-black text-primary">$319.00</span>
+<button class="bg-[#e8e7f3] dark:bg-[#2d2b3d] hover:bg-primary hover:text-white text-[#0f0d1b] dark:text-white w-9 h-9 rounded-lg flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-xl">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<div class="group bg-white dark:bg-[#252345] rounded-xl overflow-hidden border border-[#e8e7f3] dark:border-[#2d2b3d] hover:shadow-xl transition-all duration-300 flex flex-col">
+<div class="relative aspect-square overflow-hidden bg-[#f8f8fc] dark:bg-[#1a1831]">
+<img alt="Product Image" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLQqrN3-81Zl5cE1Hr2gYQMRqPtsgNzEDewHP0ILwa57KTTLTsg5qjk3BL2_1yzHZSexbgpQePvUNEHUW9BBH4TRw3Rh8WEnX5c3wBm_-jx0erTQVkoGufUcph5HpklQqBtgNt7pg-6G3mZkiJ9ZeACcMi2eSPskuGJdUp6xYOtX2Quphsm22t2Cms1hyknVO9bRWIhZw8jpnDD2xf2UVKM6hFU7OxGP9qGTYxE2ks0xorfx1CDQ_KXCy9w9zT5_rbJmB2NIESqxk"/>
+<div class="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
+                        95% MATCH
+                    </div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<h4 class="text-sm font-bold text-[#0f0d1b] dark:text-white line-clamp-2 mb-2">UltraBass Noise Canceling Z1</h4>
+<div class="mt-auto flex items-center justify-between">
+<span class="text-lg font-black text-primary">$189.99</span>
+<button class="bg-[#e8e7f3] dark:bg-[#2d2b3d] hover:bg-primary hover:text-white text-[#0f0d1b] dark:text-white w-9 h-9 rounded-lg flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-xl">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<div class="group bg-white dark:bg-[#252345] rounded-xl overflow-hidden border border-[#e8e7f3] dark:border-[#2d2b3d] hover:shadow-xl transition-all duration-300 flex flex-col">
+<div class="relative aspect-square overflow-hidden bg-[#f8f8fc] dark:bg-[#1a1831]">
+<img alt="Product Image" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5_RAKlT9QXZMWfroFNGDIOp8iuKI6MMnnxQOxqYdVylNgi3iXDkgBmLbnE27C4OpSZvGvMnb07BVupsin86oP7qcu5HVr5IZjyu9msT50JzfZwOi6Ughi6EudUhG1iyFfQmEV7XupQBtyaImpNc9RfLkAIut65-7gb4XUhI8HvgrP_RUntRS3bd-1Ebtu-DqstYBQSqXMYNF86wkloz6a-yqwOJbTeV_sTm7rHw81vSNI_bTt27_wUqbZSRYHWO21ofbtVThZgjE"/>
+<div class="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
+                        95% MATCH
+                    </div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<h4 class="text-sm font-bold text-[#0f0d1b] dark:text-white line-clamp-2 mb-2">AeroFit Comfort BT V5.2</h4>
+<div class="mt-auto flex items-center justify-between">
+<span class="text-lg font-black text-primary">$275.00</span>
+<button class="bg-[#e8e7f3] dark:bg-[#2d2b3d] hover:bg-primary hover:text-white text-[#0f0d1b] dark:text-white w-9 h-9 rounded-lg flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-xl">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<div class="group bg-white dark:bg-[#252345] rounded-xl overflow-hidden border border-[#e8e7f3] dark:border-[#2d2b3d] hover:shadow-xl transition-all duration-300 flex flex-col">
+<div class="relative aspect-square overflow-hidden bg-[#f8f8fc] dark:bg-[#1a1831]">
+<img alt="Product Image" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA64LgcQeRU9jS6p8-ku0isleezzTetnUQzC0iz4xfgijWkC78BtXSs88A8C_6txW7zx5-FZepEFkdeOIeRLSd7Ip6sYSxF5PadmgyY_R3X1wEVmzM79liCUsemvhjpa3gS3bMD2OaZd-oMpRXpJgfoLEbPfX4mWwkTdPlntI71btxRZNfvgGORPYJ6U8FKkmyhpGBnJTLQ8t6DC--6YVjtdVK0N0_Ex7itsPNGBkpQGUxt_TeayncJ2FHtumEw6YIj2ORalRSUuJA"/>
+<div class="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
+                        95% MATCH
+                    </div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<h4 class="text-sm font-bold text-[#0f0d1b] dark:text-white line-clamp-2 mb-2">SoundScape Infinite Gen 3</h4>
+<div class="mt-auto flex items-center justify-between">
+<span class="text-lg font-black text-primary">$299.99</span>
+<button class="bg-[#e8e7f3] dark:bg-[#2d2b3d] hover:bg-primary hover:text-white text-[#0f0d1b] dark:text-white w-9 h-9 rounded-lg flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-xl">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<footer class="bg-white dark:bg-[#1a1831] border-t border-[#e8e7f3] dark:border-[#2d2b3d] py-12 px-6">
+<div class="max-w-[1280px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+<div class="col-span-2">
+<div class="flex items-center gap-3 text-primary mb-6">
+<div class="size-6">
+<svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M24 0.757355L47.2426 24L24 47.2426L0.757355 24L24 0.757355ZM21 35.7574V12.2426L9.24264 24L21 35.7574Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+<span class="text-xl font-bold text-[#0f0d1b] dark:text-white">ShopAI</span>
+</div>
+<p class="text-[#524c9a] dark:text-[#a19dbd] text-sm max-w-xs">The next generation of e-commerce. Powered by vision models to ensure every product meets the highest standards of quality.</p>
+</div>
+<div class="flex flex-col gap-4">
+<h5 class="font-bold text-[#0f0d1b] dark:text-white">Customer Service</h5>
+<a class="text-[#524c9a] dark:text-[#a19dbd] text-sm hover:text-primary transition-colors" href="#">Help Center</a>
+<a class="text-[#524c9a] dark:text-[#a19dbd] text-sm hover:text-primary transition-colors" href="#">Shipping Info</a>
+<a class="text-[#524c9a] dark:text-[#a19dbd] text-sm hover:text-primary transition-colors" href="#">Returns &amp; Refunds</a>
+</div>
+<div class="flex flex-col gap-4">
+<h5 class="font-bold text-[#0f0d1b] dark:text-white">About AI</h5>
+<a class="text-[#524c9a] dark:text-[#a19dbd] text-sm hover:text-primary transition-colors" href="#">Vision Verification</a>
+<a class="text-[#524c9a] dark:text-[#a19dbd] text-sm hover:text-primary transition-colors" href="#">Personalization Engine</a>
+<a class="text-[#524c9a] dark:text-[#a19dbd] text-sm hover:text-primary transition-colors" href="#">Privacy Policy</a>
+</div>
+</div>
+<div class="max-w-[1280px] mx-auto mt-12 pt-8 border-t border-[#e8e7f3] dark:border-[#2d2b3d] text-center text-[#524c9a] dark:text-[#a19dbd] text-xs">
+        © 2024 ShopAI Interactive. All rights reserved.
+    </div>
+</footer>
+
+</body></html>

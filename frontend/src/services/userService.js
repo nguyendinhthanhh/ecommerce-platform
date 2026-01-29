@@ -35,37 +35,66 @@ const userService = {
   // Invalidate profile cache
   invalidateCache: () => {
     apiCache.invalidate("/users/me");
+    apiCache.invalidatePattern("/admin/users");
   },
 
   // ==================== ADMIN ENDPOINTS ====================
 
-  // Get all users (admin)
+  // Get all users (admin) - with caching
   getAllUsers: async (params = {}) => {
+    const cacheKey = apiCache.generateKey("/admin/users", params);
+    const cached = apiCache.get(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
     const response = await api.get("/admin/users", { params });
-    return response.data;
+    const data = response.data;
+
+    apiCache.set(cacheKey, data, CACHE_TTL.MEDIUM);
+    return data;
   },
 
-  // Get user by ID (admin)
+  // Get user by ID (admin) - with caching
   getUserById: async (userId) => {
+    const cacheKey = `/admin/users/${userId}`;
+    const cached = apiCache.get(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
     const response = await api.get(`/admin/users/${userId}`);
-    return response.data.data;
+    const data = response.data.data;
+
+    apiCache.set(cacheKey, data, CACHE_TTL.MEDIUM);
+    return data;
   },
 
   // Create new user (admin)
   createUser: async (userData) => {
     const response = await api.post("/admin/users", userData);
+    // Invalidate cache after creating
+    apiCache.invalidatePattern("/admin/users");
     return response.data.data;
   },
 
   // Update user (admin)
   updateUser: async (userId, userData) => {
     const response = await api.put(`/admin/users/${userId}`, userData);
+    // Invalidate cache after updating
+    apiCache.invalidate(`/admin/users/${userId}`);
+    apiCache.invalidatePattern("/admin/users");
     return response.data.data;
   },
 
   // Delete user (admin)
   deleteUser: async (userId) => {
     const response = await api.delete(`/admin/users/${userId}`);
+    // Invalidate cache after deleting
+    apiCache.invalidate(`/admin/users/${userId}`);
+    apiCache.invalidatePattern("/admin/users");
     return response.data;
   },
 };

@@ -58,9 +58,17 @@ const LoginPage = () => {
       );
       const user = response.data.user;
 
-      // Redirect based on user role
-      const redirectPath = authService.getRedirectPath(user);
-      navigate(redirectPath);
+      // Check if there's a redirect URL saved (from login prompt)
+      const redirectAfterLogin = sessionStorage.getItem("redirectAfterLogin");
+
+      if (redirectAfterLogin) {
+        sessionStorage.removeItem("redirectAfterLogin");
+        navigate(redirectAfterLogin);
+      } else {
+        // Redirect based on user role
+        const redirectPath = authService.getRedirectPath(user);
+        navigate(redirectPath);
+      }
     } catch (err) {
       setError(parseErrorMessage(err));
     } finally {

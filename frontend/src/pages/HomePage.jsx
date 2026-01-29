@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import productService from "../services/productService";
-import authService from "../services/authService";
+import Header from "../components/layout/Header";
 import {
   ProductCardSkeleton,
   ProductCarouselSkeleton,
@@ -13,7 +13,6 @@ const HomePage = () => {
   const [topProducts, setTopProducts] = useState([]);
   const [loadingTop, setLoadingTop] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(true);
-  const [user, setUser] = useState(null);
 
   // Load top selling products
   const loadTopProducts = useCallback(async () => {
@@ -45,177 +44,11 @@ const HomePage = () => {
     // Load data in parallel for faster perceived loading
     loadTopProducts();
     loadProducts();
-    const userData = authService.getUser();
-    setUser(userData);
   }, [loadTopProducts, loadProducts]);
 
-  const handleLogout = () => {
-    authService.logout();
-    setUser(null);
-    window.location.reload();
-  };
-
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark text-[#111418] dark:text-white font-display">
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-[#f0f2f4] dark:border-slate-800">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 gap-4">
-            {/* Logo */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="size-8 text-primary flex items-center justify-center">
-                <span className="material-symbols-outlined text-3xl">
-                  smart_toy
-                </span>
-              </div>
-              <h1 className="text-xl font-bold tracking-tight">AI Shop</h1>
-            </div>
-
-            {/* Desktop Nav */}
-            <nav className="hidden lg:flex items-center gap-6">
-              <a
-                className="text-sm font-medium hover:text-primary transition-colors"
-                href="#"
-              >
-                Home
-              </a>
-              <a
-                className="text-sm font-medium hover:text-primary transition-colors"
-                href="#"
-              >
-                Categories
-              </a>
-              <a
-                className="text-sm font-medium hover:text-primary transition-colors"
-                href="#"
-              >
-                Deals
-              </a>
-              <a
-                className="text-sm font-medium text-primary bg-primary/10 px-3 py-1 rounded-full flex items-center gap-1"
-                href="#"
-              >
-                <span className="material-symbols-outlined text-[16px]">
-                  auto_awesome
-                </span>
-                AI Recommendations
-              </a>
-            </nav>
-
-            {/* Search Bar */}
-            <div className="flex-1 max-w-lg hidden md:block">
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="material-symbols-outlined text-gray-400 group-focus-within:text-primary">
-                    search
-                  </span>
-                </div>
-                <input
-                  className="block w-full pl-10 pr-3 py-2 border-none rounded-lg leading-5 bg-[#f0f2f4] dark:bg-slate-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary sm:text-sm"
-                  placeholder="Search products with AI suggestions..."
-                  type="text"
-                />
-                <div className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
-                  <span className="material-symbols-outlined text-primary text-[18px]">
-                    auto_awesome
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* User Actions */}
-            <div className="flex items-center gap-2">
-              <button className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors relative">
-                <span className="material-symbols-outlined">shopping_cart</span>
-                <span className="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full"></span>
-              </button>
-              <button className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-                <span className="material-symbols-outlined">favorite</span>
-              </button>
-              {user ? (
-                <div className="relative group">
-                  <button className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-                    <span className="material-symbols-outlined">person</span>
-                  </button>
-                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                    <div className="p-3 border-b border-gray-200 dark:border-slate-700">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {user.fullName}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {user.email}
-                      </p>
-                    </div>
-                    <Link
-                      to="/profile"
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">
-                        account_circle
-                      </span>
-                      Personal Info
-                    </Link>
-                    {user.role === "ADMIN" && (
-                      <Link
-                        to="/admin/dashboard"
-                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">
-                          admin_panel_settings
-                        </span>
-                        Admin Dashboard
-                      </Link>
-                    )}
-                    {user.role === "SELLER" && (
-                      <Link
-                        to="/seller/dashboard"
-                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">
-                          storefront
-                        </span>
-                        Seller Dashboard
-                      </Link>
-                    )}
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">
-                        logout
-                      </span>
-                      Logout
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <Link
-                  to="/login"
-                  className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                >
-                  <span className="material-symbols-outlined">person</span>
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Search */}
-        <div className="md:hidden px-4 pb-3">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="material-symbols-outlined text-gray-400">
-                search
-              </span>
-            </div>
-            <input
-              className="block w-full pl-10 pr-3 py-2 border-none rounded-lg bg-[#f0f2f4] dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary"
-              placeholder="Ask AI to find products..."
-              type="text"
-            />
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 text-[#111418] font-display">
+      <Header />
 
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-10">
         {/* Hero Section */}
@@ -295,7 +128,8 @@ const HomePage = () => {
               <ProductCarouselSkeleton count={4} />
             ) : topProducts.length > 0 ? (
               topProducts.map((product) => (
-                <div
+                <Link
+                  to={`/products/${product.id}`}
                   key={product.id}
                   className="min-w-[280px] snap-center bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden group hover:shadow-lg transition-all duration-300"
                 >
@@ -310,6 +144,7 @@ const HomePage = () => {
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       src={
+                        product.thumbnail ||
                         product.imageUrl ||
                         "https://via.placeholder.com/400x300?text=Product"
                       }
@@ -338,7 +173,7 @@ const HomePage = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))
             ) : (
               <div className="flex items-center justify-center w-full py-12">
@@ -473,7 +308,8 @@ const HomePage = () => {
                 {/* Product Cards */}
                 {products.length > 0 ? (
                   products.map((product) => (
-                    <div
+                    <Link
+                      to={`/products/${product.id}`}
                       key={product.id}
                       className="group bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all"
                     >
@@ -482,6 +318,7 @@ const HomePage = () => {
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           src={
+                            product.thumbnail ||
                             product.imageUrl ||
                             "https://via.placeholder.com/400?text=Product"
                           }
@@ -503,14 +340,17 @@ const HomePage = () => {
                           <span className="font-bold text-lg">
                             ${product.price.toFixed(2)}
                           </span>
-                          <button className="size-8 rounded-full bg-gray-100 dark:bg-slate-700 hover:bg-primary hover:text-white flex items-center justify-center transition-colors">
+                          <button
+                            onClick={(e) => e.preventDefault()}
+                            className="size-8 rounded-full bg-gray-100 dark:bg-slate-700 hover:bg-primary hover:text-white flex items-center justify-center transition-colors"
+                          >
                             <span className="material-symbols-outlined text-[18px]">
                               add
                             </span>
                           </button>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   ))
                 ) : (
                   <div className="col-span-full flex items-center justify-center py-12">

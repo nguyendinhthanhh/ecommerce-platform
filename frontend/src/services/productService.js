@@ -125,6 +125,32 @@ const productService = {
     apiCache.invalidatePattern("/products/top-selling");
     apiCache.invalidatePattern("/products/newest");
   },
+
+  // Create a new product
+  createProduct: async (productData) => {
+    const response = await api.post("/products", productData);
+    // Invalidate cache after creating
+    apiCache.invalidatePattern("/products");
+    return response.data.data;
+  },
+
+  // Update a product
+  updateProduct: async (id, productData) => {
+    const response = await api.put(`/products/${id}`, productData);
+    // Invalidate cache after updating
+    apiCache.invalidate(`/products/${id}`);
+    apiCache.invalidatePattern("/products");
+    return response.data.data;
+  },
+
+  // Delete a product
+  deleteProduct: async (id) => {
+    const response = await api.delete(`/products/${id}`);
+    // Invalidate cache after deleting
+    apiCache.invalidate(`/products/${id}`);
+    apiCache.invalidatePattern("/products");
+    return response.data;
+  },
 };
 
 export default productService;
