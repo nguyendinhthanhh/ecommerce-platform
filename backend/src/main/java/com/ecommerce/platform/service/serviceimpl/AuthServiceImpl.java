@@ -1,8 +1,6 @@
 package com.ecommerce.platform.service.serviceimpl;
 
-import com.ecommerce.platform.dto.request.LoginRequest;
-import com.ecommerce.platform.dto.request.RefreshTokenRequest;
-import com.ecommerce.platform.dto.request.RegisterRequest;
+import com.ecommerce.platform.dto.request.*;
 import com.ecommerce.platform.dto.response.AuthResponse;
 import com.ecommerce.platform.dto.response.TokenResponse;
 import com.ecommerce.platform.dto.response.UserResponse;
@@ -121,5 +119,50 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
         return userMapper.toResponse(user);
+    }
+
+    @Override
+    public UserResponse updateProfile(Long userId, UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        // Logic: Chỉ update những trường có dữ liệu (không null/empty)
+        if (request.getFullName() != null && !request.getFullName().isEmpty()) {
+            user.setFullName(request.getFullName());
+        }
+
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
+
+        if (request.getAddress() != null) {
+            user.setAddress(request.getAddress());
+        }
+
+        if (request.getAvatar() != null) {
+            user.setAvatar(request.getAvatar());
+        }
+
+        user = userRepository.save(user);
+        return userMapper.toResponse(user);
+    }
+
+    @Override
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        // 1. Kiểm tra mật khẩu cũ có đúng không
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new BadRequestException("Current password is incorrect");
+        }
+
+        // 2. Kiểm tra mật khẩu mới và xác nhận có khớp không
+        if (!request.getNewPassword().equals(request.getConfirmationPassword())) {
+            throw new BadRequestException("New password and confirmation password do not match");
+    }
+        // 3. Update mật khẩu mới
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 }

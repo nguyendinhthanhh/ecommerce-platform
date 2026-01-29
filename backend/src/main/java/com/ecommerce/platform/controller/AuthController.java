@@ -3,6 +3,8 @@ package com.ecommerce.platform.controller;
 import com.ecommerce.platform.dto.request.LoginRequest;
 import com.ecommerce.platform.dto.request.RefreshTokenRequest;
 import com.ecommerce.platform.dto.request.RegisterRequest;
+import com.ecommerce.platform.dto.request.UpdateProfileRequest;
+import com.ecommerce.platform.dto.request.ChangePasswordRequest;
 import com.ecommerce.platform.dto.response.ApiResponse;
 import com.ecommerce.platform.dto.response.AuthResponse;
 import com.ecommerce.platform.dto.response.TokenResponse;
@@ -58,5 +60,26 @@ public class AuthController {
     public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser(@AuthenticationPrincipal UserPrincipal principal) {
         UserResponse response = authService.getCurrentUser(principal.getId());
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "Update profile", description = "Update current user's information (Customer/Seller/Admin)")
+    @PutMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> updateProfile(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody UpdateProfileRequest request) {
+
+        // principal.getId() lấy ID từ Token, đảm bảo user chỉ sửa được chính mình
+        UserResponse response = authService.updateProfile(principal.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", response));
+    }
+
+    @Operation(summary = "Change password", description = "Change current user's password")
+    @PutMapping("/change-password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody ChangePasswordRequest request) {
+
+        authService.changePassword(principal.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Password changed successfully", null));
     }
 }
