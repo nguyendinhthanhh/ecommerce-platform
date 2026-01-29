@@ -9,18 +9,15 @@ import java.util.List;
 
 public interface OrderService {
     
-    // Customer - Place Order
     List<OrderResponse> placeOrder(Long customerId, PlaceOrderRequest request);
     
-    // Customer - Track Order
     OrderResponse getOrderById(Long orderId, Long userId);
     
     Page<OrderResponse> getCustomerOrders(Long customerId, Pageable pageable);
     
     OrderResponse cancelOrder(Long orderId, Long customerId);
     
-    // Seller - Manage Orders
-    Page<OrderResponse> getShopOrders(Long shopId, String status, Pageable pageable);
+    Page<OrderResponse> getAllOrders(String status, Pageable pageable);
     
-    OrderResponse updateOrderStatus(Long orderId, Long sellerId, UpdateOrderStatusRequest request);
+    OrderResponse updateOrderStatus(Long orderId, Long staffId, UpdateOrderStatusRequest request);
 }

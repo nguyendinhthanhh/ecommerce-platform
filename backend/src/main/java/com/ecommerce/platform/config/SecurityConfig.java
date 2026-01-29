@@ -39,27 +39,34 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Swagger UI
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html","/api/payment/**").permitAll()
-                
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api/payment/**").permitAll()
+
                 // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-                
+                .requestMatchers(HttpMethod.GET, "/api/users/check-email").permitAll()
+
                 // Customer endpoints
                 .requestMatchers("/api/cart/**").hasRole("CUSTOMER")
                 .requestMatchers(HttpMethod.POST, "/api/orders").hasRole("CUSTOMER")
                 .requestMatchers(HttpMethod.GET, "/api/orders/my-orders").hasRole("CUSTOMER")
                 .requestMatchers(HttpMethod.PUT, "/api/orders/*/cancel").hasRole("CUSTOMER")
                 
-                // Seller endpoints
-                .requestMatchers("/api/seller/**").hasRole("SELLER")
-                .requestMatchers("/api/orders/shop/**").hasRole("SELLER")
-                .requestMatchers(HttpMethod.PUT, "/api/orders/*/status").hasRole("SELLER")
-                
+                // Staff endpoints (product & order management) - Single-Vendor System
+                .requestMatchers("/api/products/management/**").hasAnyRole("STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/products").hasAnyRole("STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/products/*").hasAnyRole("STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/products/*").hasAnyRole("STAFF", "ADMIN")
+                .requestMatchers("/api/orders/management").hasAnyRole("STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/orders/*/status").hasAnyRole("STAFF", "ADMIN")
+
                 // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 
+                // User self-management (authenticated users)
+                .requestMatchers("/api/users/me/**").authenticated()
+
                 // All other requests need authentication
                 .anyRequest().authenticated()
             )
@@ -72,7 +79,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         

@@ -18,17 +18,21 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     
     Page<Order> findByCustomerId(Long customerId, Pageable pageable);
     
-    Page<Order> findByShopId(Long shopId, Pageable pageable);
-    
-    Page<Order> findByShopIdAndStatus(Long shopId, Order.OrderStatus status, Pageable pageable);
+    Page<Order> findByStatus(Order.OrderStatus status, Pageable pageable);
     
     List<Order> findByCustomerIdAndStatus(Long customerId, Order.OrderStatus status);
     
-    @Query("SELECT o FROM Order o WHERE o.shop.id = :shopId AND o.createdAt BETWEEN :startDate AND :endDate")
-    List<Order> findByShopIdAndDateRange(@Param("shopId") Long shopId, 
-                                          @Param("startDate") LocalDateTime startDate, 
-                                          @Param("endDate") LocalDateTime endDate);
+    @Query("SELECT o FROM Order o WHERE o.createdAt BETWEEN :startDate AND :endDate")
+    List<Order> findByDateRange(@Param("startDate") LocalDateTime startDate, 
+                                 @Param("endDate") LocalDateTime endDate);
     
-    @Query("SELECT COUNT(o) FROM Order o WHERE o.shop.id = :shopId AND o.status = :status")
-    Long countByShopIdAndStatus(@Param("shopId") Long shopId, @Param("status") Order.OrderStatus status);
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.status = :status")
+    Long countByStatus(@Param("status") Order.OrderStatus status);
+
+    // User statistics queries
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.customer.id = :customerId")
+    Long countByCustomerId(@Param("customerId") Long customerId);
+
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.customer.id = :customerId AND o.status = 'DELIVERED'")
+    Long sumTotalAmountByCustomerId(@Param("customerId") Long customerId);
 }
