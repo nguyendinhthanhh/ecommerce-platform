@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ShopAI User Profile Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2513ec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#121022",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#0f0d1b] dark:text-white font-display">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between border-b border-solid border-[#e8e7f3] dark:border-white/10 bg-white dark:bg-background-dark px-6 md:px-10 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-primary">
+<div class="size-8">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M24 0.757355L47.2426 24L24 47.2426L0.757355 24L24 0.757355ZM21 35.7574V12.2426L9.24264 24L21 35.7574Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+<h2 class="text-[#0f0d1b] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">ShopAI</h2>
+</div>
+<nav class="hidden md:flex items-center gap-9">
+<a class="text-[#0f0d1b] dark:text-white/80 text-sm font-medium hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="text-[#0f0d1b] dark:text-white/80 text-sm font-medium hover:text-primary transition-colors" href="#">Orders</a>
+<a class="text-[#0f0d1b] dark:text-white/80 text-sm font-medium hover:text-primary transition-colors" href="#">Products</a>
+<a class="text-primary text-sm font-bold border-b-2 border-primary" href="#">Settings</a>
+</nav>
+</div>
+<div class="flex flex-1 justify-end gap-6 items-center">
+<div class="hidden sm:flex bg-background-light dark:bg-white/5 items-center rounded-xl px-3 py-1.5 border border-[#e8e7f3] dark:border-white/10">
+<span class="material-symbols-outlined text-[#524c9a] dark:text-white/60 text-xl">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm placeholder:text-[#524c9a]/60 dark:placeholder:text-white/40" placeholder="Search settings..." type="text"/>
+</div>
+<div class="size-10 rounded-full bg-cover bg-center border-2 border-primary/20" data-alt="User profile avatar of system admin" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDlFrQbFK9cH-6I0qOpnEM6MoG2IGBfAdfUp5gwf9uSlfjRtLoNp9bstrsVVWxMe5s460G4i1stSCD0dJB7OuCXph0tk6oBTW6tVTBb9o0OC9wWKh9K5hxXKCQfKeTyPGXCwG9hfohaypO-SJNrzDIu5rqAez_VpbSiNwet745VkgrGHxs2b2ouJH1wlytcrbMjW-qUY-ohA9hBL9OJijLL6Zotu_nOWkbVaGO5onuXhUPeCE3sp5sK7uJFQ0KMQBXG0RW1w22keSM')"></div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-6 py-10">
+<!-- Page Heading -->
+<div class="mb-10">
+<h1 class="text-[#0f0d1b] dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]">User Profile Settings</h1>
+<p class="text-[#524c9a] dark:text-white/60 text-lg mt-2">Manage your personal information and account security.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- Left Column: Profile Card & Quick Info -->
+<aside class="lg:col-span-4 flex flex-col gap-6">
+<!-- Profile Summary Card -->
+<div class="bg-white dark:bg-white/5 rounded-xl shadow-sm border border-[#e8e7f3] dark:border-white/10 overflow-hidden">
+<div class="h-32 bg-gradient-to-r from-primary to-[#6366f1]" data-alt="Abstract purple and blue gradient background"></div>
+<div class="px-6 pb-6">
+<div class="relative -mt-12 mb-4">
+<div class="size-24 rounded-full border-4 border-white dark:border-background-dark bg-cover bg-center" data-alt="Large profile photo of system admin" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCenoooi4q_Zbt_aW-5dIt2kaREwf-MJNnXhuGhj5cqU-iEB_YAtUxkpvkRipsDGb7trK9t2kXhW2IC5crkUtL8jExMT5FEeiSVtBiyAdq4B9NonjWPdJ77moVpVe4Srm-WBST3Bxer9GQnk-35Z-3wjw3eT2rsks6BbztCkyVff39iFNQIOujT8zHX-EUgWUNn6AtQ7HgIdUX7Rf1PbQCi0ui9cnTrO5Jg-53RKjCvALN_-ZCMXwioT1mG16-CovjkQ9Qm9Nooxdo')"></div>
+<button class="absolute bottom-0 right-0 p-1.5 bg-primary text-white rounded-full shadow-lg hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-sm">edit</span>
+</button>
+</div>
+<div class="flex items-center justify-between">
+<div>
+<h3 class="text-xl font-bold text-[#0f0d1b] dark:text-white">System Admin</h3>
+<p class="text-[#524c9a] dark:text-white/60 text-sm">Primary Administrator</p>
+</div>
+<span class="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full uppercase tracking-wider border border-primary/20">Admin</span>
+</div>
+<div class="mt-8 space-y-4 border-t border-[#e8e7f3] dark:border-white/10 pt-6">
+<div class="flex items-center gap-4">
+<div class="bg-[#f8f8fc] dark:bg-white/5 p-2 rounded-lg text-primary">
+<span class="material-symbols-outlined">calendar_today</span>
+</div>
+<div>
+<p class="text-xs text-[#524c9a] dark:text-white/40 uppercase font-bold tracking-tight">Account Age</p>
+<p class="text-sm font-medium">0 days</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="bg-[#f8f8fc] dark:bg-white/5 p-2 rounded-lg text-green-500">
+<span class="material-symbols-outlined">verified_user</span>
+</div>
+<div>
+<p class="text-xs text-[#524c9a] dark:text-white/40 uppercase font-bold tracking-tight">Status</p>
+<p class="text-sm font-medium text-green-600 dark:text-green-400">ACTIVE</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Secondary Nav Links (from SideNavBar list) -->
+<div class="bg-white dark:bg-white/5 rounded-xl shadow-sm border border-[#e8e7f3] dark:border-white/10 p-2">
+<div class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary/5 text-primary" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-sm font-semibold">Profile</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#524c9a] dark:text-white/70 hover:bg-background-light dark:hover:bg-white/10 transition-colors" href="#">
+<span class="material-symbols-outlined">shield</span>
+<span class="text-sm font-semibold">Security</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#524c9a] dark:text-white/70 hover:bg-background-light dark:hover:bg-white/10 transition-colors" href="#">
+<span class="material-symbols-outlined">notifications</span>
+<span class="text-sm font-semibold">Notifications</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#524c9a] dark:text-white/70 hover:bg-background-light dark:hover:bg-white/10 transition-colors" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="text-sm font-semibold">Billing</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Right Column: Main Content -->
+<div class="lg:col-span-8 flex flex-col gap-8">
+<!-- Personal Information Section -->
+<section class="bg-white dark:bg-white/5 rounded-xl shadow-sm border border-[#e8e7f3] dark:border-white/10 p-8">
+<div class="flex items-center gap-2 mb-6 text-primary">
+<span class="material-symbols-outlined">badge</span>
+<h2 class="text-xl font-bold text-[#0f0d1b] dark:text-white">Personal Information</h2>
+</div>
+<form class="space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-[#524c9a] dark:text-white/60">Full Name</label>
+<div class="flex items-center bg-[#f8f8fc] dark:bg-background-dark/50 border border-[#e8e7f3] dark:border-white/10 rounded-xl px-4 py-2.5 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+<span class="material-symbols-outlined text-primary mr-3">person</span>
+<input class="w-full bg-transparent border-none p-0 focus:ring-0 text-[#0f0d1b] dark:text-white" type="text" value="System Admin"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-[#524c9a] dark:text-white/60">Email Address</label>
+<div class="flex items-center bg-[#e8e7f3] dark:bg-white/5 border border-transparent dark:border-white/5 rounded-xl px-4 py-2.5 cursor-not-allowed opacity-75">
+<span class="material-symbols-outlined text-[#524c9a] dark:text-white/40 mr-3">mail</span>
+<input class="w-full bg-transparent border-none p-0 focus:ring-0 text-[#524c9a] dark:text-white/40 cursor-not-allowed" readonly="" type="email" value="admin@ecommerce.com"/>
+<span class="material-symbols-outlined text-xs text-[#524c9a] dark:text-white/40">lock</span>
+</div>
+<p class="text-[10px] text-primary font-medium px-1 mt-0.5">Contact support to change email</p>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-[#524c9a] dark:text-white/60">Phone Number</label>
+<div class="flex items-center bg-[#f8f8fc] dark:bg-background-dark/50 border border-[#e8e7f3] dark:border-white/10 rounded-xl px-4 py-2.5 focus-within:border-primary transition-all">
+<span class="material-symbols-outlined text-primary mr-3">call</span>
+<input class="w-full bg-transparent border-none p-0 focus:ring-0 text-[#0f0d1b] dark:text-white" placeholder="+1 (555) 000-0000" type="tel"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-[#524c9a] dark:text-white/60">Location</label>
+<div class="flex items-center bg-[#f8f8fc] dark:bg-background-dark/50 border border-[#e8e7f3] dark:border-white/10 rounded-xl px-4 py-2.5 focus-within:border-primary transition-all">
+<span class="material-symbols-outlined text-primary mr-3">location_on</span>
+<input class="w-full bg-transparent border-none p-0 focus:ring-0 text-[#0f0d1b] dark:text-white" placeholder="San Francisco, CA" type="text"/>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-[#524c9a] dark:text-white/60">Bio / About</label>
+<div class="bg-[#f8f8fc] dark:bg-background-dark/50 border border-[#e8e7f3] dark:border-white/10 rounded-xl px-4 py-3 focus-within:border-primary transition-all">
+<textarea class="w-full bg-transparent border-none p-0 focus:ring-0 text-[#0f0d1b] dark:text-white resize-none" placeholder="Write a short description about yourself..." rows="3"></textarea>
+</div>
+</div>
+<div class="flex items-center justify-end gap-4 pt-4">
+<button class="px-6 py-2.5 text-[#524c9a] dark:text-white/70 font-bold text-sm hover:bg-background-light dark:hover:bg-white/10 rounded-xl transition-all" type="button">Cancel</button>
+<button class="px-8 py-2.5 bg-primary text-white font-bold text-sm rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all" type="submit">Save Changes</button>
+</div>
+</form>
+</section>
+<!-- Security & Privacy Section -->
+<section class="bg-white dark:bg-white/5 rounded-xl shadow-sm border border-[#e8e7f3] dark:border-white/10 p-8">
+<div class="flex items-center gap-2 mb-8 text-primary">
+<span class="material-symbols-outlined">security</span>
+<h2 class="text-xl font-bold text-[#0f0d1b] dark:text-white">Security &amp; Privacy</h2>
+</div>
+<div class="space-y-6">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl bg-background-light dark:bg-white/5 border border-[#e8e7f3] dark:border-white/5">
+<div class="flex items-center gap-4">
+<div class="p-2.5 bg-white dark:bg-white/10 rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-primary">key</span>
+</div>
+<div>
+<h4 class="font-bold text-sm text-[#0f0d1b] dark:text-white">Change Password</h4>
+<p class="text-xs text-[#524c9a] dark:text-white/60">Update your account password regularly for security</p>
+</div>
+</div>
+<button class="px-5 py-2 text-primary border border-primary/30 font-bold text-xs rounded-lg hover:bg-primary/5 transition-all">Update Password</button>
+</div>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl bg-background-light dark:bg-white/5 border border-[#e8e7f3] dark:border-white/5">
+<div class="flex items-center gap-4">
+<div class="p-2.5 bg-white dark:bg-white/10 rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-primary">phonelink_lock</span>
+</div>
+<div>
+<h4 class="font-bold text-sm text-[#0f0d1b] dark:text-white">Two-Factor Authentication</h4>
+<p class="text-xs text-[#524c9a] dark:text-white/60">Add an extra layer of security to your profile</p>
+</div>
+</div>
+<div class="flex items-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-gray-200 dark:bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+<span class="ms-3 text-xs font-bold text-[#0f0d1b] dark:text-white">Enabled</span>
+</label>
+</div>
+</div>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl border border-red-100 dark:border-red-900/30 bg-red-50/50 dark:bg-red-900/10">
+<div class="flex items-center gap-4">
+<div class="p-2.5 bg-white dark:bg-red-900/20 rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-red-500">delete_forever</span>
+</div>
+<div>
+<h4 class="font-bold text-sm text-red-600 dark:text-red-400">Deactivate Account</h4>
+<p class="text-xs text-[#524c9a] dark:text-white/60">Permanently delete your profile and shop data</p>
+</div>
+</div>
+<button class="px-5 py-2 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 font-bold text-xs rounded-lg hover:bg-red-600 hover:text-white transition-all">Delete Account</button>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<footer class="mt-20 border-t border-[#e8e7f3] dark:border-white/10 py-10">
+<div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="flex items-center gap-2 opacity-50">
+<div class="size-6">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M24 0.757355L47.2426 24L24 47.2426L0.757355 24L24 0.757355ZM21 35.7574V12.2426L9.24264 24L21 35.7574Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+<span class="text-sm font-bold">ShopAI Admin</span>
+</div>
+<p class="text-sm text-[#524c9a] dark:text-white/40">© 2024 ShopAI Inc. All rights reserved.</p>
+<div class="flex gap-6 text-sm font-medium text-[#524c9a] dark:text-white/40">
+<a class="hover:text-primary" href="#">Privacy Policy</a>
+<a class="hover:text-primary" href="#">Terms of Service</a>
+</div>
+</div>
+</footer>
+</body></html>

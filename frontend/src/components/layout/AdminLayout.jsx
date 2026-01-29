@@ -1,23 +1,40 @@
-import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import authService from '../../services/authService';
+import React, { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import authService from "../../services/authService";
+import userService from "../../services/userService";
 
 const AdminLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const user = authService.getUser();
+  const [user, setUser] = useState(authService.getUser());
 
-  const handleLogout = async () => {
-    await authService.logout();
-    navigate('/login');
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        const profile = await userService.getMyProfile();
+        setUser(profile);
+      } catch (error) {
+        console.error("Error loading user profile:", error);
+      }
+    };
+    loadUserProfile();
+  }, []);
+
+  const handleLogout = () => {
+    authService.logout();
+    navigate("/login");
   };
 
   const menuItems = [
-    { path: '/admin/dashboard', icon: 'dashboard', label: 'Dashboard' },
-    { path: '/admin/users', icon: 'group', label: 'User Management' },
-    { path: '/admin/products', icon: 'inventory_2', label: 'Product Moderation' },
-    { path: '/admin/reviews', icon: 'chat', label: 'Content Reviews' },
-    { path: '/admin/reports', icon: 'bar_chart', label: 'System Reports' },
+    { path: "/admin/dashboard", icon: "dashboard", label: "Dashboard" },
+    { path: "/admin/users", icon: "group", label: "User Management" },
+    {
+      path: "/admin/products",
+      icon: "inventory_2",
+      label: "Product Moderation",
+    },
+    { path: "/admin/reviews", icon: "chat", label: "Content Reviews" },
+    { path: "/admin/reports", icon: "bar_chart", label: "System Reports" },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -32,8 +49,12 @@ const AdminLayout = ({ children }) => {
               <span className="material-symbols-outlined">smart_toy</span>
             </div>
             <div>
-              <h1 className="text-[#0f0d1b] dark:text-white text-lg font-bold leading-tight">ShopAI Admin</h1>
-              <p className="text-slate-500 dark:text-slate-400 text-xs font-normal">Enterprise Suite</p>
+              <h1 className="text-[#0f0d1b] dark:text-white text-lg font-bold leading-tight">
+                ShopAI Admin
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 text-xs font-normal">
+                Enterprise Suite
+              </p>
             </div>
           </Link>
 
@@ -44,8 +65,8 @@ const AdminLayout = ({ children }) => {
                 to={item.path}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors ${
                   isActive(item.path)
-                    ? 'bg-primary text-white'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    ? "bg-primary text-white"
+                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
                 <span className="material-symbols-outlined">{item.icon}</span>
@@ -72,16 +93,25 @@ const AdminLayout = ({ children }) => {
         <header className="h-16 flex items-center justify-between px-8 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 transition-colors duration-200">
           <div className="flex items-center gap-4">
             <nav className="flex items-center gap-2 text-sm">
-              <Link to="/" className="text-slate-500 hover:text-primary transition-colors">Home</Link>
+              <Link
+                to="/"
+                className="text-slate-500 hover:text-primary transition-colors"
+              >
+                Home
+              </Link>
               <span className="text-slate-300">/</span>
-              <span className="text-slate-900 dark:text-white font-medium">Admin</span>
+              <span className="text-slate-900 dark:text-white font-medium">
+                Admin
+              </span>
             </nav>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="relative group">
               <label className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-transparent focus-within:border-primary transition-all">
-                <span className="material-symbols-outlined text-slate-400 text-[20px]">search</span>
+                <span className="material-symbols-outlined text-slate-400 text-[20px]">
+                  search
+                </span>
                 <input
                   className="bg-transparent border-none focus:ring-0 text-sm w-48 text-slate-900 dark:text-white placeholder:text-slate-400"
                   placeholder="Search data..."
@@ -93,29 +123,80 @@ const AdminLayout = ({ children }) => {
             <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2"></div>
 
             <div className="relative group">
-              <button className="bg-primary text-white text-sm font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
-                {user?.fullName || 'Admin'}
-              </button>
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                <div className="p-3 border-b border-gray-200 dark:border-slate-700">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{user?.fullName}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
+              <button className="flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-slate-800 px-3 py-2 rounded-lg transition-colors">
+                <div className="size-9 bg-primary rounded-full flex items-center justify-center overflow-hidden">
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.fullName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="material-symbols-outlined text-white text-[20px]">
+                      person
+                    </span>
+                  )}
                 </div>
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
-                >
-                  Logout
-                </button>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                    {user?.fullName || "Admin"}
+                  </p>
+                  <p className="text-xs text-slate-500">System Admin</p>
+                </div>
+                <span className="material-symbols-outlined text-slate-400 text-[18px]">
+                  expand_more
+                </span>
+              </button>
+              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all py-2">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+                  <p className="text-xs text-primary font-medium">
+                    System Admin
+                  </p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {user?.fullName}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {user?.email}
+                  </p>
+                </div>
+                <div className="py-1">
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      person
+                    </span>
+                    Personal Info
+                  </Link>
+                  <Link
+                    to="/"
+                    className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      home
+                    </span>
+                    Back to Store
+                  </Link>
+                </div>
+                <div className="border-t border-gray-100 dark:border-slate-700 pt-1">
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      logout
+                    </span>
+                    Logout
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <div className="flex-1">
-          {children}
-        </div>
+        <div className="flex-1">{children}</div>
       </main>
     </div>
   );
