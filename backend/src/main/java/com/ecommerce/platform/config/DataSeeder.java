@@ -21,14 +21,24 @@ public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
-    private final ShopRepository shopRepository;
     private final ProductRepository productRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) {
-        if (userRepository.count() > 0) {
+        long userCount = userRepository.count();
+        log.info("Current user count: {}", userCount);
+
+        if (userCount > 0) {
             log.info("Data already seeded, skipping...");
+            log.info("If you want to reseed, please truncate the database tables first.");
+
+            // Debug: Kiểm tra xem password encode có hoạt động không
+            String testPassword = "admin123";
+            String encoded = passwordEncoder.encode(testPassword);
+            log.info("Password encoder test - 'admin123' encoded: {}", encoded);
+            log.info("Password encoder test - matches: {}", passwordEncoder.matches(testPassword, encoded));
+
             return;
         }
 
@@ -44,39 +54,28 @@ public class DataSeeder implements CommandLineRunner {
                 .build();
         userRepository.save(admin);
 
-        // Create Sellers
-        User seller1 = User.builder()
-                .email("seller1@ecommerce.com")
-                .password(passwordEncoder.encode("seller123"))
-                .fullName("Tech Store Owner")
+        // Create Staff members
+        User staff1 = User.builder()
+                .email("staff1@ecommerce.com")
+                .password(passwordEncoder.encode("staff123"))
+                .fullName("Nguyen Van Staff")
                 .phone("0901234567")
-                .address("123 Tech Street, District 1, HCMC")
-                .role(User.Role.SELLER)
+                .address("123 Staff Street, District 1, HCMC")
+                .role(User.Role.STAFF)
                 .status(User.UserStatus.ACTIVE)
                 .build();
-        seller1 = userRepository.save(seller1);
+        userRepository.save(staff1);
 
-        User seller2 = User.builder()
-                .email("seller2@ecommerce.com")
-                .password(passwordEncoder.encode("seller123"))
-                .fullName("Fashion Boutique Owner")
+        User staff2 = User.builder()
+                .email("staff2@ecommerce.com")
+                .password(passwordEncoder.encode("staff123"))
+                .fullName("Tran Thi Staff")
                 .phone("0902345678")
-                .address("456 Fashion Ave, District 3, HCMC")
-                .role(User.Role.SELLER)
+                .address("456 Staff Ave, District 3, HCMC")
+                .role(User.Role.STAFF)
                 .status(User.UserStatus.ACTIVE)
                 .build();
-        seller2 = userRepository.save(seller2);
-
-        User seller3 = User.builder()
-                .email("seller3@ecommerce.com")
-                .password(passwordEncoder.encode("seller123"))
-                .fullName("Home Decor Specialist")
-                .phone("0903456789")
-                .address("789 Home Blvd, District 7, HCMC")
-                .role(User.Role.SELLER)
-                .status(User.UserStatus.ACTIVE)
-                .build();
-        seller3 = userRepository.save(seller3);
+        userRepository.save(staff2);
 
         // Create Customers
         User customer1 = User.builder()
@@ -137,40 +136,10 @@ public class DataSeeder implements CommandLineRunner {
                 .build();
         beauty = categoryRepository.save(beauty);
 
-        // Create Shops
-        Shop techShop = Shop.builder()
-                .name("TechZone Store")
-                .description("Your one-stop shop for the latest technology and gadgets")
-                .seller(seller1)
-                .status(Shop.ShopStatus.ACTIVE)
-                .address("123 Tech Street, District 1, HCMC")
-                .phone("0901234567")
-                .build();
-        techShop = shopRepository.save(techShop);
-
-        Shop fashionShop = Shop.builder()
-                .name("StyleHub Boutique")
-                .description("Trendy fashion for modern lifestyle")
-                .seller(seller2)
-                .status(Shop.ShopStatus.ACTIVE)
-                .address("456 Fashion Ave, District 3, HCMC")
-                .phone("0902345678")
-                .build();
-        fashionShop = shopRepository.save(fashionShop);
-
-        Shop homeShop = Shop.builder()
-                .name("Cozy Home Decor")
-                .description("Beautiful home furnishings and decor")
-                .seller(seller3)
-                .status(Shop.ShopStatus.ACTIVE)
-                .address("789 Home Blvd, District 7, HCMC")
-                .phone("0903456789")
-                .build();
-        homeShop = shopRepository.save(homeShop);
-
-        // Create Electronics Products
+        // Create Products for Single-Vendor System
         List<Product> products = new ArrayList<>();
 
+        // Electronics Products
         products.add(Product.builder()
                 .name("iPhone 15 Pro Max")
                 .description("Latest Apple flagship with A17 Pro chip, titanium design, and advanced camera system. 256GB storage.")
@@ -179,7 +148,6 @@ public class DataSeeder implements CommandLineRunner {
                 .stockQuantity(50)
                 .thumbnail("https://cdn.tgdd.vn/Products/Images/42/305658/iphone-15-pro-max-blue-thumbnew-600x600.jpg")
                 .category(electronics)
-                .shop(techShop)
                 .status(Product.ProductStatus.ACTIVE)
                 .build());
 
@@ -191,7 +159,6 @@ public class DataSeeder implements CommandLineRunner {
                 .stockQuantity(40)
                 .thumbnail("https://cdn.tgdd.vn/Products/Images/42/320721/samsung-galaxy-s24-ultra-grey-thumbnew-600x600.jpg")
                 .category(electronics)
-                .shop(techShop)
                 .status(Product.ProductStatus.ACTIVE)
                 .build());
 
@@ -203,7 +170,6 @@ public class DataSeeder implements CommandLineRunner {
                 .stockQuantity(25)
                 .thumbnail("https://cdn.tgdd.vn/Products/Images/44/309016/macbook-pro-14-inch-m3-2023-gray-thumb-600x600.jpg")
                 .category(electronics)
-                .shop(techShop)
                 .status(Product.ProductStatus.ACTIVE)
                 .build());
 
@@ -214,198 +180,85 @@ public class DataSeeder implements CommandLineRunner {
                 .stockQuantity(100)
                 .thumbnail("https://cdn.tgdd.vn/Products/Images/54/289780/tai-nghe-bluetooth-airpods-pro-2-usb-c-charge-apple-mqd83-thumb-600x600.jpg")
                 .category(electronics)
-                .shop(techShop)
-                .status(Product.ProductStatus.ACTIVE)
-                .build());
-
-        products.add(Product.builder()
-                .name("iPad Air M2")
-                .description("Powerful tablet with M2 chip, 11-inch Liquid Retina display, 128GB storage.")
-                .price(new BigDecimal("16990000"))
-                .discountPrice(new BigDecimal("15990000"))
-                .stockQuantity(35)
-                .thumbnail("https://cdn.tgdd.vn/Products/Images/522/325536/ipad-air-11-inch-m2-wifi-blue-thumb-600x600.jpg")
-                .category(electronics)
-                .shop(techShop)
-                .status(Product.ProductStatus.ACTIVE)
-                .build());
-
-        products.add(Product.builder()
-                .name("Sony WH-1000XM5")
-                .description("Industry-leading noise canceling headphones with exceptional sound quality.")
-                .price(new BigDecimal("8990000"))
-                .discountPrice(new BigDecimal("7990000"))
-                .stockQuantity(60)
-                .thumbnail("https://cdn.tgdd.vn/Products/Images/54/289525/tai-nghe-bluetooth-sony-wh-1000xm5-den-thumb-600x600.jpg")
-                .category(electronics)
-                .shop(techShop)
-                .status(Product.ProductStatus.ACTIVE)
-                .build());
-
-        products.add(Product.builder()
-                .name("Apple Watch Series 9")
-                .description("Advanced health and fitness tracking with always-on Retina display. 45mm GPS.")
-                .price(new BigDecimal("11990000"))
-                .stockQuantity(45)
-                .thumbnail("https://cdn.tgdd.vn/Products/Images/7077/309733/apple-watch-s9-45mm-vien-nhom-day-cao-su-thumb-600x600.jpg")
-                .category(electronics)
-                .shop(techShop)
-                .status(Product.ProductStatus.ACTIVE)
-                .build());
-
-        products.add(Product.builder()
-                .name("Dell XPS 15")
-                .description("Premium laptop with Intel Core i7, 16GB RAM, 512GB SSD, NVIDIA RTX 4050.")
-                .price(new BigDecimal("42990000"))
-                .stockQuantity(20)
-                .thumbnail("https://cdn.tgdd.vn/Products/Images/44/321680/dell-xps-15-9530-i7-71013776-thumb-600x600.jpg")
-                .category(electronics)
-                .shop(techShop)
                 .status(Product.ProductStatus.ACTIVE)
                 .build());
 
         // Fashion Products
         products.add(Product.builder()
-                .name("Nike Air Max 270")
-                .description("Comfortable running shoes with Max Air cushioning. Available in multiple colors.")
-                .price(new BigDecimal("3590000"))
-                .discountPrice(new BigDecimal("2990000"))
-                .stockQuantity(80)
-                .thumbnail("https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/e777c881-5b62-4250-92a6-362967f54cca/air-max-270-shoes-2V5C4p.png")
-                .category(fashion)
-                .shop(fashionShop)
-                .status(Product.ProductStatus.ACTIVE)
-                .build());
-
-        products.add(Product.builder()
-                .name("Adidas Ultraboost 22")
-                .description("Premium running shoes with Boost cushioning technology for ultimate comfort.")
-                .price(new BigDecimal("4290000"))
-                .discountPrice(new BigDecimal("3490000"))
-                .stockQuantity(65)
-                .thumbnail("https://assets.adidas.com/images/h_840,f_auto,q_auto,fl_lossy,c_fill,g_auto/fbaf991a78bc4896a3e9ad7800abcec6_9366/Ultraboost_22_Shoes_Black_GZ0127_01_standard.jpg")
-                .category(fashion)
-                .shop(fashionShop)
-                .status(Product.ProductStatus.ACTIVE)
-                .build());
-
-        products.add(Product.builder()
-                .name("Levi's 501 Original Jeans")
-                .description("Classic straight fit jeans. 100% cotton denim. Timeless style.")
-                .price(new BigDecimal("1890000"))
-                .discountPrice(new BigDecimal("1490000"))
-                .stockQuantity(120)
-                .thumbnail("https://lsco.scene7.com/is/image/lsco/005010101-front-pdp?fmt=jpeg&qlt=70&resMode=bisharp&fit=crop,1&op_usm=0.6,0.6,8&wid=750&hei=1000")
-                .category(fashion)
-                .shop(fashionShop)
-                .status(Product.ProductStatus.ACTIVE)
-                .build());
-
-        products.add(Product.builder()
-                .name("Uniqlo AIRism T-Shirt")
-                .description("Breathable and quick-drying t-shirt. Perfect for everyday wear.")
-                .price(new BigDecimal("290000"))
+                .name("Áo Polo Nam Premium")
+                .description("Áo polo nam chất liệu cotton cao cấp, thoáng mát, form regular fit.")
+                .price(new BigDecimal("450000"))
+                .discountPrice(new BigDecimal("350000"))
                 .stockQuantity(200)
-                .thumbnail("https://image.uniqlo.com/UQ/ST3/AsianCommon/imagesgoods/455359/item/goods_09_455359.jpg")
+                .thumbnail("https://example.com/polo-shirt.jpg")
                 .category(fashion)
-                .shop(fashionShop)
                 .status(Product.ProductStatus.ACTIVE)
                 .build());
 
         products.add(Product.builder()
-                .name("Ray-Ban Aviator Sunglasses")
-                .description("Classic aviator sunglasses with UV protection. Iconic style.")
-                .price(new BigDecimal("4590000"))
-                .discountPrice(new BigDecimal("3990000"))
-                .stockQuantity(55)
-                .thumbnail("https://assets.ray-ban.com/is/image/RayBan/8056597625104__STD__shad__qt.png")
+                .name("Quần Jeans Nữ Skinny")
+                .description("Quần jeans nữ form skinny, co giãn tốt, màu xanh đậm classic.")
+                .price(new BigDecimal("650000"))
+                .discountPrice(new BigDecimal("520000"))
+                .stockQuantity(150)
+                .thumbnail("https://example.com/jeans.jpg")
                 .category(fashion)
-                .shop(fashionShop)
-                .status(Product.ProductStatus.ACTIVE)
-                .build());
-
-        products.add(Product.builder()
-                .name("The North Face Backpack")
-                .description("Durable 30L backpack with laptop compartment. Perfect for daily commute.")
-                .price(new BigDecimal("2490000"))
-                .stockQuantity(75)
-                .thumbnail("https://images.thenorthface.com/is/image/TheNorthFace/NF0A3KV7_JK3_hero")
-                .category(fashion)
-                .shop(fashionShop)
                 .status(Product.ProductStatus.ACTIVE)
                 .build());
 
         // Home & Living Products
         products.add(Product.builder()
-                .name("IKEA POÄNG Armchair")
-                .description("Comfortable armchair with layer-glued bent birch frame. Includes cushion.")
-                .price(new BigDecimal("2990000"))
-                .discountPrice(new BigDecimal("2490000"))
-                .stockQuantity(40)
-                .thumbnail("https://www.ikea.com/us/en/images/products/poaeng-armchair-birch-veneer-knisa-light-beige__0818181_pe774482_s5.jpg")
+                .name("Bộ Chăn Ga Gối Cotton")
+                .description("Bộ chăn ga gối 100% cotton Hàn Quốc, mềm mại, thoáng khí.")
+                .price(new BigDecimal("1200000"))
+                .discountPrice(new BigDecimal("990000"))
+                .stockQuantity(80)
+                .thumbnail("https://example.com/bedding.jpg")
                 .category(home)
-                .shop(homeShop)
                 .status(Product.ProductStatus.ACTIVE)
                 .build());
 
         products.add(Product.builder()
-                .name("Philips Hue Smart Bulb")
-                .description("Smart LED bulb with 16 million colors. Control with app or voice.")
+                .name("Đèn Bàn LED Thông Minh")
+                .description("Đèn bàn LED điều chỉnh độ sáng, màu sắc, kết nối app điện thoại.")
                 .price(new BigDecimal("890000"))
-                .stockQuantity(150)
-                .thumbnail("https://assets.philips.com/is/image/philipsconsumer/046677562984-IMS-en_US")
+                .stockQuantity(60)
+                .thumbnail("https://example.com/lamp.jpg")
                 .category(home)
-                .shop(homeShop)
                 .status(Product.ProductStatus.ACTIVE)
                 .build());
 
+        // Sports Products
         products.add(Product.builder()
-                .name("Dyson V15 Detect Vacuum")
-                .description("Cordless vacuum with laser dust detection and LCD screen.")
-                .price(new BigDecimal("18990000"))
-                .discountPrice(new BigDecimal("16990000"))
-                .stockQuantity(25)
-                .thumbnail("https://dyson-h.assetsadobe2.com/is/image/content/dam/dyson/images/products/primary/394470-01.png")
-                .category(home)
-                .shop(homeShop)
+                .name("Giày Chạy Bộ Nike Air Zoom")
+                .description("Giày chạy bộ công nghệ Air Zoom, êm ái, hỗ trợ chạy đường dài.")
+                .price(new BigDecimal("3500000"))
+                .discountPrice(new BigDecimal("2990000"))
+                .stockQuantity(45)
+                .thumbnail("https://example.com/nike-shoes.jpg")
+                .category(sports)
                 .status(Product.ProductStatus.ACTIVE)
                 .build());
 
+        // Beauty Products
         products.add(Product.builder()
-                .name("Nespresso Coffee Machine")
-                .description("Compact espresso machine with 19-bar pressure. Includes milk frother.")
-                .price(new BigDecimal("5490000"))
-                .stockQuantity(50)
-                .thumbnail("https://www.nespresso.com/ecom/medias/sys_master/public/13927890444318/C-D30-EU-BK-NE-H01-1000x1000.png")
-                .category(home)
-                .shop(homeShop)
+                .name("Serum Vitamin C Brightening")
+                .description("Serum dưỡng trắng da với 20% Vitamin C nguyên chất, chống oxy hóa.")
+                .price(new BigDecimal("680000"))
+                .discountPrice(new BigDecimal("550000"))
+                .stockQuantity(120)
+                .thumbnail("https://example.com/serum.jpg")
+                .category(beauty)
                 .status(Product.ProductStatus.ACTIVE)
                 .build());
 
-        products.add(Product.builder()
-                .name("Muji Aroma Diffuser")
-                .description("Ultrasonic aroma diffuser with LED light. Creates relaxing atmosphere.")
-                .price(new BigDecimal("790000"))
-                .stockQuantity(90)
-                .thumbnail("https://img.muji.net/img/item/4550344579664_1260.jpg")
-                .category(home)
-                .shop(homeShop)
-                .status(Product.ProductStatus.ACTIVE)
-                .build());
-
-        // Save all products
         productRepository.saveAll(products);
 
-        log.info("Data seeding completed!");
-        log.info("Created {} products across {} categories", products.size(), categoryRepository.count());
-        log.info("");
-        log.info("=== Test Accounts ===");
-        log.info("Admin:     admin@ecommerce.com / admin123");
-        log.info("Seller 1:  seller1@ecommerce.com / seller123");
-        log.info("Seller 2:  seller2@ecommerce.com / seller123");
-        log.info("Seller 3:  seller3@ecommerce.com / seller123");
-        log.info("Customer 1: customer1@ecommerce.com / customer123");
-        log.info("Customer 2: customer2@ecommerce.com / customer123");
-        log.info("====================");
+        log.info("=".repeat(80));
+        log.info("Data seeding completed successfully for Single-Vendor E-commerce!");
+        log.info("Created: 1 admin, 2 staff, 2 customers, 5 categories, {} products", products.size());
+        log.info("System Type: Single-Vendor (First-Party)");
+        log.info("Roles: CUSTOMER, STAFF, ADMIN (No SELLER role)");
+        log.info("=".repeat(80));
     }
 }

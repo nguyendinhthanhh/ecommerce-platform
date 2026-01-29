@@ -28,7 +28,6 @@ public class CartItem {
     @Column(nullable = false)
     private Integer quantity;
     
-    // Price at the time of adding to cart
     @Column(precision = 12, scale = 2)
     private BigDecimal unitPrice;
 }

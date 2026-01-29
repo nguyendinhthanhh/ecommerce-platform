@@ -19,8 +19,8 @@ public class OpenApiConfig {
     public OpenAPI openAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("E-Commerce Platform API")
-                        .description("API documentation for E-Commerce Platform")
+                        .title("E-Commerce Platform API (Single-Vendor)")
+                        .description("API documentation for Single-Vendor E-Commerce Platform - First-Party Retail System")
                         .version("1.0.0")
                         .contact(new Contact()
                                 .name("E-Commerce Team")

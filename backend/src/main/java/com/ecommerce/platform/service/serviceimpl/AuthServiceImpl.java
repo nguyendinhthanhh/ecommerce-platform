@@ -45,7 +45,7 @@ public class AuthServiceImpl implements AuthService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmailAndStatusNot(request.getEmail(), User.UserStatus.INACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         String accessToken = tokenProvider.generateAccessToken(authentication);
@@ -64,25 +64,15 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmailAndStatusNot(request.getEmail(), User.UserStatus.INACTIVE)) {
             throw new BadRequestException("Email already exists");
         }
 
-        User.Role role = User.Role.CUSTOMER;
-        if (request.getRole() != null && !request.getRole().isEmpty()) {
-            try {
-                role = User.Role.valueOf(request.getRole().toUpperCase());
-                if (role == User.Role.ADMIN) {
-                    throw new BadRequestException("Cannot register as admin");
-                }
-            } catch (IllegalArgumentException e) {
-                throw new BadRequestException("Invalid role: " + request.getRole());
-            }
-        }
-
+        // Single-vendor system: only CUSTOMER can self-register
+        // Staff/Admin accounts are created by Admin
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(role);
+        user.setRole(User.Role.CUSTOMER);
         user.setStatus(User.UserStatus.ACTIVE);
         user = userRepository.save(user);
 
@@ -118,7 +108,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional(readOnly = true)
     public UserResponse getCurrentUser(Long userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdAndStatusNot(userId, User.UserStatus.INACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
         return userMapper.toResponse(user);
     }

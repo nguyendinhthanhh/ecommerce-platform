@@ -31,8 +31,8 @@ public class Review {
     private Order order;
     
     @Column(nullable = false)
-    private Integer rating; // 1-5
-    
+    private Integer rating;
+
     @Column(columnDefinition = "TEXT")
     private String comment;
     
@@ -42,8 +42,8 @@ public class Review {
     private List<String> images;
     
     @Enumerated(EnumType.STRING)
-    private ReviewStatus status; // ACTIVE, HIDDEN, PENDING
-    
+    private ReviewStatus status;
+
     private LocalDateTime createdAt;
     
     @PrePersist

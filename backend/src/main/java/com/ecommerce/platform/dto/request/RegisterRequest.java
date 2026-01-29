@@ -24,6 +24,6 @@ public class RegisterRequest {
     
     private String address;
     
-    // CUSTOMER, SELLER
-    private String role;
+    // Only CUSTOMER can register (Staff/Admin created by Admin)
+    // Role will default to CUSTOMER
 }

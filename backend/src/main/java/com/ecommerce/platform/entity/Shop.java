@@ -3,8 +3,12 @@ package com.ecommerce.platform.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-import java.util.List;
 
+/**
+ * Shop entity - DEPRECATED for Single-Vendor System
+ * Kept for backward compatibility with existing database
+ * In single-vendor system, there is only one implicit shop (the company itself)
+ */
 @Entity
 @Table(name = "shops")
 @Getter
@@ -31,14 +35,13 @@ public class Shop {
     private String phone;
     
     @Enumerated(EnumType.STRING)
-    private ShopStatus status; // ACTIVE, INACTIVE, PENDING
-    
+    private ShopStatus status;
+
     @OneToOne
-    @JoinColumn(name = "seller_id", nullable = false)
+    @JoinColumn(name = "seller_id")
     private User seller;
     
-    @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL)
-    private List<Product> products;
+    // Removed: @OneToMany(mappedBy = "shop") - Products no longer belong to shops
     
     private LocalDateTime createdAt;
     

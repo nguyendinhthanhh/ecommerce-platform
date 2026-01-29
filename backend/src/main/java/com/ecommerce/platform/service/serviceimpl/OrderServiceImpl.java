@@ -30,7 +30,6 @@ public class OrderServiceImpl implements OrderService {
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
-    private final ShopRepository shopRepository;
     private final PaymentRepository paymentRepository;
     private final OrderMapper orderMapper;
 
@@ -53,74 +52,63 @@ public class OrderServiceImpl implements OrderService {
             throw new BadRequestException("No items selected");
         }
 
-        Map<Long, List<CartItem>> itemsByShop = cartItems.stream()
-                .collect(Collectors.groupingBy(item -> item.getProduct().getShop().getId()));
+        // Single-vendor: Create one order for all items
+        BigDecimal subtotal = cartItems.stream()
+                .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        List<Order> orders = new ArrayList<>();
+        Order order = Order.builder()
+                .customer(customer)
+                .subtotal(subtotal)
+                .shippingFee(SHIPPING_FEE)
+                .totalAmount(subtotal.add(SHIPPING_FEE))
+                .shippingName(request.getShippingName())
+                .shippingPhone(request.getShippingPhone())
+                .shippingAddress(request.getShippingAddress())
+                .note(request.getNote())
+                .status(Order.OrderStatus.PLACED)
+                .build();
 
-        for (Map.Entry<Long, List<CartItem>> entry : itemsByShop.entrySet()) {
-            Long shopId = entry.getKey();
-            List<CartItem> shopItems = entry.getValue();
+        order = orderRepository.save(order);
 
-            Shop shop = shopRepository.findById(shopId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Shop", shopId));
+        // Create order items and update stock
+        for (CartItem cartItem : cartItems) {
+            Product product = cartItem.getProduct();
 
-            BigDecimal subtotal = shopItems.stream()
-                    .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            Order order = Order.builder()
-                    .customer(customer)
-                    .shop(shop)
-                    .subtotal(subtotal)
-                    .shippingFee(SHIPPING_FEE)
-                    .totalAmount(subtotal.add(SHIPPING_FEE))
-                    .shippingName(request.getShippingName())
-                    .shippingPhone(request.getShippingPhone())
-                    .shippingAddress(request.getShippingAddress())
-                    .note(request.getNote())
-                    .status(Order.OrderStatus.PLACED)
-                    .build();
-
-            order = orderRepository.save(order);
-
-            for (CartItem cartItem : shopItems) {
-                Product product = cartItem.getProduct();
-
-                if (product.getStockQuantity() < cartItem.getQuantity()) {
-                    throw new BadRequestException("Insufficient stock for: " + product.getName());
-                }
-
-                OrderItem orderItem = OrderItem.builder()
-                        .order(order)
-                        .product(product)
-                        .productName(product.getName())
-                        .productThumbnail(product.getThumbnail())
-                        .quantity(cartItem.getQuantity())
-                        .unitPrice(cartItem.getUnitPrice())
-                        .totalPrice(cartItem.getUnitPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity())))
-                        .build();
-                orderItemRepository.save(orderItem);
-
-                product.setStockQuantity(product.getStockQuantity() - cartItem.getQuantity());
-                product.setSoldCount(product.getSoldCount() + cartItem.getQuantity());
-                productRepository.save(product);
+            if (product.getStockQuantity() < cartItem.getQuantity()) {
+                throw new BadRequestException("Insufficient stock for: " + product.getName());
             }
 
-            Payment payment = Payment.builder()
+            OrderItem orderItem = OrderItem.builder()
                     .order(order)
-                    .amount(order.getTotalAmount())
-                    .method(Payment.PaymentMethod.valueOf(request.getPaymentMethod()))
-                    .status(Payment.PaymentStatus.PENDING)
+                    .product(product)
+                    .productName(product.getName())
+                    .productThumbnail(product.getThumbnail())
+                    .quantity(cartItem.getQuantity())
+                    .unitPrice(cartItem.getUnitPrice())
+                    .totalPrice(cartItem.getUnitPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity())))
                     .build();
-            paymentRepository.save(payment);
+            orderItemRepository.save(orderItem);
 
-            orders.add(order);
+            product.setStockQuantity(product.getStockQuantity() - cartItem.getQuantity());
+            product.setSoldCount(product.getSoldCount() + cartItem.getQuantity());
+            productRepository.save(product);
         }
 
+        // Create payment
+        Payment payment = Payment.builder()
+                .order(order)
+                .amount(order.getTotalAmount())
+                .method(Payment.PaymentMethod.valueOf(request.getPaymentMethod()))
+                .status(Payment.PaymentStatus.PENDING)
+                .build();
+        paymentRepository.save(payment);
+
+        // Clear cart items
         cartItems.forEach(cartItemRepository::delete);
 
-        return orders.stream().map(this::buildOrderResponse).collect(Collectors.toList());
+        // Return single order in list for consistency
+        return List.of(buildOrderResponse(order));
     }
 
     @Override
@@ -129,10 +117,9 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
 
-        boolean isCustomer = order.getCustomer().getId().equals(userId);
-        boolean isSeller = order.getShop().getSeller().getId().equals(userId);
-
-        if (!isCustomer && !isSeller) {
+        // In single-vendor: Only customer can view their own order
+        // Staff/Admin can view all orders (handled by security layer)
+        if (!order.getCustomer().getId().equals(userId)) {
             throw new BadRequestException("You don't have permission to view this order");
         }
 
@@ -170,25 +157,23 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<OrderResponse> getShopOrders(Long shopId, String status, Pageable pageable) {
+    public Page<OrderResponse> getAllOrders(String status, Pageable pageable) {
         Page<Order> orders;
         if (status != null && !status.isEmpty()) {
             Order.OrderStatus orderStatus = Order.OrderStatus.valueOf(status.toUpperCase());
-            orders = orderRepository.findByShopIdAndStatus(shopId, orderStatus, pageable);
+            orders = orderRepository.findByStatus(orderStatus, pageable);
         } else {
-            orders = orderRepository.findByShopId(shopId, pageable);
+            orders = orderRepository.findAll(pageable);
         }
         return orders.map(this::buildOrderResponse);
     }
 
     @Override
-    public OrderResponse updateOrderStatus(Long orderId, Long sellerId, UpdateOrderStatusRequest request) {
+    public OrderResponse updateOrderStatus(Long orderId, Long staffId, UpdateOrderStatusRequest request) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
 
-        if (!order.getShop().getSeller().getId().equals(sellerId)) {
-            throw new BadRequestException("You don't have permission to update this order");
-        }
+        // In single-vendor: Staff/Admin can update any order (handled by security layer)
 
         Order.OrderStatus newStatus = Order.OrderStatus.valueOf(request.getStatus().toUpperCase());
         validateStatusTransition(order.getStatus(), newStatus);
