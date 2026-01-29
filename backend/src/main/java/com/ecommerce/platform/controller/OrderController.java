@@ -17,6 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -69,21 +70,22 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.success("Order cancelled", order));
     }
 
-    @Operation(summary = "Get shop orders", description = "Get paginated list of shop's orders (Seller)")
-    @GetMapping("/shop/{shopId}")
-    public ResponseEntity<ApiResponse<PageResponse<OrderResponse>>> getShopOrders(
-            @PathVariable Long shopId,
+    @Operation(summary = "Get all orders", description = "Get paginated list of all orders (Staff/Admin only)")
+    @GetMapping("/management")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    public ResponseEntity<ApiResponse<PageResponse<OrderResponse>>> getAllOrders(
             @Parameter(description = "Filter by status") @RequestParam(required = false) String status,
             @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<OrderResponse> orders = orderService.getShopOrders(shopId, status, pageable);
+        Page<OrderResponse> orders = orderService.getAllOrders(status, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(orders)));
     }
 
-    @Operation(summary = "Update order status", description = "Update order status: PLACED → CONFIRMED → SHIPPED → DELIVERED (Seller)")
+    @Operation(summary = "Update order status", description = "Update order status: PLACED → CONFIRMED → SHIPPED → DELIVERED (Staff/Admin only)")
     @PutMapping("/{orderId}/status")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<ApiResponse<OrderResponse>> updateOrderStatus(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long orderId,

@@ -15,8 +15,6 @@ public class OrderResponse {
     private String orderCode;
     private Long customerId;
     private String customerName;
-    private Long shopId;
-    private String shopName;
     private List<OrderItemResponse> items;
     private BigDecimal subtotal;
     private BigDecimal shippingFee;

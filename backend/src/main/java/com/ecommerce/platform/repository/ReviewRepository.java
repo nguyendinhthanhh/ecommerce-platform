@@ -25,4 +25,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Integer countActiveReviewsByProductId(@Param("productId") Long productId);
     
     Page<Review> findByStatus(Review.ReviewStatus status, Pageable pageable);
+
+    // User statistics queries
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.customer.id = :customerId")
+    Long countByCustomerId(@Param("customerId") Long customerId);
 }

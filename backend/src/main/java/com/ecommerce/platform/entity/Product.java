@@ -44,16 +44,12 @@ public class Product {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
     
-    @ManyToOne
-    @JoinColumn(name = "shop_id", nullable = false)
-    private Shop shop;
-    
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private List<Review> reviews;
     
     @Enumerated(EnumType.STRING)
-    private ProductStatus status; // ACTIVE, INACTIVE, PENDING, REJECTED
-    
+    private ProductStatus status;
+
     private Double averageRating;
     
     private Integer totalReviews;

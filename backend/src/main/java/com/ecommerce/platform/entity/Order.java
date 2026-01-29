@@ -26,10 +26,6 @@ public class Order {
     @JoinColumn(name = "customer_id", nullable = false)
     private User customer;
     
-    @ManyToOne
-    @JoinColumn(name = "shop_id", nullable = false)
-    private Shop shop;
-    
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> items;
     
@@ -42,7 +38,6 @@ public class Order {
     @Column(precision = 12, scale = 2)
     private BigDecimal totalAmount;
     
-    // Shipping info
     private String shippingName;
     private String shippingPhone;
     private String shippingAddress;
@@ -71,11 +66,11 @@ public class Order {
     }
     
     public enum OrderStatus {
-        PLACED,      // Đã đặt hàng
-        CONFIRMED,   // Đã xác nhận
-        SHIPPED,     // Đang giao
-        DELIVERED,   // Đã giao
-        CANCELLED,   // Đã hủy
-        RETURNED     // Đã trả hàng
+        PLACED,
+        CONFIRMED,
+        SHIPPED,
+        DELIVERED,
+        CANCELLED,
+        RETURNED
     }
 }

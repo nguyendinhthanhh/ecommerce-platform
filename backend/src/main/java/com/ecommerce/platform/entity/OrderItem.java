@@ -25,7 +25,6 @@ public class OrderItem {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
     
-    // Snapshot of product info at order time
     private String productName;
     private String productThumbnail;
     

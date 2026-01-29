@@ -1,5 +1,6 @@
 package com.ecommerce.platform.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import java.time.LocalDateTime;
 
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserResponse {
     private Long id;
     private String email;
@@ -18,4 +20,9 @@ public class UserResponse {
     private String role;
     private String status;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime lastLoginAt;
+    private String lastLoginIp;
+    private Long createdBy;
+    private Long updatedBy;
 }

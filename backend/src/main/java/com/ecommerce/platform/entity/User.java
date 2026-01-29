@@ -34,16 +34,25 @@ public class User {
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role; // CUSTOMER, SELLER, ADMIN
-    
+    private Role role;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UserStatus status; // ACTIVE, INACTIVE, BANNED
-    
+    @Builder.Default
+    private UserStatus status = UserStatus.ACTIVE;
+
     private LocalDateTime createdAt;
     
     private LocalDateTime updatedAt;
     
+    private Long createdBy;
+
+    private Long updatedBy;
+
+    private LocalDateTime lastLoginAt;
+
+    private String lastLoginIp;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -57,7 +66,7 @@ public class User {
     }
     
     public enum Role {
-        CUSTOMER, SELLER, ADMIN
+        CUSTOMER, STAFF, ADMIN
     }
     
     public enum UserStatus {

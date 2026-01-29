@@ -20,8 +20,6 @@ public class ProductResponse {
     private List<String> images;
     private Long categoryId;
     private String categoryName;
-    private Long shopId;
-    private String shopName;
     private String status;
     private Double averageRating;
     private Integer totalReviews;

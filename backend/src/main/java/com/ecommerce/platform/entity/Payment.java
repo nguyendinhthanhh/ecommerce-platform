@@ -32,11 +32,11 @@ public class Payment {
     private BigDecimal amount;
     
     @Enumerated(EnumType.STRING)
-    private PaymentMethod method; // COD, VNPAY, MOMO, BANK_TRANSFER
-    
+    private PaymentMethod method;
+
     @Enumerated(EnumType.STRING)
-    private PaymentStatus status; // PENDING, COMPLETED, FAILED, REFUNDED
-    
+    private PaymentStatus status;
+
     private String gatewayResponse;
     
     private LocalDateTime createdAt;
