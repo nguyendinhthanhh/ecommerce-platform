@@ -27,13 +27,11 @@ public class VnpayConfig {
 
     public Map<String, String> getVNPayConfig() {
         // tạo id cho giao dịch lấy số s từ 1970 và luôn tăng nên nó sẽ không trùng
-        String vnp_TxnRef = String.valueOf(System.currentTimeMillis());
         Map<String, String> vnParamsMap = new HashMap<>();
         vnParamsMap.put("vnp_Version", vnp_Version);
         vnParamsMap.put("vnp_Command", vnp_Command);
         vnParamsMap.put("vnp_TmnCode", vnp_TmnCode);
         vnParamsMap.put("vnp_CurrCode", "VND");
-        vnParamsMap.put("vnp_TxnRef", vnp_TxnRef);
 
         vnParamsMap.put("vnp_OrderType", orderType);
         vnParamsMap.put("vnp_Locale", "vn");
@@ -43,6 +41,7 @@ public class VnpayConfig {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
         String vnpCreateDate = sdf.format(calendar.getTime());
         vnParamsMap.put("vnp_CreateDate", vnpCreateDate);
+
         calendar.add(Calendar.MINUTE, 15);
         String vnp_ExpireDate = sdf.format(calendar.getTime());
         vnParamsMap.put("vnp_ExpireDate", vnp_ExpireDate);

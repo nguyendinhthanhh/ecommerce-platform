@@ -99,6 +99,7 @@ public class OrderServiceImpl implements OrderService {
         Payment payment = Payment.builder()
                 .order(order)
                 .amount(order.getTotalAmount())
+                .transactionId(order.getOrderCode())
                 .method(Payment.PaymentMethod.valueOf(request.getPaymentMethod()))
                 .status(Payment.PaymentStatus.PENDING)
                 .build();

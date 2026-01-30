@@ -1,6 +1,7 @@
 package com.ecommerce.platform.service.serviceimpl;
 
 import com.ecommerce.platform.config.VnpayConfig;
+import com.ecommerce.platform.dto.response.OrderResponse;
 import com.ecommerce.platform.entity.Payment;
 import   com.ecommerce.platform.util.VnpayUtil;
 import com.ecommerce.platform.config.VnpayConfig;
@@ -25,26 +26,25 @@ public class PaymentService {
     @Autowired
     HttpServletRequest request;
 
+
     public String paymentUrl(Payment payment) {
         Map<String, String> params = vnpayConfig.getVNPayConfig();
 
-        BigDecimal money = payment.getAmount().multiply(BigDecimal.valueOf(100));
+        // Đổ mã đơn hàng ORD... vào tham số gửi sang VNPAY
+        params.put("vnp_TxnRef", payment.getTransactionId());
 
-        String value = String.valueOf(money);
-        String val[] = value.split("\\.");
-        if (val.length == 2) {
-            value =  val[0];
-        }
-        System.out.println(value);
-        params.put("vnp_Amount", value);
+        // Tính toán số tiền (Ví dụ: 1.130.000 -> 113.000.000)
+        BigDecimal money = payment.getAmount().multiply(BigDecimal.valueOf(100));
+        params.put("vnp_Amount", String.valueOf(money.longValue()));
+
         params.put("vnp_IpAddr", request.getRemoteAddr());
-        params.put("vnp_OrderInfo",  payment.getContenPayment());
+        // Lấy nội dung thanh toán từ đối tượng payment
+        params.put("vnp_OrderInfo", "Thanh toan don hang: " + payment.getTransactionId());
+
         String query = vnpayUtil.dataToappendUrl(params);
         String hasdata = vnpayUtil.hmacSHA512(vnpayConfig.getSecretKey(), query);
 
-        String payurl = vnpayConfig.getVnp_PayUrl() + query + "&vnp_SecureHash=" + hasdata;
-
-        return payurl;
+        return vnpayConfig.getVnp_PayUrl() + query + "&vnp_SecureHash=" + hasdata;
     }
 
     public Boolean checkPayment() {

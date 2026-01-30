@@ -29,19 +29,19 @@ public class VnpayUtil {
 
     public String dataToappendUrl(Map<String, String> params) {
         StringBuilder query = new StringBuilder();
-
         List<String> filekey = new ArrayList<>(params.keySet());
         Collections.sort(filekey);
 
         for (String key : filekey) {
             String value = params.get(key);
-            if (value != null && value.length() > 0) {
-
-                query.append(key).append("=").append(URLEncoder.encode(params.get(key), StandardCharsets.US_ASCII)).append("&");
+            if (value != null && !value.isEmpty()) {
+                query.append(key).append("=").append(URLEncoder.encode(value, StandardCharsets.US_ASCII)).append("&");
             }
         }
-        query.deleteCharAt(query.length() - 1);
-        return query.toString();
 
+        if (query.length() > 0) {
+            query.deleteCharAt(query.length() - 1);
+        }
+        return query.toString();
     }
 }
