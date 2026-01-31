@@ -4,7 +4,8 @@ const orderService = {
   // Place order
   placeOrder: async (orderData) => {
     const response = await api.post('/orders', orderData);
-    return response.data.data;
+    // Return the whole data object to be safe, as some APIs don't wrap in .data
+    return response.data;
   },
 
   // Get order by ID
@@ -52,6 +53,21 @@ const orderService = {
       console.error('Error fetching seller orders:', error);
       throw error;
     }
+  },
+
+  // Initiate payment
+  createPayment: async (paymentMethod, orderCode) => {
+    // Map internal payment method to API path
+    const pathMap = {
+      'VNPAY': 'vn_pay',
+      'MOMO': 'momo'
+    };
+
+    const path = pathMap[paymentMethod] || 'vn_pay';
+    const response = await api.post(`/payment/${path}`, null, {
+      params: { orderCode }
+    });
+    return response.data; // Should return the payment URL string or an object containing it
   },
 };
 

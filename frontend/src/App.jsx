@@ -13,6 +13,7 @@ import AdminCategories from "./pages/admin/AdminCategories";
 import AdminReviews from "./pages/admin/AdminReviews";
 import SellerDashboard from "./pages/seller/SellerDashboard";
 import SellerOrders from "./pages/seller/SellerOrders";
+import PlaceOrderPage from "./pages/customer/PlaceOrderPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./contexts/CartContext";
 import CartDrawer from "./components/common/CartDrawer";
@@ -32,6 +33,14 @@ function App() {
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/products/:id" element={<ProductDetailPage />} />
             <Route path="/cart" element={<CartPage />} />
+            <Route
+              path="/place-order"
+              element={
+                <ProtectedRoute allowedRoles={["CUSTOMER"]}>
+                  <PlaceOrderPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Profile - Accessible by all authenticated users */}
             <Route

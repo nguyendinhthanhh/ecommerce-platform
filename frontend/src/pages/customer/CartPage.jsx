@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "../../components/layout/Header";
 import { useCart } from "../../contexts/CartContext";
 
 const CartPage = () => {
+  const navigate = useNavigate();
   const [promoCode, setPromoCode] = useState("");
 
   const {
@@ -127,11 +128,10 @@ const CartPage = () => {
             {cartItems.map((item) => (
               <div
                 key={item.id}
-                className={`bg-white rounded-lg shadow-sm border p-6 transition-all duration-200 ${
-                  selectedItems.has(item.id)
+                className={`bg-white rounded-lg shadow-sm border p-6 transition-all duration-200 ${selectedItems.has(item.id)
                     ? "ring-2 ring-blue-500 ring-opacity-50"
                     : ""
-                }`}
+                  }`}
               >
                 <div className="flex items-start space-x-4">
                   {/* Selection Checkbox */}
@@ -154,11 +154,10 @@ const CartPage = () => {
                     <img
                       src={`https://picsum.photos/200/200?random=${item.id}`}
                       alt={item.name}
-                      className={`w-24 h-24 object-cover rounded-lg transition-opacity duration-300 ${
-                        imageLoadingStates[item.id]
+                      className={`w-24 h-24 object-cover rounded-lg transition-opacity duration-300 ${imageLoadingStates[item.id]
                           ? "opacity-0 absolute"
                           : "opacity-100"
-                      }`}
+                        }`}
                       onLoad={() => handleImageLoad(item.id)}
                       onError={() => handleImageError(item.id)}
                     />
@@ -375,12 +374,12 @@ const CartPage = () => {
 
               {/* Checkout Button */}
               <button
+                onClick={() => navigate("/place-order")}
                 disabled={selectedItemsCount === 0}
-                className={`w-full py-3 px-4 rounded-md font-medium flex items-center justify-center transition-all duration-200 ${
-                  selectedItemsCount > 0
+                className={`w-full py-3 px-4 rounded-md font-medium flex items-center justify-center transition-all duration-200 ${selectedItemsCount > 0
                     ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
+                  }`}
               >
                 {selectedItemsCount > 0
                   ? `Checkout ${selectedItemsCount} item${selectedItemsCount !== 1 ? "s" : ""}`

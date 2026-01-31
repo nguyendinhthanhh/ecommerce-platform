@@ -33,22 +33,23 @@ api.interceptors.response.use(
 
     // If error is 403 (Forbidden) - user doesn't have permission
     if (error.response?.status === 403) {
+      const user = storage.getJSON("user");
+      const userRole = user?.role || "GUEST";
+      const requestUrl = originalRequest.url;
+
       console.error(
-        "Access denied: You do not have permission to access this resource",
+        `Access denied (403): User role [${userRole}] does not have permission for [${requestUrl}]`
       );
-      // Check if user role doesn't match required permission
-      const user = storage.getItem("user");
-      if (user) {
-        const userData = typeof user === "string" ? JSON.parse(user) : user;
-        // If trying to access admin route without ADMIN role
-        if (
-          originalRequest.url?.includes("/admin/") &&
-          userData.role !== "ADMIN"
-        ) {
-          window.location.href = "/";
-          return Promise.reject(error);
-        }
+
+      // Simple role-based protection for specific areas
+      if (userRole !== "ADMIN" && requestUrl?.includes("/admin/")) {
+        console.warn("Redirecting non-admin user from admin endpoint");
+        window.location.href = "/";
+      } else if (userRole !== "SELLER" && requestUrl?.includes("/seller/")) {
+        console.warn("Redirecting non-seller user from seller endpoint");
+        window.location.href = "/";
       }
+
       return Promise.reject(error);
     }
 
