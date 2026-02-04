@@ -7,10 +7,12 @@ import {
   StatsRowSkeleton,
 } from "../../components/common/LoadingSpinner";
 import productService from "../../services/productService";
+import categoryService from "../../services/categoryService";
 import ImageUrlManager from "../../components/admin/ImageUrlManager";
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     category: "all",
@@ -177,9 +179,19 @@ const AdminProducts = () => {
     }
   }, [filters, pagination.page, pagination.size]);
 
+  const loadCategories = useCallback(async () => {
+    try {
+      const data = await categoryService.getAllCategories();
+      setCategories(data || []);
+    } catch (error) {
+      console.error("Error loading categories:", error);
+    }
+  }, []);
+
   useEffect(() => {
     loadProducts();
-  }, [loadProducts]);
+    loadCategories();
+  }, [loadProducts, loadCategories]);
 
   const handleViewProduct = async (productId) => {
     // Show modal immediately with loading state
@@ -1382,21 +1394,25 @@ const AdminProducts = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                        Category ID <span className="text-red-500">*</span>
+                        Category <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="number"
+                      <select
                         name="categoryId"
                         value={formData.categoryId}
                         onChange={handleInputChange}
-                        min="1"
                         className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
                           formErrors.categoryId
                             ? "border-red-500"
                             : "border-slate-200 dark:border-slate-700"
                         } bg-slate-50 dark:bg-slate-800`}
-                        placeholder="Enter category ID"
-                      />
+                      >
+                        <option value="">-- Select Category --</option>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
                       {formErrors.categoryId && (
                         <p className="mt-1 text-sm text-red-500">
                           {formErrors.categoryId}
@@ -1644,21 +1660,25 @@ const AdminProducts = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                        Category ID <span className="text-red-500">*</span>
+                        Category <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="number"
+                      <select
                         name="categoryId"
                         value={formData.categoryId}
                         onChange={handleInputChange}
-                        min="1"
                         className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
                           formErrors.categoryId
                             ? "border-red-500"
                             : "border-slate-200 dark:border-slate-700"
                         } bg-slate-50 dark:bg-slate-800`}
-                        placeholder="Enter category ID"
-                      />
+                      >
+                        <option value="">-- Select Category --</option>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
                       {formErrors.categoryId && (
                         <p className="mt-1 text-sm text-red-500">
                           {formErrors.categoryId}

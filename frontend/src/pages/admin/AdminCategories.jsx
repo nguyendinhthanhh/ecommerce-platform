@@ -716,17 +716,21 @@ const AdminCategories = () => {
                   {/* Parent ID */}
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Parent Category ID
+                      Parent Category
                     </label>
-                    <input
-                      type="number"
+                    <select
                       name="parentId"
                       value={formData.parentId}
                       onChange={handleInputChange}
-                      min="1"
                       className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                      placeholder="Leave empty for root category"
-                    />
+                    >
+                      <option value="">-- None (Root Category) --</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* Is Active */}
@@ -875,17 +879,23 @@ const AdminCategories = () => {
                   {/* Parent ID */}
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Parent Category ID
+                      Parent Category
                     </label>
-                    <input
-                      type="number"
+                    <select
                       name="parentId"
                       value={formData.parentId}
                       onChange={handleInputChange}
-                      min="1"
                       className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                      placeholder="Leave empty for root category"
-                    />
+                    >
+                      <option value="">-- None (Root Category) --</option>
+                      {categories
+                        .filter((cat) => cat.id !== selectedCategory?.id)
+                        .map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                    </select>
                   </div>
 
                   {/* Is Active */}
