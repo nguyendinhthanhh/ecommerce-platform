@@ -20,6 +20,9 @@ const authService = {
     storage.setItem("refreshToken", data.refreshToken);
     storage.setJSON("user", user);
 
+    // Dispatch custom event to notify components
+    window.dispatchEvent(new Event('auth-change'));
+
     return { ...response.data, data: { ...data, user } };
   },
 
@@ -41,6 +44,9 @@ const authService = {
     storage.setItem("refreshToken", data.refreshToken);
     storage.setJSON("user", user);
 
+    // Dispatch custom event to notify components
+    window.dispatchEvent(new Event('auth-change'));
+
     return { ...response.data, data: { ...data, user } };
   },
 
@@ -52,6 +58,9 @@ const authService = {
     storage.removeItem("accessToken");
     storage.removeItem("refreshToken");
     storage.removeItem("user");
+
+    // Dispatch custom event to notify components
+    window.dispatchEvent(new Event('auth-change'));
 
     // Call logout API in background (don't wait)
     if (refreshToken) {

@@ -25,7 +25,33 @@ export const CartProvider = ({ children }) => {
   const [loginPromptMessage, setLoginPromptMessage] = useState("");
 
   useEffect(() => {
-    loadCart();
+    // Only load cart if user is authenticated
+    if (authService.isAuthenticated()) {
+      loadCart();
+    } else {
+      // Set initial state for non-authenticated users
+      setLoading(false);
+      setCartItems([]);
+      setSelectedItems(new Set());
+    }
+
+    // Listen for auth changes (login/logout)
+    const handleAuthChange = () => {
+      if (authService.isAuthenticated()) {
+        loadCart();
+      } else {
+        setLoading(false);
+        setCartItems([]);
+        setSelectedItems(new Set());
+      }
+    };
+
+    window.addEventListener('auth-change', handleAuthChange);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange);
+    };
   }, []);
 
   const loadCart = async () => {
@@ -76,15 +102,24 @@ export const CartProvider = ({ children }) => {
       });
       setImageLoadingStates(loadingStates);
     } catch (err) {
-      console.error("Error loading cart:", err);
-      // Don't show error for empty cart, auth issues, or permission issues
-      if (err.response?.status !== 401 && err.response?.status !== 403 && err.response?.status !== 404) {
-        console.error("Server Error Details:", err.response?.data);
-        setError("Không thể tải giỏ hàng.");
+      // Silently handle errors - don't spam console
+      const status = err.response?.status;
+      
+      // Only log once for debugging
+      if (status === 500) {
+        console.error("Cart API Error 500:", err.response?.data?.message || "Internal server error");
+      } else if (status && status !== 401 && status !== 403 && status !== 404) {
+        console.error("Cart API Error:", status, err.response?.data?.message);
       }
-      // For 403, just silently set empty cart (user might not have CUSTOMER role)
+      
+      // Set empty cart for all error cases
       setCartItems([]);
       setSelectedItems(new Set());
+      
+      // Only show user-facing error for 500
+      if (status === 500) {
+        setError("Không thể tải giỏ hàng. Vui lòng thử lại sau.");
+      }
     } finally {
       setLoading(false);
     }

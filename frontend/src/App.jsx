@@ -58,7 +58,7 @@ function App() {
             <Route
               path="/profile"
               element={
-                <ProtectedRoute allowedRoles={["ADMIN", "SELLER", "CUSTOMER"]}>
+                <ProtectedRoute allowedRoles={["ADMIN", "STAFF", "SELLER", "CUSTOMER"]}>
                   <ProfilePage />
                 </ProtectedRoute>
               }

@@ -63,11 +63,12 @@ const LoginPage = () => {
 
       if (redirectAfterLogin) {
         sessionStorage.removeItem("redirectAfterLogin");
-        navigate(redirectAfterLogin);
+        // Force reload to clear all state
+        window.location.href = redirectAfterLogin;
       } else {
-        // Redirect based on user role
+        // Redirect based on user role with force reload
         const redirectPath = authService.getRedirectPath(user);
-        navigate(redirectPath);
+        window.location.href = redirectPath;
       }
     } catch (err) {
       setError(parseErrorMessage(err));
