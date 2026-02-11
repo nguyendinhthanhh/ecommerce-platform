@@ -4,10 +4,12 @@ import LoadingSpinner, {
   TableRowSkeleton,
 } from "../../components/common/LoadingSpinner";
 import userService from "../../services/userService";
+import roleService from "../../services/roleService";
 
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filters, setFilters] = useState({
     role: "all",
     status: "all",
@@ -25,6 +27,7 @@ const AdminUsers = () => {
     totalPages: 0,
   });
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [availableRoles, setAvailableRoles] = useState([]);
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -61,8 +64,14 @@ const AdminUsers = () => {
   };
 
   const loadUsers = useCallback(async () => {
+    const isInitial = users.length === 0;
     try {
-      setLoading(true);
+      if (isInitial) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+
       const params = {
         page: pagination.page,
         size: pagination.size,
@@ -108,12 +117,27 @@ const AdminUsers = () => {
       }
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [filters, pagination.page, pagination.size]);
 
   useEffect(() => {
     loadUsers();
   }, [loadUsers]);
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await roleService.getAllRoles();
+        if (response.data) {
+          setAvailableRoles(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching roles:", error);
+      }
+    };
+    fetchRoles();
+  }, []);
 
   const resetFormData = () => {
     setFormData({
@@ -354,12 +378,7 @@ const AdminUsers = () => {
       errors.email = "Please enter a valid email address";
     }
 
-    // Password validation
-    if (!formData.password) {
-      errors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      errors.password = "Password must be at least 6 characters";
-    }
+
 
     // Full name validation
     if (!formData.fullName.trim()) {
@@ -465,9 +484,11 @@ const AdminUsers = () => {
                 }
               >
                 <option value="all">All Roles</option>
-                <option value="ADMIN">Admin</option>
-                <option value="CUSTOMER">Customer</option>
-                <option value="SELLER">Seller</option>
+                {availableRoles.map((role) => (
+                  <option key={role.id} value={role.name}>
+                    {role.name}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -493,11 +514,10 @@ const AdminUsers = () => {
             {/* Advanced Filters Toggle */}
             <button
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
-                showAdvancedFilters
-                  ? "bg-primary/10 border-primary text-primary"
-                  : "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 hover:bg-slate-50"
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${showAdvancedFilters
+                ? "bg-primary/10 border-primary text-primary"
+                : "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 hover:bg-slate-50"
+                }`}
             >
               <span className="material-symbols-outlined text-[18px]">
                 tune
@@ -529,11 +549,11 @@ const AdminUsers = () => {
               className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
             >
               <span
-                className={`material-symbols-outlined text-[18px] ${loading ? "animate-spin" : ""}`}
+                className={`material-symbols-outlined text-[18px] ${loading || refreshing ? "animate-spin" : ""}`}
               >
                 refresh
               </span>
-              {loading ? "Loading..." : "Refresh"}
+              {loading || refreshing ? "Loading..." : "Refresh"}
             </button>
           </div>
         </div>
@@ -670,7 +690,16 @@ const AdminUsers = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 relative">
+                {/* Refresh Overlay */}
+                {refreshing && (
+                  <div className="absolute inset-0 bg-white/50 dark:bg-slate-950/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-xs font-medium text-primary">Updating...</span>
+                    </div>
+                  </div>
+                )}
                 {loading ? (
                   Array.from({ length: 5 }).map((_, index) => (
                     <TableRowSkeleton key={index} columns={7} />
@@ -693,11 +722,10 @@ const AdminUsers = () => {
                   users.map((user, idx) => (
                     <tr
                       key={user.id}
-                      className={`hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors ${
-                        idx % 2 === 1
-                          ? "bg-slate-50/30 dark:bg-slate-900/20"
-                          : ""
-                      }`}
+                      className={`hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors ${idx % 2 === 1
+                        ? "bg-slate-50/30 dark:bg-slate-900/20"
+                        : ""
+                        }`}
                     >
                       <td className="px-6 py-3 text-sm font-medium text-slate-400">
                         #{user.id}
@@ -740,13 +768,12 @@ const AdminUsers = () => {
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-full uppercase tracking-tighter ${getStatusBadgeStyle(user.status)}`}
                         >
                           <span
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              user.status === "ACTIVE"
-                                ? "bg-green-500"
-                                : user.status === "INACTIVE"
-                                  ? "bg-amber-500"
-                                  : "bg-red-500"
-                            }`}
+                            className={`h-1.5 w-1.5 rounded-full ${user.status === "ACTIVE"
+                              ? "bg-green-500"
+                              : user.status === "INACTIVE"
+                                ? "bg-amber-500"
+                                : "bg-red-500"
+                              }`}
                           ></span>
                           {user.status}
                         </span>
@@ -842,13 +869,12 @@ const AdminUsers = () => {
 
       {/* Toast Notification */}
       {toast.show && (
-        <div className="fixed bottom-6 right-6 z-50 animate-slide-in">
+        <div className="fixed top-6 right-6 z-50 animate-slide-in">
           <div
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg ${
-              toast.type === "error"
-                ? "bg-red-500 text-white"
-                : "bg-green-500 text-white"
-            }`}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg ${toast.type === "error"
+              ? "bg-red-500 text-white"
+              : "bg-green-500 text-white"
+              }`}
           >
             <span className="material-symbols-outlined">
               {toast.type === "error" ? "error" : "check_circle"}
@@ -904,11 +930,10 @@ const AdminUsers = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl focus:ring-2 transition-all ${
-                      formErrors.email
-                        ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
-                        : "border-slate-200 dark:border-slate-700 focus:ring-primary/20 focus:border-primary"
-                    }`}
+                    className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl focus:ring-2 transition-all ${formErrors.email
+                      ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
+                      : "border-slate-200 dark:border-slate-700 focus:ring-primary/20 focus:border-primary"
+                      }`}
                     placeholder="user@example.com"
                   />
                   {formErrors.email && (
@@ -921,43 +946,7 @@ const AdminUsers = () => {
                   )}
                 </div>
 
-                {/* Password Field */}
-                <div className="col-span-2">
-                  <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                    Password <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl focus:ring-2 transition-all pr-12 ${
-                        formErrors.password
-                          ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
-                          : "border-slate-200 dark:border-slate-700 focus:ring-primary/20 focus:border-primary"
-                      }`}
-                      placeholder="Enter password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-xl">
-                        {showPassword ? "visibility_off" : "visibility"}
-                      </span>
-                    </button>
-                  </div>
-                  {formErrors.password && (
-                    <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[16px]">
-                        error
-                      </span>
-                      {formErrors.password}
-                    </p>
-                  )}
-                </div>
+
 
                 {/* Full Name Field */}
                 <div className="col-span-2">
@@ -969,11 +958,10 @@ const AdminUsers = () => {
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl focus:ring-2 transition-all ${
-                      formErrors.fullName
-                        ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
-                        : "border-slate-200 dark:border-slate-700 focus:ring-primary/20 focus:border-primary"
-                    }`}
+                    className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl focus:ring-2 transition-all ${formErrors.fullName
+                      ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
+                      : "border-slate-200 dark:border-slate-700 focus:ring-primary/20 focus:border-primary"
+                      }`}
                     placeholder="John Doe"
                   />
                   {formErrors.fullName && (
@@ -996,11 +984,10 @@ const AdminUsers = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl focus:ring-2 transition-all ${
-                      formErrors.phone
-                        ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
-                        : "border-slate-200 dark:border-slate-700 focus:ring-primary/20 focus:border-primary"
-                    }`}
+                    className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl focus:ring-2 transition-all ${formErrors.phone
+                      ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
+                      : "border-slate-200 dark:border-slate-700 focus:ring-primary/20 focus:border-primary"
+                      }`}
                     placeholder="VD: 0912345678"
                   />
                   <p className="mt-1 text-xs text-slate-400">
@@ -1027,9 +1014,15 @@ const AdminUsers = () => {
                     onChange={handleInputChange}
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   >
-                    <option value="CUSTOMER">Customer</option>
-                    <option value="SELLER">Seller</option>
-                    <option value="ADMIN">Admin</option>
+                    {availableRoles.length > 0 ? (
+                      availableRoles.map((role) => (
+                        <option key={role.id} value={role.name}>
+                          {role.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="CUSTOMER">Customer</option>
+                    )}
                   </select>
                 </div>
 
@@ -1160,11 +1153,10 @@ const AdminUsers = () => {
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl transition-all ${
-                      formErrors.fullName
-                        ? "border-red-500 ring-2 ring-red-500/20"
-                        : "border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                    }`}
+                    className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl transition-all ${formErrors.fullName
+                      ? "border-red-500 ring-2 ring-red-500/20"
+                      : "border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      }`}
                     placeholder="John Doe"
                     required
                   />
@@ -1187,11 +1179,10 @@ const AdminUsers = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl transition-all ${
-                      formErrors.phone
-                        ? "border-red-500 ring-2 ring-red-500/20"
-                        : "border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                    }`}
+                    className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl transition-all ${formErrors.phone
+                      ? "border-red-500 ring-2 ring-red-500/20"
+                      : "border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      }`}
                     placeholder="VD: 0912345678"
                   />
                   <p className="mt-1 text-xs text-slate-400">
@@ -1217,9 +1208,19 @@ const AdminUsers = () => {
                     onChange={handleInputChange}
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   >
-                    <option value="CUSTOMER">Customer</option>
-                    <option value="SELLER">Seller</option>
-                    <option value="ADMIN">Admin</option>
+                    {availableRoles.length > 0 ? (
+                      availableRoles.map((role) => (
+                        <option key={role.id} value={role.name}>
+                          {role.name}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="CUSTOMER">Customer</option>
+                        <option value="SELLER">Seller</option>
+                        <option value="ADMIN">Admin</option>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -1232,11 +1233,10 @@ const AdminUsers = () => {
                     name="address"
                     value={formData.address}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl transition-all ${
-                      formErrors.address
-                        ? "border-red-500 ring-2 ring-red-500/20"
-                        : "border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                    }`}
+                    className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl transition-all ${formErrors.address
+                      ? "border-red-500 ring-2 ring-red-500/20"
+                      : "border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      }`}
                     placeholder="123 Main St, City"
                   />
                   {formErrors.address && (

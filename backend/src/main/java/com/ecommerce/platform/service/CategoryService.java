@@ -4,6 +4,7 @@ import com.ecommerce.platform.dto.request.CategoryFilterRequest;
 import com.ecommerce.platform.dto.request.CreateCategoryRequest;
 import com.ecommerce.platform.dto.request.UpdateCategoryRequest;
 import com.ecommerce.platform.dto.response.CategoryResponse;
+import org.springframework.data.domain.Page;
 import java.util.List;
 
 public interface CategoryService {
@@ -16,7 +17,7 @@ public interface CategoryService {
 
     CategoryResponse getCategoryById(Long id);
 
-    List<CategoryResponse> getAllCategories(CategoryFilterRequest filter);
+    Page<CategoryResponse> getAllCategories(CategoryFilterRequest filter);
 
     List<CategoryResponse> getCategoriesWithHierarchy();
 }

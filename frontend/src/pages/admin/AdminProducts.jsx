@@ -14,6 +14,7 @@ const AdminProducts = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filters, setFilters] = useState({
     category: "all",
     status: "all",
@@ -133,8 +134,13 @@ const AdminProducts = () => {
   };
 
   const loadProducts = useCallback(async () => {
+    const isInitial = products.length === 0;
     try {
-      setLoading(true);
+      if (isInitial) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
 
       let data;
       if (filters.keyword) {
@@ -145,12 +151,14 @@ const AdminProducts = () => {
           pagination.size,
         );
       } else {
-        // Use getAllProducts
-        data = await productService.getAllProducts(
+        // Use getAllProductsForManagement which supports status and category filters
+        data = await productService.getAllProductsForManagement(
           pagination.page,
           pagination.size,
           filters.sortBy,
           filters.sortDir,
+          filters.status,
+          filters.category,
         );
       }
 
@@ -176,13 +184,15 @@ const AdminProducts = () => {
       showToast("Failed to load products", "error");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [filters, pagination.page, pagination.size]);
 
   const loadCategories = useCallback(async () => {
     try {
-      const data = await categoryService.getAllCategories();
-      setCategories(data || []);
+      // Fetch all categories for dropdown (using a large page size)
+      const response = await categoryService.getAllCategories({ size: 1000 });
+      setCategories(response?.content || []);
     } catch (error) {
       console.error("Error loading categories:", error);
     }
@@ -446,11 +456,11 @@ const AdminProducts = () => {
                 className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
               >
                 <span
-                  className={`material-symbols-outlined text-lg ${loading ? "animate-spin" : ""}`}
+                  className={`material-symbols-outlined text-lg ${loading || refreshing ? "animate-spin" : ""}`}
                 >
                   refresh
                 </span>
-                {loading ? "Loading..." : "Refresh"}
+                {loading || refreshing ? "Loading..." : "Refresh"}
               </button>
             </div>
           </div>
@@ -590,6 +600,20 @@ const AdminProducts = () => {
                 <option value="OUT_OF_STOCK">Out of Stock</option>
               </select>
 
+              {/* Category Filter */}
+              <select
+                value={filters.category}
+                onChange={(e) => handleFilterChange("category", e.target.value)}
+                className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              >
+                <option value="all">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+
               {/* Sort */}
               <select
                 value={`${filters.sortBy}-${filters.sortDir}`}
@@ -644,7 +668,16 @@ const AdminProducts = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-700 relative">
+                {/* Refresh Overlay */}
+                {refreshing && (
+                  <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-xs font-medium text-primary">Updating...</span>
+                    </div>
+                  </div>
+                )}
                 {loading ? (
                   <ProductTableRowSkeleton rows={pagination.size} />
                 ) : products.length === 0 ? (
@@ -730,13 +763,12 @@ const AdminProducts = () => {
                       {/* Stock */}
                       <td className="px-6 py-4">
                         <span
-                          className={`font-medium ${
-                            product.stockQuantity <= 10
-                              ? "text-red-600 dark:text-red-400"
-                              : product.stockQuantity <= 50
-                                ? "text-yellow-600 dark:text-yellow-400"
-                                : "text-slate-900 dark:text-white"
-                          }`}
+                          className={`font-medium ${product.stockQuantity <= 10
+                            ? "text-red-600 dark:text-red-400"
+                            : product.stockQuantity <= 50
+                              ? "text-yellow-600 dark:text-yellow-400"
+                              : "text-slate-900 dark:text-white"
+                            }`}
                         >
                           {product.stockQuantity}
                         </span>
@@ -868,11 +900,10 @@ const AdminProducts = () => {
                         <button
                           key={pageNum}
                           onClick={() => handlePageChange(pageNum)}
-                          className={`min-w-[36px] h-9 px-3 rounded-lg text-sm font-medium transition-colors ${
-                            pagination.page === pageNum
-                              ? "bg-primary text-white"
-                              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                          }`}
+                          className={`min-w-[36px] h-9 px-3 rounded-lg text-sm font-medium transition-colors ${pagination.page === pageNum
+                            ? "bg-primary text-white"
+                            : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            }`}
                         >
                           {pageNum + 1}
                         </button>
@@ -1032,7 +1063,7 @@ const AdminProducts = () => {
                                   ((selectedProduct.price -
                                     selectedProduct.discountPrice) /
                                     selectedProduct.price) *
-                                    100,
+                                  100,
                                 )}
                                 %
                               </span>
@@ -1286,11 +1317,10 @@ const AdminProducts = () => {
                       name="name"
                       value={formData.name}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                        formErrors.name
-                          ? "border-red-500"
-                          : "border-slate-200 dark:border-slate-700"
-                      } bg-slate-50 dark:bg-slate-800`}
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${formErrors.name
+                        ? "border-red-500"
+                        : "border-slate-200 dark:border-slate-700"
+                        } bg-slate-50 dark:bg-slate-800`}
                       placeholder="Enter product name"
                     />
                     {formErrors.name && (
@@ -1328,11 +1358,10 @@ const AdminProducts = () => {
                         onChange={handleInputChange}
                         step="0.01"
                         min="0.01"
-                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                          formErrors.price
-                            ? "border-red-500"
-                            : "border-slate-200 dark:border-slate-700"
-                        } bg-slate-50 dark:bg-slate-800`}
+                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${formErrors.price
+                          ? "border-red-500"
+                          : "border-slate-200 dark:border-slate-700"
+                          } bg-slate-50 dark:bg-slate-800`}
                         placeholder="0.00"
                       />
                       {formErrors.price && (
@@ -1352,11 +1381,10 @@ const AdminProducts = () => {
                         onChange={handleInputChange}
                         step="0.01"
                         min="0"
-                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                          formErrors.discountPrice
-                            ? "border-red-500"
-                            : "border-slate-200 dark:border-slate-700"
-                        } bg-slate-50 dark:bg-slate-800`}
+                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${formErrors.discountPrice
+                          ? "border-red-500"
+                          : "border-slate-200 dark:border-slate-700"
+                          } bg-slate-50 dark:bg-slate-800`}
                         placeholder="0.00"
                       />
                       {formErrors.discountPrice && (
@@ -1379,11 +1407,10 @@ const AdminProducts = () => {
                         value={formData.stockQuantity}
                         onChange={handleInputChange}
                         min="0"
-                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                          formErrors.stockQuantity
-                            ? "border-red-500"
-                            : "border-slate-200 dark:border-slate-700"
-                        } bg-slate-50 dark:bg-slate-800`}
+                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${formErrors.stockQuantity
+                          ? "border-red-500"
+                          : "border-slate-200 dark:border-slate-700"
+                          } bg-slate-50 dark:bg-slate-800`}
                         placeholder="0"
                       />
                       {formErrors.stockQuantity && (
@@ -1400,11 +1427,10 @@ const AdminProducts = () => {
                         name="categoryId"
                         value={formData.categoryId}
                         onChange={handleInputChange}
-                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                          formErrors.categoryId
-                            ? "border-red-500"
-                            : "border-slate-200 dark:border-slate-700"
-                        } bg-slate-50 dark:bg-slate-800`}
+                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${formErrors.categoryId
+                          ? "border-red-500"
+                          : "border-slate-200 dark:border-slate-700"
+                          } bg-slate-50 dark:bg-slate-800`}
                       >
                         <option value="">-- Select Category --</option>
                         {categories.map((category) => (
@@ -1453,11 +1479,10 @@ const AdminProducts = () => {
                       name="status"
                       value={formData.status}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                        formErrors.status
-                          ? "border-red-500"
-                          : "border-slate-200 dark:border-slate-700"
-                      } bg-slate-50 dark:bg-slate-800`}
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${formErrors.status
+                        ? "border-red-500"
+                        : "border-slate-200 dark:border-slate-700"
+                        } bg-slate-50 dark:bg-slate-800`}
                     >
                       <option value="ACTIVE">Active</option>
                       <option value="INACTIVE">Inactive</option>
@@ -1552,11 +1577,10 @@ const AdminProducts = () => {
                       name="name"
                       value={formData.name}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                        formErrors.name
-                          ? "border-red-500"
-                          : "border-slate-200 dark:border-slate-700"
-                      } bg-slate-50 dark:bg-slate-800`}
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${formErrors.name
+                        ? "border-red-500"
+                        : "border-slate-200 dark:border-slate-700"
+                        } bg-slate-50 dark:bg-slate-800`}
                       placeholder="Enter product name"
                     />
                     {formErrors.name && (
@@ -1594,11 +1618,10 @@ const AdminProducts = () => {
                         onChange={handleInputChange}
                         step="0.01"
                         min="0.01"
-                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                          formErrors.price
-                            ? "border-red-500"
-                            : "border-slate-200 dark:border-slate-700"
-                        } bg-slate-50 dark:bg-slate-800`}
+                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${formErrors.price
+                          ? "border-red-500"
+                          : "border-slate-200 dark:border-slate-700"
+                          } bg-slate-50 dark:bg-slate-800`}
                         placeholder="0.00"
                       />
                       {formErrors.price && (
@@ -1618,11 +1641,10 @@ const AdminProducts = () => {
                         onChange={handleInputChange}
                         step="0.01"
                         min="0"
-                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                          formErrors.discountPrice
-                            ? "border-red-500"
-                            : "border-slate-200 dark:border-slate-700"
-                        } bg-slate-50 dark:bg-slate-800`}
+                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${formErrors.discountPrice
+                          ? "border-red-500"
+                          : "border-slate-200 dark:border-slate-700"
+                          } bg-slate-50 dark:bg-slate-800`}
                         placeholder="0.00"
                       />
                       {formErrors.discountPrice && (
@@ -1645,11 +1667,10 @@ const AdminProducts = () => {
                         value={formData.stockQuantity}
                         onChange={handleInputChange}
                         min="0"
-                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                          formErrors.stockQuantity
-                            ? "border-red-500"
-                            : "border-slate-200 dark:border-slate-700"
-                        } bg-slate-50 dark:bg-slate-800`}
+                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${formErrors.stockQuantity
+                          ? "border-red-500"
+                          : "border-slate-200 dark:border-slate-700"
+                          } bg-slate-50 dark:bg-slate-800`}
                         placeholder="0"
                       />
                       {formErrors.stockQuantity && (
@@ -1666,11 +1687,10 @@ const AdminProducts = () => {
                         name="categoryId"
                         value={formData.categoryId}
                         onChange={handleInputChange}
-                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                          formErrors.categoryId
-                            ? "border-red-500"
-                            : "border-slate-200 dark:border-slate-700"
-                        } bg-slate-50 dark:bg-slate-800`}
+                        className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${formErrors.categoryId
+                          ? "border-red-500"
+                          : "border-slate-200 dark:border-slate-700"
+                          } bg-slate-50 dark:bg-slate-800`}
                       >
                         <option value="">-- Select Category --</option>
                         {categories.map((category) => (
@@ -1719,11 +1739,10 @@ const AdminProducts = () => {
                       name="status"
                       value={formData.status}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                        formErrors.status
-                          ? "border-red-500"
-                          : "border-slate-200 dark:border-slate-700"
-                      } bg-slate-50 dark:bg-slate-800`}
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${formErrors.status
+                        ? "border-red-500"
+                        : "border-slate-200 dark:border-slate-700"
+                        } bg-slate-50 dark:bg-slate-800`}
                     >
                       <option value="ACTIVE">Active</option>
                       <option value="INACTIVE">Inactive</option>
@@ -1848,11 +1867,10 @@ const AdminProducts = () => {
         {/* Toast Notification */}
         {toast.show && (
           <div
-            className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg animate-slide-up ${
-              toast.type === "error"
-                ? "bg-red-500 text-white"
-                : "bg-green-500 text-white"
-            }`}
+            className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg animate-slide-in ${toast.type === "error"
+              ? "bg-red-500 text-white"
+              : "bg-green-500 text-white"
+              }`}
           >
             <span className="material-symbols-outlined">
               {toast.type === "error" ? "error" : "check_circle"}

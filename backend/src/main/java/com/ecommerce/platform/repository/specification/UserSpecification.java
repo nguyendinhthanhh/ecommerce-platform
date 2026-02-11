@@ -20,7 +20,8 @@ public class UserSpecification {
 
             // Only exclude INACTIVE if:
             // 1. includeDeleted is false/null AND
-            // 2. No specific status filter is provided (let user filter by any status including INACTIVE)
+            // 2. No specific status filter is provided (let user filter by any status
+            // including INACTIVE)
             boolean hasStatusFilter = StringUtils.hasText(filter.getStatus());
             boolean includeDeleted = filter.getIncludeDeleted() != null && filter.getIncludeDeleted();
 
@@ -31,22 +32,25 @@ public class UserSpecification {
             if (StringUtils.hasText(filter.getKeyword())) {
                 String keyword = "%" + filter.getKeyword().toLowerCase() + "%";
                 predicates.add(cb.or(
-                    cb.like(cb.lower(root.get("email")), keyword),
-                    cb.like(cb.lower(root.get("fullName")), keyword),
-                    cb.like(cb.lower(root.get("phone")), keyword)
-                ));
+                        cb.like(cb.lower(root.get("email")), keyword),
+                        cb.like(cb.lower(root.get("fullName")), keyword),
+                        cb.like(cb.lower(root.get("phone")), keyword)));
             }
 
             if (StringUtils.hasText(filter.getRole())) {
                 try {
-                    predicates.add(cb.equal(root.get("role"), User.Role.valueOf(filter.getRole().toUpperCase())));
-                } catch (IllegalArgumentException ignored) {}
+                    Join<User, com.ecommerce.platform.entity.Role> rolesJoin = root.join("roles");
+                    predicates.add(cb.equal(rolesJoin.get("name"), filter.getRole().toUpperCase()));
+                } catch (IllegalArgumentException ignored) {
+                }
             }
 
             if (hasStatusFilter) {
                 try {
-                    predicates.add(cb.equal(root.get("status"), User.UserStatus.valueOf(filter.getStatus().toUpperCase())));
-                } catch (IllegalArgumentException ignored) {}
+                    predicates.add(
+                            cb.equal(root.get("status"), User.UserStatus.valueOf(filter.getStatus().toUpperCase())));
+                } catch (IllegalArgumentException ignored) {
+                }
             }
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");

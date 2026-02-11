@@ -105,18 +105,53 @@ public class ReviewController {
         return ResponseEntity.ok(ApiResponse.success(canReview));
     }
 
-    @Operation(summary = "Get all reviews for management", description = "Get all reviews with optional status filter (Staff/Admin only)")
+    @Operation(summary = "Check review eligibility", description = "Check if user can review a product (finds eligible order)")
+    @GetMapping("/check-eligibility/{productId}")
+    public ResponseEntity<ApiResponse<com.ecommerce.platform.dto.response.ReviewEligibilityResponse>> checkReviewEligibility(
+            @AuthenticationPrincipal UserPrincipal currentUser,
+            @PathVariable Long productId) {
+        // Allow guest to check (will return canReview=false with message to login)
+        if (currentUser == null) {
+            return ResponseEntity
+                    .ok(ApiResponse.success(com.ecommerce.platform.dto.response.ReviewEligibilityResponse.builder()
+                            .canReview(false)
+                            .message("Please login to review")
+                            .build()));
+        }
+        return ResponseEntity
+                .ok(ApiResponse.success(reviewService.checkReviewEligibility(currentUser.getId(), productId)));
+    }
+
+    @Operation(summary = "Get all reviews for management", description = "Get all reviews with optional filters (Staff/Admin only)")
     @GetMapping("/management")
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<ApiResponse<PageResponse<ReviewResponse>>> getAllReviewsForManagement(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer rating,
+            @RequestParam(required = false) Boolean isReplied,
+            @RequestParam(required = false) java.time.LocalDate dateFrom,
+            @RequestParam(required = false) java.time.LocalDate dateTo,
+            @RequestParam(required = false) Long productId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Boolean isReported,
+            @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(
-                reviewService.getAllReviews(status, PageRequest.of(page, size, sort)))));
+                reviewService.getAllReviews(
+                        status,
+                        rating,
+                        isReplied,
+                        dateFrom,
+                        dateTo,
+                        productId,
+                        categoryId,
+                        isReported,
+                        search,
+                        PageRequest.of(page, size, sort)))));
     }
 
     @Operation(summary = "Update review status", description = "Update review status (hide/show) (Staff/Admin only)")
@@ -135,6 +170,34 @@ public class ReviewController {
     public ResponseEntity<ApiResponse<Void>> adminDeleteReview(@PathVariable Long reviewId) {
         reviewService.adminDeleteReview(reviewId);
         return ResponseEntity.ok(ApiResponse.success("Review deleted successfully", null));
+    }
+
+    @Operation(summary = "Reply to review", description = "Reply to a review (Staff/Admin only)")
+    @PutMapping("/{reviewId}/reply")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    public ResponseEntity<ApiResponse<ReviewResponse>> replyToReview(
+            @PathVariable Long reviewId,
+            @Valid @RequestBody com.ecommerce.platform.dto.request.ReplyReviewRequest request) {
+        ReviewResponse review = reviewService.replyToReview(reviewId, request);
+        return ResponseEntity.ok(ApiResponse.success("Replied to review successfully", review));
+    }
+
+    @Operation(summary = "Report review", description = "Report a review for inappropriate content")
+    @PostMapping("/{reviewId}/report")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> reportReview(
+            @PathVariable Long reviewId,
+            @Valid @RequestBody com.ecommerce.platform.dto.request.ReportReviewRequest request) {
+        reviewService.reportReview(reviewId, request);
+        return ResponseEntity.ok(ApiResponse.success("Review reported successfully", null));
+    }
+
+    @Operation(summary = "Dismiss report", description = "Dismiss a review report (Staff/Admin only)")
+    @PutMapping("/{reviewId}/dismiss-report")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> dismissReport(@PathVariable Long reviewId) {
+        reviewService.dismissReport(reviewId);
+        return ResponseEntity.ok(ApiResponse.success("Report dismissed successfully", null));
     }
 
     @Operation(summary = "Get customer reviews", description = "Get reviews by customer ID (Staff/Admin only)")

@@ -16,5 +16,10 @@ public class CategoryFilterRequest {
     private Long parentId;
 
     private Boolean rootOnly; // only get root categories (no parent)
-}
 
+    // Pagination
+    private Integer page;
+    private Integer size;
+    private String sortBy;
+    private String sortDir;
+}

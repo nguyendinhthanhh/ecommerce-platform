@@ -1,14 +1,14 @@
 package com.ecommerce.platform.mapper;
 
 import com.ecommerce.platform.dto.response.CartResponse;
-import com.ecommerce.platform.dto.response.CartResponse.CartItemResponse;
+import com.ecommerce.platform.dto.response.CartItemResponse;
 import com.ecommerce.platform.entity.Cart;
 import com.ecommerce.platform.entity.CartItem;
 import org.mapstruct.*;
 import java.math.BigDecimal;
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CartMapper {
 
     @Mapping(target = "customerId", source = "customer.id")

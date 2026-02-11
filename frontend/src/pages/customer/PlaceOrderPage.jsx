@@ -439,9 +439,13 @@ const PlaceOrderPage = () => {
                                     <div key={item.id} className="flex gap-4 group">
                                         <div className="relative size-20 shrink-0 overflow-hidden rounded-xl border border-gray-100 transition-transform group-hover:scale-105">
                                             <img
-                                                src={item.image || `https://picsum.photos/100/100?random=${item.id}`}
+                                                src={item.image || 'https://via.placeholder.com/100x100?text=Product'}
                                                 alt={item.name}
                                                 className="h-full w-full object-cover"
+                                                onError={(e) => {
+                                                    e.target.onerror = null;
+                                                    e.target.src = 'https://via.placeholder.com/100x100?text=No+Image';
+                                                }}
                                             />
                                         </div>
                                         <div className="flex-1 min-w-0 flex flex-col justify-center">

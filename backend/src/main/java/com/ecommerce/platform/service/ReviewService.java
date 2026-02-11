@@ -10,35 +10,44 @@ import org.springframework.data.domain.Pageable;
 
 public interface ReviewService {
 
-
     ReviewResponse createReview(Long customerId, CreateReviewRequest request);
-
 
     ReviewResponse updateReview(Long reviewId, Long customerId, UpdateReviewRequest request);
 
-
     void deleteReview(Long reviewId, Long customerId);
-
 
     Page<ReviewResponse> getCustomerReviews(Long customerId, Pageable pageable);
 
     boolean canReviewProduct(Long customerId, Long productId, Long orderId);
 
-
     Page<ReviewResponse> getProductReviews(Long productId, Pageable pageable);
-
-
 
     ReviewStatisticsResponse getProductReviewStatistics(Long productId);
 
-
     ReviewResponse getReviewById(Long reviewId);
 
-
-    Page<ReviewResponse> getAllReviews(String status, Pageable pageable);
+    Page<ReviewResponse> getAllReviews(
+            String status,
+            Integer rating,
+            Boolean isReplied,
+            java.time.LocalDate dateFrom,
+            java.time.LocalDate dateTo,
+            Long productId,
+            Long categoryId,
+            Boolean isReported,
+            String search,
+            Pageable pageable);
 
     ReviewResponse updateReviewStatus(Long reviewId, UpdateReviewStatusRequest request);
 
     void adminDeleteReview(Long reviewId);
-}
 
+    ReviewResponse replyToReview(Long reviewId, com.ecommerce.platform.dto.request.ReplyReviewRequest request);
+
+    void reportReview(Long reviewId, com.ecommerce.platform.dto.request.ReportReviewRequest request);
+
+    void dismissReport(Long reviewId);
+
+    com.ecommerce.platform.dto.response.ReviewEligibilityResponse checkReviewEligibility(Long customerId,
+            Long productId);
+}

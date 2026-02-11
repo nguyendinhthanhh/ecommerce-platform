@@ -152,14 +152,18 @@ const CartPage = () => {
                       </div>
                     )}
                     <img
-                      src={`https://picsum.photos/200/200?random=${item.id}`}
+                      src={item.image || 'https://via.placeholder.com/200x200?text=Product'}
                       alt={item.name}
                       className={`w-24 h-24 object-cover rounded-lg transition-opacity duration-300 ${imageLoadingStates[item.id]
-                          ? "opacity-0 absolute"
-                          : "opacity-100"
+                        ? "opacity-0 absolute"
+                        : "opacity-100"
                         }`}
                       onLoad={() => handleImageLoad(item.id)}
-                      onError={() => handleImageError(item.id)}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://via.placeholder.com/200x200?text=No+Image';
+                        handleImageError(item.id);
+                      }}
                     />
                   </div>
 

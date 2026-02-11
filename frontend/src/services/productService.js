@@ -2,7 +2,24 @@ import api from "./api";
 import apiCache, { CACHE_TTL } from "../utils/apiCache";
 
 const productService = {
-  // Get all products with pagination (with caching)
+  // Get all products for management (Staff/Admin)
+  getAllProductsForManagement: async (
+    page = 0,
+    size = 12,
+    sortBy = "createdAt",
+    sortDir = "desc",
+    status = "all",
+    categoryId = "all",
+  ) => {
+    const params = { page, size, sortBy, sortDir };
+    if (status !== "all") params.status = status;
+    if (categoryId !== "all") params.categoryId = categoryId;
+
+    const response = await api.get("/products/management", { params });
+    return response.data.data;
+  },
+
+  // Get all products with filters and pagination (active products only)
   getAllProducts: async (
     page = 0,
     size = 12,

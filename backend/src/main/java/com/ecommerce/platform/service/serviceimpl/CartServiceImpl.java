@@ -2,7 +2,7 @@ package com.ecommerce.platform.service.serviceimpl;
 
 import com.ecommerce.platform.dto.request.AddToCartRequest;
 import com.ecommerce.platform.dto.response.CartResponse;
-import com.ecommerce.platform.dto.response.CartResponse.CartItemResponse;
+import com.ecommerce.platform.dto.response.CartItemResponse;
 import com.ecommerce.platform.entity.*;
 import com.ecommerce.platform.exception.*;
 import com.ecommerce.platform.mapper.CartMapper;

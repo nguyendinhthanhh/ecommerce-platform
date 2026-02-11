@@ -18,6 +18,22 @@ const categoryService = {
     return data;
   },
 
+  // Get categories hierarchy (returns simple array, not paginated)
+  getCategoriesHierarchy: async () => {
+    const cacheKey = "/categories/hierarchy";
+    const cached = apiCache.get(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
+    const response = await api.get("/categories/hierarchy");
+    const data = response.data.data;
+
+    apiCache.set(cacheKey, data, CACHE_TTL.MEDIUM);
+    return data;
+  },
+
   // Get category by ID (with caching)
   getCategoryById: async (id) => {
     const cacheKey = `/categories/${id}`;

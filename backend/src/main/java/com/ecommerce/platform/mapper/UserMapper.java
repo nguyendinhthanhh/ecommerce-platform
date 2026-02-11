@@ -13,13 +13,13 @@ import org.mapstruct.*;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "avatar", ignore = true)
-    @Mapping(target = "role", ignore = true)
+    @Mapping(target = "roles", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -31,7 +31,6 @@ public interface UserMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "password", ignore = true)
-    @Mapping(target = "role", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -39,12 +38,12 @@ public interface UserMapper {
     @Mapping(target = "updatedBy", ignore = true)
     @Mapping(target = "lastLoginAt", ignore = true)
     @Mapping(target = "lastLoginIp", ignore = true)
+    @Mapping(target = "roles", ignore = true)
     User toEntity(CreateUserRequest request);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "email", ignore = true)
     @Mapping(target = "password", ignore = true)
-    @Mapping(target = "role", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -64,18 +63,26 @@ public interface UserMapper {
     @Mapping(target = "updatedBy", ignore = true)
     @Mapping(target = "lastLoginAt", ignore = true)
     @Mapping(target = "lastLoginIp", ignore = true)
-    @Mapping(target = "role", ignore = true)
+    @Mapping(target = "roles", ignore = true)
     @Mapping(target = "status", ignore = true)
+
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateFromAdminRequest(AdminUpdateUserRequest request, @MappingTarget User user);
 
-    @Mapping(target = "role", expression = "java(user.getRole().name())")
+    @Mapping(target = "role", expression = "java(mapRole(user))")
     @Mapping(target = "status", expression = "java(user.getStatus().name())")
     UserResponse toResponse(User user);
 
+    default String mapRole(User user) {
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+            return "CUSTOMER"; // Default fallback
+        }
+        return user.getRoles().iterator().next().getName();
+    }
+
     List<UserResponse> toResponseList(List<User> users);
 
-    @Mapping(target = "role", expression = "java(user.getRole().name())")
+    @Mapping(target = "role", expression = "java(mapRole(user))")
     @Mapping(target = "status", expression = "java(user.getStatus().name())")
     @Mapping(target = "totalOrders", ignore = true)
     @Mapping(target = "totalReviews", ignore = true)

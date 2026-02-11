@@ -29,10 +29,19 @@ export const CartProvider = ({ children }) => {
   }, []);
 
   const loadCart = async () => {
+    // Check if user is authenticated before loading cart
+    if (!authService.isAuthenticated()) {
+      setLoading(false);
+      setCartItems([]);
+      setSelectedItems(new Set());
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       const data = await cartService.getCart();
+
 
       // Handle API response: data.items from backend
       let rawItems = data?.items || data?.cartItems || data || [];
@@ -68,10 +77,12 @@ export const CartProvider = ({ children }) => {
       setImageLoadingStates(loadingStates);
     } catch (err) {
       console.error("Error loading cart:", err);
-      // Don't show error for empty cart or auth issues
-      if (err.response?.status !== 401 && err.response?.status !== 404) {
+      // Don't show error for empty cart, auth issues, or permission issues
+      if (err.response?.status !== 401 && err.response?.status !== 403 && err.response?.status !== 404) {
+        console.error("Server Error Details:", err.response?.data);
         setError("Không thể tải giỏ hàng.");
       }
+      // For 403, just silently set empty cart (user might not have CUSTOMER role)
       setCartItems([]);
       setSelectedItems(new Set());
     } finally {

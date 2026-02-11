@@ -9,7 +9,7 @@ import com.ecommerce.platform.entity.Payment;
 import org.mapstruct.*;
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface OrderMapper {
 
     @Mapping(target = "customerId", source = "customer.id")

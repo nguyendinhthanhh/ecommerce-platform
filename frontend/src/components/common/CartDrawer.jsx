@@ -151,14 +151,18 @@ const CartDrawer = () => {
                           </div>
                         )}
                         <img
-                          src={`https://picsum.photos/150/150?random=${item.id}`}
+                          src={item.image || 'https://via.placeholder.com/150x150?text=Product'}
                           alt={item.name}
                           className={`w-16 h-16 object-cover rounded-lg transition-opacity duration-300 ${imageLoadingStates[item.id]
                               ? "opacity-0 absolute"
                               : "opacity-100"
                             }`}
                           onLoad={() => handleImageLoad(item.id)}
-                          onError={() => handleImageError(item.id)}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://via.placeholder.com/150x150?text=No+Image';
+                            handleImageError(item.id);
+                          }}
                         />
                       </div>
 

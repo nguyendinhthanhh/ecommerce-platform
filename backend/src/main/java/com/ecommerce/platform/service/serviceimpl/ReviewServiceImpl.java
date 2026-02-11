@@ -35,18 +35,14 @@ public class ReviewServiceImpl implements ReviewService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
 
-
-
     @Override
     public ReviewResponse createReview(Long customerId, CreateReviewRequest request) {
 
         User customer = userRepository.findById(customerId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", customerId));
 
-
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product", request.getProductId()));
-
 
         Order order = orderRepository.findById(request.getOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Order", request.getOrderId()));
@@ -55,11 +51,9 @@ public class ReviewServiceImpl implements ReviewService {
             throw new BadRequestException("This order does not belong to you");
         }
 
-
         if (order.getStatus() != Order.OrderStatus.DELIVERED) {
             throw new BadRequestException("You can only review products from delivered orders");
         }
-
 
         boolean productInOrder = order.getItems().stream()
                 .anyMatch(item -> item.getProduct().getId().equals(request.getProductId()));
@@ -67,11 +61,11 @@ public class ReviewServiceImpl implements ReviewService {
             throw new BadRequestException("This product was not in your order");
         }
 
-
-        if (reviewRepository.findByCustomerIdAndProductIdAndOrderId(customerId, request.getProductId(), request.getOrderId()).isPresent()) {
+        if (reviewRepository
+                .findByCustomerIdAndProductIdAndOrderId(customerId, request.getProductId(), request.getOrderId())
+                .isPresent()) {
             throw new BadRequestException("You have already reviewed this product for this order");
         }
-
 
         Review review = Review.builder()
                 .product(product)
@@ -138,11 +132,9 @@ public class ReviewServiceImpl implements ReviewService {
             return false;
         }
 
-
         if (order.getStatus() != Order.OrderStatus.DELIVERED) {
             return false;
         }
-
 
         boolean productInOrder = order.getItems().stream()
                 .anyMatch(item -> item.getProduct().getId().equals(productId));
@@ -150,11 +142,8 @@ public class ReviewServiceImpl implements ReviewService {
             return false;
         }
 
-
         return reviewRepository.findByCustomerIdAndProductIdAndOrderId(customerId, productId, orderId).isEmpty();
     }
-
-
 
     @Override
     @Transactional(readOnly = true)
@@ -170,10 +159,10 @@ public class ReviewServiceImpl implements ReviewService {
         Double averageRating = reviewRepository.calculateAverageRating(productId);
         Integer totalReviews = reviewRepository.countActiveReviewsByProductId(productId);
 
-
         Map<Integer, Integer> ratingDistribution = new HashMap<>();
         for (int i = 1; i <= 5; i++) {
-            Integer count = reviewRepository.countByProductIdAndRatingAndStatus(productId, i, Review.ReviewStatus.ACTIVE);
+            Integer count = reviewRepository.countByProductIdAndRatingAndStatus(productId, i,
+                    Review.ReviewStatus.ACTIVE);
             ratingDistribution.put(i, count != null ? count : 0);
         }
 
@@ -193,17 +182,45 @@ public class ReviewServiceImpl implements ReviewService {
         return mapToResponse(review);
     }
 
-
-
     @Override
     @Transactional(readOnly = true)
-    public Page<ReviewResponse> getAllReviews(String status, Pageable pageable) {
-        if (status != null && !status.isEmpty()) {
-            Review.ReviewStatus reviewStatus = Review.ReviewStatus.valueOf(status.toUpperCase());
-            return reviewRepository.findByStatus(reviewStatus, pageable)
-                    .map(this::mapToResponse);
+    public Page<ReviewResponse> getAllReviews(
+            String status,
+            Integer rating,
+            Boolean isReplied,
+            java.time.LocalDate dateFrom,
+            java.time.LocalDate dateTo,
+            Long productId,
+            Long categoryId,
+            Boolean isReported,
+            String search,
+            Pageable pageable) {
+
+        Review.ReviewStatus reviewStatus = null;
+        if (status != null && !status.isEmpty() && !status.equalsIgnoreCase("ALL")) {
+            try {
+                reviewStatus = Review.ReviewStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // Ignore invalid status or handle as null
+            }
         }
-        return reviewRepository.findAll(pageable)
+
+        java.time.LocalDateTime startDateTime = dateFrom != null ? dateFrom.atStartOfDay() : null;
+        java.time.LocalDateTime endDateTime = dateTo != null ? dateTo.atTime(23, 59, 59) : null;
+
+        org.springframework.data.jpa.domain.Specification<Review> spec = com.ecommerce.platform.repository.specification.ReviewSpecification
+                .filterReviews(
+                        reviewStatus,
+                        rating,
+                        isReplied,
+                        startDateTime,
+                        endDateTime,
+                        productId,
+                        categoryId,
+                        isReported,
+                        search);
+
+        return reviewRepository.findAll(spec, pageable)
                 .map(this::mapToResponse);
     }
 
@@ -224,7 +241,71 @@ public class ReviewServiceImpl implements ReviewService {
         reviewRepository.delete(review);
     }
 
+    @Override
+    public ReviewResponse replyToReview(Long reviewId, com.ecommerce.platform.dto.request.ReplyReviewRequest request) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review", reviewId));
 
+        review.setReply(request.getReply());
+        review.setRepliedAt(java.time.LocalDateTime.now());
+        review = reviewRepository.save(review);
+
+        return mapToResponse(review);
+    }
+
+    @Override
+    public void reportReview(Long reviewId, com.ecommerce.platform.dto.request.ReportReviewRequest request) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review", reviewId));
+
+        review.setIsReported(true);
+        review.setReportReason(request.getReportReason());
+        reviewRepository.save(review);
+    }
+
+    @Override
+    public void dismissReport(Long reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review", reviewId));
+
+        review.setIsReported(false);
+        review.setReportReason(null);
+        reviewRepository.save(review);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public com.ecommerce.platform.dto.response.ReviewEligibilityResponse checkReviewEligibility(Long customerId,
+            Long productId) {
+        // Find all delivered orders for this customer
+        java.util.List<Order> orders = orderRepository.findByCustomerIdAndStatus(customerId,
+                Order.OrderStatus.DELIVERED);
+
+        // Find an order that contains the product and hasn't been reviewed yet
+        for (Order order : orders) {
+            boolean hasProduct = order.getItems().stream()
+                    .anyMatch(item -> item.getProduct().getId().equals(productId));
+
+            if (hasProduct) {
+                boolean alreadyReviewed = reviewRepository
+                        .findByCustomerIdAndProductIdAndOrderId(customerId, productId, order.getId())
+                        .isPresent();
+
+                if (!alreadyReviewed) {
+                    return com.ecommerce.platform.dto.response.ReviewEligibilityResponse.builder()
+                            .canReview(true)
+                            .orderId(order.getId())
+                            .message("You can review this product")
+                            .build();
+                }
+            }
+        }
+
+        return com.ecommerce.platform.dto.response.ReviewEligibilityResponse.builder()
+                .canReview(false)
+                .message("You need to purchase this product to review it, or you have already reviewed it.")
+                .build();
+    }
 
     private ReviewResponse mapToResponse(Review review) {
         return ReviewResponse.builder()
@@ -244,7 +325,10 @@ public class ReviewServiceImpl implements ReviewService {
                 .images(review.getImages())
                 .status(review.getStatus().name())
                 .createdAt(review.getCreatedAt())
+                .reply(review.getReply())
+                .repliedAt(review.getRepliedAt())
+                .isReported(review.getIsReported())
+                .reportReason(review.getReportReason())
                 .build();
     }
 }
-

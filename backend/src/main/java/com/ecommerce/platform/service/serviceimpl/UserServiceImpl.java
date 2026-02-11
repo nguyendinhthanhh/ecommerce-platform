@@ -39,14 +39,24 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final OrderRepository orderRepository;
     private final ReviewRepository reviewRepository;
+    private final com.ecommerce.platform.service.RoleService roleService;
 
     @Override
     public UserResponse createUser(CreateUserRequest request, Long adminId) {
         validateEmailNotExists(request.getEmail());
 
         User user = userMapper.toEntity(request);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(parseRole(request.getRole()));
+        String password = request.getPassword();
+        if (password == null || password.isEmpty()) {
+            password = java.util.UUID.randomUUID().toString().substring(0, 8);
+            log.info("Auto-generated password for user {}: {}", request.getEmail(), password);
+        }
+        user.setPassword(passwordEncoder.encode(password));
+
+        com.ecommerce.platform.entity.Role role = roleService.getRoleByName(
+                request.getRole() != null ? request.getRole() : "CUSTOMER");
+        user.setRoles(java.util.Collections.singleton(role));
+
         user.setStatus(parseStatus(request.getStatus()));
         user.setCreatedBy(adminId);
 
@@ -81,7 +91,8 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public Page<UserResponse> getUsersByRole(String role, Pageable pageable) {
-        return userRepository.findByRoleAndStatusNot(parseRole(role), User.UserStatus.INACTIVE, pageable).map(userMapper::toResponse);
+        return userRepository.findUsersWithRole(role, User.UserStatus.INACTIVE, pageable)
+                .map(userMapper::toResponse);
     }
 
     @Override
@@ -108,7 +119,12 @@ public class UserServiceImpl implements UserService {
         User user = findUserByIdIncludeInactive(id);
 
         userMapper.updateFromAdminRequest(request, user);
-        user.setRole(parseRole(request.getRole()));
+
+        if (request.getRole() != null) {
+            com.ecommerce.platform.entity.Role role = roleService.getRoleByName(request.getRole());
+            user.setRoles(java.util.Collections.singleton(role));
+        }
+
         user.setStatus(parseStatus(request.getStatus()));
         user.setUpdatedBy(adminId);
 
@@ -171,14 +187,13 @@ public class UserServiceImpl implements UserService {
                 userRepository.countByStatus(User.UserStatus.ACTIVE),
                 userRepository.countByStatus(User.UserStatus.INACTIVE),
                 userRepository.countByStatus(User.UserStatus.BANNED),
-                userRepository.countByRoleAndStatusNot(User.Role.CUSTOMER, User.UserStatus.INACTIVE),
-                userRepository.countByRoleAndStatusNot(User.Role.STAFF, User.UserStatus.INACTIVE),
-                userRepository.countByRoleAndStatusNot(User.Role.ADMIN, User.UserStatus.INACTIVE),
+                userRepository.countUsersWithRole("CUSTOMER", User.UserStatus.INACTIVE),
+                userRepository.countUsersWithRole("STAFF", User.UserStatus.INACTIVE),
+                userRepository.countUsersWithRole("ADMIN", User.UserStatus.INACTIVE),
                 userRepository.countByCreatedAtAfterAndStatusNot(today, User.UserStatus.INACTIVE),
                 userRepository.countByCreatedAtAfterAndStatusNot(weekAgo, User.UserStatus.INACTIVE),
                 userRepository.countByCreatedAtAfterAndStatusNot(monthAgo, User.UserStatus.INACTIVE),
-                userRepository.countByLastLoginAtAfterAndStatusNot(today, User.UserStatus.INACTIVE)
-        );
+                userRepository.countByLastLoginAtAfterAndStatusNot(today, User.UserStatus.INACTIVE));
     }
 
     @Override
@@ -275,7 +290,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private void enrichResponseWithRoleStatistics(UserDetailResponse response, User user) {
-        if (user.getRole() == User.Role.CUSTOMER) {
+        if (user.getRoles().stream().anyMatch(r -> r.getName().equals("CUSTOMER"))) {
             response.setTotalOrders(orderRepository.countByCustomerId(user.getId()));
             response.setTotalReviews(reviewRepository.countByCustomerId(user.getId()));
             response.setTotalSpent(orderRepository.sumTotalAmountByCustomerId(user.getId()));
@@ -295,11 +310,15 @@ public class UserServiceImpl implements UserService {
     }
 
     private String calculateLastActivityStatus(LocalDateTime lastLogin) {
-        if (lastLogin == null) return "Never logged in";
+        if (lastLogin == null)
+            return "Never logged in";
         long minutes = ChronoUnit.MINUTES.between(lastLogin, LocalDateTime.now());
-        if (minutes < 5) return "Active now";
-        if (minutes < 60) return "Last seen " + minutes + " minutes ago";
-        if (minutes < 1440) return "Last seen " + (minutes / 60) + " hours ago";
+        if (minutes < 5)
+            return "Active now";
+        if (minutes < 60)
+            return "Last seen " + minutes + " minutes ago";
+        if (minutes < 1440)
+            return "Last seen " + (minutes / 60) + " hours ago";
         return "Last seen " + (minutes / 1440) + " days ago";
     }
 
@@ -307,17 +326,11 @@ public class UserServiceImpl implements UserService {
         return lastLogin != null && ChronoUnit.MINUTES.between(lastLogin, LocalDateTime.now()) < 5;
     }
 
-    private User.Role parseRole(String role) {
-        if (role == null || role.isEmpty()) return User.Role.CUSTOMER;
-        try {
-            return User.Role.valueOf(role.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid role: " + role);
-        }
-    }
+    // parseRole method removed
 
     private User.UserStatus parseStatus(String status) {
-        if (status == null || status.isEmpty()) return User.UserStatus.ACTIVE;
+        if (status == null || status.isEmpty())
+            return User.UserStatus.ACTIVE;
         try {
             return User.UserStatus.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException e) {

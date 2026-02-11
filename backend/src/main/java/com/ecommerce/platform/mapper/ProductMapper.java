@@ -7,7 +7,7 @@ import com.ecommerce.platform.entity.Product;
 import org.mapstruct.*;
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ProductMapper {
 
     @Mapping(target = "categoryId", source = "category.id")

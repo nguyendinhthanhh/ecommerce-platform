@@ -9,11 +9,15 @@ import CartPage from "./pages/customer/CartPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminProducts from "./pages/admin/AdminProducts";
-import AdminCategories from "./pages/admin/AdminCategories";
-import AdminReviews from "./pages/admin/AdminReviews";
+import AdminCategoriesNew from "./pages/admin/AdminCategoriesNew";
+import AdminReviewsNew from "./pages/admin/AdminReviewsNew";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminRoles from "./pages/admin/AdminRoles";
 import SellerDashboard from "./pages/seller/SellerDashboard";
+import StaffDashboard from "./pages/staff/StaffDashboard";
 import SellerOrders from "./pages/seller/SellerOrders";
 import PlaceOrderPage from "./pages/customer/PlaceOrderPage";
+import MyOrdersPage from "./pages/customer/MyOrdersPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./contexts/CartContext";
 import CartDrawer from "./components/common/CartDrawer";
@@ -33,6 +37,14 @@ function App() {
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/products/:id" element={<ProductDetailPage />} />
             <Route path="/cart" element={<CartPage />} />
+            <Route
+              path="/my-orders"
+              element={
+                <ProtectedRoute allowedRoles={["CUSTOMER", "ADMIN", "SELLER", "STAFF"]}>
+                  <MyOrdersPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/place-order"
               element={
@@ -72,7 +84,7 @@ function App() {
             <Route
               path="/admin/products"
               element={
-                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                   <AdminProducts />
                 </ProtectedRoute>
               }
@@ -80,16 +92,42 @@ function App() {
             <Route
               path="/admin/categories"
               element={
-                <ProtectedRoute allowedRoles={["ADMIN"]}>
-                  <AdminCategories />
+                <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
+                  <AdminCategoriesNew />
                 </ProtectedRoute>
               }
             />
             <Route
               path="/admin/reviews"
               element={
+                <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
+                  <AdminReviewsNew />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/roles"
+              element={
                 <ProtectedRoute allowedRoles={["ADMIN"]}>
-                  <AdminReviews />
+                  <AdminRoles />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/orders"
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
+                  <AdminOrders />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Staff Routes */}
+            <Route
+              path="/staff/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["STAFF"]}>
+                  <StaffDashboard />
                 </ProtectedRoute>
               }
             />

@@ -12,29 +12,29 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class User {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(nullable = false, unique = true)
     private String email;
-    
+
     @Column(nullable = false)
     private String password;
-    
+
     @Column(nullable = false)
     private String fullName;
-    
+
     private String phone;
-    
+
     private String address;
-    
+
     private String avatar;
-    
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "users_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private java.util.Set<Role> roles = new java.util.HashSet<>();
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -42,9 +42,9 @@ public class User {
     private UserStatus status = UserStatus.ACTIVE;
 
     private LocalDateTime createdAt;
-    
+
     private LocalDateTime updatedAt;
-    
+
     private Long createdBy;
 
     private Long updatedBy;
@@ -57,18 +57,17 @@ public class User {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if (status == null) status = UserStatus.ACTIVE;
+        if (status == null)
+            status = UserStatus.ACTIVE;
     }
-    
+
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-    
-    public enum Role {
-        CUSTOMER, STAFF, ADMIN
-    }
-    
+
+    // Role enum removed as we now use Role entity
+
     public enum UserStatus {
         ACTIVE, INACTIVE, BANNED
     }

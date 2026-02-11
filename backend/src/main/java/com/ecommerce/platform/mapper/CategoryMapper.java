@@ -5,7 +5,7 @@ import com.ecommerce.platform.entity.Category;
 import org.mapstruct.*;
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CategoryMapper {
 
     @Mapping(target = "parentId", source = "parent.id")
@@ -18,7 +18,8 @@ public interface CategoryMapper {
 
     @Named("toResponseWithChildren")
     default CategoryResponse toResponseWithChildren(Category category) {
-        if (category == null) return null;
+        if (category == null)
+            return null;
 
         CategoryResponse response = CategoryResponse.builder()
                 .id(category.getId())
@@ -29,6 +30,16 @@ public interface CategoryMapper {
                 .parentName(category.getParent() != null ? category.getParent().getName() : null)
                 .isActive(category.getIsActive())
                 .productCount(category.getProducts() != null ? category.getProducts().size() : 0)
+                .slug(category.getSlug())
+                .bannerUrl(category.getBannerUrl())
+                .isMenu(category.getIsMenu())
+                .isFilterable(category.getIsFilterable())
+                .level(category.getLevel())
+                .position(category.getPosition())
+                .metaTitle(category.getMetaTitle())
+                .metaDescription(category.getMetaDescription())
+                .createdAt(category.getCreatedAt())
+                .updatedAt(category.getUpdatedAt())
                 .build();
 
         if (category.getChildren() != null && !category.getChildren().isEmpty()) {
@@ -40,4 +51,3 @@ public interface CategoryMapper {
         return response;
     }
 }
-

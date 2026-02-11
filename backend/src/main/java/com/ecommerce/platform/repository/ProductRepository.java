@@ -14,43 +14,51 @@ import java.util.Optional;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.status = :status")
-    Page<Product> findByStatusWithGraph(@Param("status") Product.ProductStatus status, Pageable pageable);
+       @EntityGraph(attributePaths = { "category" })
+       @Query("SELECT p FROM Product p WHERE p.status = :status")
+       Page<Product> findByStatusWithGraph(@Param("status") Product.ProductStatus status, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.status = 'ACTIVE'")
-    Page<Product> findByCategoryIdWithGraph(@Param("categoryId") Long categoryId, Pageable pageable);
+       @EntityGraph(attributePaths = { "category" })
+       @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.status = 'ACTIVE'")
+       Page<Product> findByCategoryIdWithGraph(@Param("categoryId") Long categoryId, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.id = :id")
-    Optional<Product> findByIdWithGraph(@Param("id") Long id);
+       @EntityGraph(attributePaths = { "category" })
+       @Query("SELECT p FROM Product p WHERE p.id = :id")
+       Optional<Product> findByIdWithGraph(@Param("id") Long id);
 
-    @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND " +
-           "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Page<Product> searchProductsWithGraph(@Param("keyword") String keyword, Pageable pageable);
+       @EntityGraph(attributePaths = { "category" })
+       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND " +
+                     "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                     "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+       Page<Product> searchProductsWithGraph(@Param("keyword") String keyword, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY p.soldCount DESC")
-    Page<Product> findTopSellingProductsWithGraph(Pageable pageable);
+       @EntityGraph(attributePaths = { "category" })
+       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY p.soldCount DESC")
+       Page<Product> findTopSellingProductsWithGraph(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY p.createdAt DESC")
-    Page<Product> findNewestProductsWithGraph(Pageable pageable);
+       @EntityGraph(attributePaths = { "category" })
+       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY p.createdAt DESC")
+       Page<Product> findNewestProductsWithGraph(Pageable pageable);
 
-    Page<Product> findByCategoryId(Long categoryId, Pageable pageable);
-    Page<Product> findByStatus(Product.ProductStatus status, Pageable pageable);
+       @EntityGraph(attributePaths = { "category" })
+       @Query("SELECT p FROM Product p WHERE " +
+                     "(:status IS NULL OR p.status = :status) AND " +
+                     "(:categoryId IS NULL OR p.category.id = :categoryId)")
+       Page<Product> findForManagement(
+                     @Param("status") Product.ProductStatus status,
+                     @Param("categoryId") Long categoryId,
+                     Pageable pageable);
 
-    @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND " +
-           "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Page<Product> searchProducts(@Param("keyword") String keyword, Pageable pageable);
+       Page<Product> findByCategoryId(Long categoryId, Pageable pageable);
 
-    @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY p.soldCount DESC")
-    List<Product> findTopSellingProducts(Pageable pageable);
+       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND " +
+                     "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                     "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+       Page<Product> searchProducts(@Param("keyword") String keyword, Pageable pageable);
 
-    @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY p.createdAt DESC")
-    List<Product> findNewestProducts(Pageable pageable);
+       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY p.soldCount DESC")
+       List<Product> findTopSellingProducts(Pageable pageable);
+
+       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY p.createdAt DESC")
+       List<Product> findNewestProducts(Pageable pageable);
 }

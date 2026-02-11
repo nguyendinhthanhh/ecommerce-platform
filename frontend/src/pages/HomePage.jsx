@@ -2,17 +2,24 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import productService from "../services/productService";
 import Header from "../components/layout/Header";
+import CategoryGrid from "../components/category/CategoryGrid";
+import CategorySidebar from "../components/category/CategorySidebar";
 import {
   ProductCardSkeleton,
   ProductCarouselSkeleton,
   ProductGridSkeleton,
 } from "../components/common/LoadingSpinner";
+import vi from "../utils/translations";
 
 const HomePage = () => {
   const [products, setProducts] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
   const [loadingTop, setLoadingTop] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const pageSize = 6;
+  const carouselRef = React.useRef(null);
 
   // Load top selling products
   const loadTopProducts = useCallback(async () => {
@@ -28,23 +35,42 @@ const HomePage = () => {
   }, []);
 
   // Load all products
-  const loadProducts = useCallback(async () => {
+  const loadProducts = useCallback(async (page = 0) => {
     try {
       setLoadingProducts(true);
-      const productsData = await productService.getAllProducts(0, 6);
+      const productsData = await productService.getAllProducts(page, pageSize);
       setProducts(productsData.content || []);
+      setTotalPages(productsData.totalPages || 0);
+      setCurrentPage(page);
     } catch (error) {
       console.error("Error loading products:", error);
     } finally {
       setLoadingProducts(false);
     }
-  }, []);
+  }, [pageSize]);
 
   useEffect(() => {
     // Load data in parallel for faster perceived loading
     loadTopProducts();
-    loadProducts();
+    loadProducts(0);
   }, [loadTopProducts, loadProducts]);
+
+  const handlePageChange = (page) => {
+    if (page >= 0 && page < totalPages) {
+      loadProducts(page);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const scrollCarousel = (direction) => {
+    if (carouselRef.current) {
+      const scrollAmount = 300;
+      carouselRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 text-[#111418] font-display">
@@ -67,30 +93,32 @@ const HomePage = () => {
                 auto_awesome
               </span>
               <span className="text-xs font-semibold tracking-wide uppercase text-primary-50">
-                Personalized for you
+                Được cá nhân hóa cho bạn
               </span>
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight tracking-tight">
-              Smart Shopping <br />
+              Mua sắm thông minh <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-primary">
-                Powered by AI
+                Được hỗ trợ bởi AI
               </span>
             </h1>
             <p className="text-lg text-gray-200 leading-relaxed max-w-lg">
-              Stop searching, start finding. Our AI analyzes your taste to
-              recommend products you'll actually love instantly.
+              Ngừng tìm kiếm, bắt đầu khám phá. AI của chúng tôi phân tích sở thích của bạn để gợi ý sản phẩm bạn thực sự yêu thích ngay lập tức.
             </p>
             <div className="flex flex-wrap gap-4 pt-2">
               <button className="bg-primary hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-bold text-base transition-colors flex items-center gap-2 shadow-lg shadow-blue-500/30">
-                Start Shopping
+                Bắt đầu mua sắm
                 <span className="material-symbols-outlined">arrow_forward</span>
               </button>
               <button className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 px-8 py-3 rounded-lg font-bold text-base transition-colors">
-                How it Works
+                Cách hoạt động
               </button>
             </div>
           </div>
         </section>
+
+        {/* Category Grid */}
+        <CategoryGrid />
 
         {/* AI Picks Carousel */}
         <section>
@@ -101,20 +129,26 @@ const HomePage = () => {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  AI Picks for You
+                  Gợi ý AI cho bạn
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Based on trending items in your region
+                  Dựa trên xu hướng trong khu vực của bạn
                 </p>
               </div>
             </div>
             <div className="flex gap-2">
-              <button className="size-8 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              <button 
+                onClick={() => scrollCarousel('left')}
+                className="size-8 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
                 <span className="material-symbols-outlined text-sm">
                   chevron_left
                 </span>
               </button>
-              <button className="size-8 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              <button 
+                onClick={() => scrollCarousel('right')}
+                className="size-8 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
                 <span className="material-symbols-outlined text-sm">
                   chevron_right
                 </span>
@@ -122,7 +156,7 @@ const HomePage = () => {
             </div>
           </div>
 
-          <div className="flex overflow-x-auto gap-6 pb-4 no-scrollbar snap-x">
+          <div ref={carouselRef} className="flex overflow-x-auto gap-6 pb-4 no-scrollbar snap-x scroll-smooth">
             {/* Product Cards */}
             {loadingTop ? (
               <ProductCarouselSkeleton count={4} />
@@ -138,7 +172,7 @@ const HomePage = () => {
                       <span className="material-symbols-outlined text-[14px]">
                         verified
                       </span>{" "}
-                      Top Selling
+                      Bán chạy
                     </div>
                     <img
                       alt={product.name}
@@ -194,109 +228,22 @@ const HomePage = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Filters */}
           <aside className="w-full lg:w-64 flex-shrink-0 space-y-6">
-            <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-gray-100 dark:border-slate-700 sticky top-24">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-lg">Filters</h3>
-                <button className="text-xs text-primary font-medium hover:underline">
-                  Reset
-                </button>
-              </div>
-
-              {/* AI Confidence Filter */}
-              <div className="mb-6">
-                <label className="text-sm font-medium mb-3 flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                  <span className="material-symbols-outlined text-primary text-base">
-                    psychology
-                  </span>
-                  AI Match Score
-                </label>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      className="rounded text-primary focus:ring-primary border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-slate-700"
-                      type="checkbox"
-                    />
-                    <span className="text-sm text-gray-600 dark:text-gray-300 group-hover:text-primary transition-colors">
-                      90% + Match
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      className="rounded text-primary focus:ring-primary border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-slate-700"
-                      type="checkbox"
-                    />
-                    <span className="text-sm text-gray-600 dark:text-gray-300 group-hover:text-primary transition-colors">
-                      80% - 90% Match
-                    </span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Categories */}
-              <div className="mb-6 border-t border-gray-100 dark:border-slate-700 pt-4">
-                <h4 className="text-sm font-medium mb-3 text-gray-900 dark:text-white">
-                  Categories
-                </h4>
-                <div className="space-y-2">
-                  {[
-                    { name: "Electronics", count: 120 },
-                    { name: "Fashion", count: 85 },
-                    { name: "Home & Living", count: 42 },
-                  ].map((cat, idx) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between items-center group cursor-pointer"
-                    >
-                      <span className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-primary">
-                        {cat.name}
-                      </span>
-                      <span className="text-xs text-gray-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
-                        {cat.count}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Price Range */}
-              <div className="border-t border-gray-100 dark:border-slate-700 pt-4">
-                <h4 className="text-sm font-medium mb-3 text-gray-900 dark:text-white">
-                  Price Range
-                </h4>
-                <div className="flex items-center gap-2 mb-2">
-                  <input
-                    className="w-full text-sm p-2 rounded border border-gray-200 dark:border-slate-600 bg-transparent"
-                    placeholder="Min"
-                    type="number"
-                  />
-                  <span className="text-gray-400">-</span>
-                  <input
-                    className="w-full text-sm p-2 rounded border border-gray-200 dark:border-slate-600 bg-transparent"
-                    placeholder="Max"
-                    type="number"
-                  />
-                </div>
-                <input
-                  className="w-full accent-primary h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                  type="range"
-                />
-              </div>
-            </div>
+            <CategorySidebar />
           </aside>
 
           {/* Product Grid */}
           <div className="flex-1">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="font-bold text-xl">All Recommendations</h3>
+              <h3 className="font-bold text-xl">Tất cả gợi ý</h3>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-500 hidden sm:block">
-                  Sort by:
+                  Sắp xếp:
                 </span>
                 <select className="text-sm border-gray-200 dark:border-slate-700 rounded-lg py-1.5 pl-3 pr-8 focus:ring-primary focus:border-primary bg-white dark:bg-slate-800">
-                  <option>AI Recommended</option>
-                  <option>Price: Low to High</option>
-                  <option>Price: High to Low</option>
-                  <option>Newest</option>
+                  <option>AI gợi ý</option>
+                  <option>Giá: Thấp đến cao</option>
+                  <option>Giá: Cao đến thấp</option>
+                  <option>Mới nhất</option>
                 </select>
               </div>
             </div>
@@ -330,7 +277,7 @@ const HomePage = () => {
                             {product.name}
                           </h4>
                           <span className="bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded">
-                            {product.stockQuantity > 0 ? "In Stock" : "Out"}
+                            {product.stockQuantity > 0 ? "Còn hàng" : "Hết"}
                           </span>
                         </div>
                         <p className="text-sm text-gray-500 mb-3 line-clamp-2">
@@ -368,30 +315,71 @@ const HomePage = () => {
             )}
 
             {/* Pagination */}
-            <div className="mt-10 flex justify-center">
-              <nav className="flex items-center gap-1">
-                <button className="size-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50">
-                  <span className="material-symbols-outlined text-sm">
-                    chevron_left
-                  </span>
-                </button>
-                <button className="size-9 flex items-center justify-center rounded-lg bg-primary text-white font-medium text-sm">
-                  1
-                </button>
-                <button className="size-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-sm font-medium">
-                  2
-                </button>
-                <button className="size-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-sm font-medium">
-                  3
-                </button>
-                <span className="px-2 text-gray-400">...</span>
-                <button className="size-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50">
-                  <span className="material-symbols-outlined text-sm">
-                    chevron_right
-                  </span>
-                </button>
-              </nav>
-            </div>
+            {totalPages > 1 && (
+              <div className="mt-10 flex justify-center">
+                <nav className="flex items-center gap-1">
+                  <button 
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 0}
+                    className="size-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">
+                      chevron_left
+                    </span>
+                  </button>
+                  
+                  {/* Page numbers */}
+                  {[...Array(Math.min(totalPages, 5))].map((_, idx) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = idx;
+                    } else if (currentPage < 3) {
+                      pageNum = idx;
+                    } else if (currentPage > totalPages - 4) {
+                      pageNum = totalPages - 5 + idx;
+                    } else {
+                      pageNum = currentPage - 2 + idx;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`size-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-primary text-white'
+                            : 'border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        {pageNum + 1}
+                      </button>
+                    );
+                  })}
+                  
+                  {totalPages > 5 && currentPage < totalPages - 3 && (
+                    <>
+                      <span className="px-2 text-gray-400">...</span>
+                      <button
+                        onClick={() => handlePageChange(totalPages - 1)}
+                        className="size-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-sm font-medium"
+                      >
+                        {totalPages}
+                      </button>
+                    </>
+                  )}
+                  
+                  <button 
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages - 1}
+                    className="size-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">
+                      chevron_right
+                    </span>
+                  </button>
+                </nav>
+              </div>
+            )}
           </div>
         </div>
       </main>

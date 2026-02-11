@@ -22,14 +22,22 @@ public class UserPrincipal implements UserDetails {
     private Collection<? extends GrantedAuthority> authorities;
 
     public static UserPrincipal create(User user) {
+        // Map Roles and Permissions to Authorities
+        java.util.Set<org.springframework.security.core.GrantedAuthority> authorities = new java.util.HashSet<>();
+
+        // Add Role authorities (ROLE_ADMIN, ROLE_STAFF, etc.)
+        for (com.ecommerce.platform.entity.Role role : user.getRoles()) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
+        }
+
         return new UserPrincipal(
                 user.getId(),
                 user.getEmail(),
                 user.getPassword(),
-                user.getRole().name(),
+                user.getRoles().isEmpty() ? "" : user.getRoles().iterator().next().getName(), // Primary role for legacy
+                                                                                              // support
                 user.getStatus(),
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
-        );
+                authorities);
     }
 
     @Override

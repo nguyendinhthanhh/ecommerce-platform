@@ -24,8 +24,13 @@ public class CartController {
     @Operation(summary = "Get cart", description = "Get current user's shopping cart")
     @GetMapping
     public ResponseEntity<ApiResponse<CartResponse>> getCart(@AuthenticationPrincipal UserPrincipal principal) {
-        CartResponse cart = cartService.getCart(principal.getId());
-        return ResponseEntity.ok(ApiResponse.success(cart));
+        try {
+            CartResponse cart = cartService.getCart(principal.getId());
+            return ResponseEntity.ok(ApiResponse.success(cart));
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Operation(summary = "Add to cart", description = "Add product to shopping cart")
