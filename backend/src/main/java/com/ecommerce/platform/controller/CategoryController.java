@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -61,22 +62,29 @@ public class CategoryController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all categories with optional filters",
-               description = "Search by keyword (name/description), filter by isActive, parentId, or rootOnly")
-    public ResponseEntity<ApiResponse<List<CategoryResponse>>> getAllCategories(
+    @Operation(summary = "Get all categories with pagination and filters", description = "Search by keyword (name/description), filter by isActive, parentId, or rootOnly")
+    public ResponseEntity<ApiResponse<Page<CategoryResponse>>> getAllCategories(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Boolean isActive,
             @RequestParam(required = false) Long parentId,
-            @RequestParam(required = false) Boolean rootOnly) {
+            @RequestParam(required = false) Boolean rootOnly,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
 
         CategoryFilterRequest filter = CategoryFilterRequest.builder()
                 .keyword(keyword)
                 .isActive(isActive)
                 .parentId(parentId)
                 .rootOnly(rootOnly)
+                .page(page)
+                .size(size)
+                .sortBy(sortBy)
+                .sortDir(sortDir)
                 .build();
 
-        List<CategoryResponse> response = categoryService.getAllCategories(filter);
+        Page<CategoryResponse> response = categoryService.getAllCategories(filter);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

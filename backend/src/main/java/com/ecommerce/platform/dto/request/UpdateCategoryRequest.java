@@ -18,5 +18,20 @@ public class UpdateCategoryRequest {
     private Long parentId;
 
     private Boolean isActive;
+
+    // Enterprise-level fields
+    private String slug;
+
+    private String bannerUrl;
+
+    private Boolean isMenu;
+
+    private Boolean isFilterable;
+
+    private Integer position;
+
+    private String metaTitle;
+
+    private String metaDescription;
 }
 

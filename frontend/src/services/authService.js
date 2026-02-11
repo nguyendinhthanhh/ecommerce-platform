@@ -85,6 +85,8 @@ const authService = {
     switch (user.role) {
       case "ADMIN":
         return "/admin/dashboard";
+      case "STAFF":
+        return "/staff/dashboard";
       case "SELLER":
         return "/seller/dashboard";
       case "CUSTOMER":

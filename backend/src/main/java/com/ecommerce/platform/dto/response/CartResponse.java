@@ -15,20 +15,5 @@ public class CartResponse {
     private List<CartItemResponse> items;
     private BigDecimal totalAmount;
     private Integer totalItems;
-    
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class CartItemResponse {
-        private Long id;
-        private Long productId;
-        private String productName;
-        private String productThumbnail;
-        private BigDecimal unitPrice;
-        private Integer quantity;
-        private BigDecimal subtotal;
-        private Integer stockQuantity;
-    }
+
 }

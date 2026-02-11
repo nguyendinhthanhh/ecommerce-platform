@@ -72,8 +72,12 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public Page<ProductResponse> getAllProductsForManagement(Pageable pageable) {
-        return productRepository.findAll(pageable)
+    public Page<ProductResponse> getAllProductsForManagement(String status, Long categoryId, Pageable pageable) {
+        Product.ProductStatus productStatus = null;
+        if (status != null && !status.equalsIgnoreCase("all")) {
+            productStatus = parseStatus(status);
+        }
+        return productRepository.findForManagement(productStatus, categoryId, pageable)
                 .map(productMapper::toResponse);
     }
 
@@ -132,7 +136,8 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private Product.ProductStatus parseStatus(String status) {
-        if (status == null || status.isEmpty()) return Product.ProductStatus.ACTIVE;
+        if (status == null || status.isEmpty())
+            return Product.ProductStatus.ACTIVE;
         try {
             return Product.ProductStatus.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException e) {

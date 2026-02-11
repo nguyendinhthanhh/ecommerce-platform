@@ -86,13 +86,15 @@ public class ProductController {
     @GetMapping("/management")
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getAllProductsForManagement(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long categoryId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(
-                productService.getAllProductsForManagement(PageRequest.of(page, size, sort)))));
+                productService.getAllProductsForManagement(status, categoryId, PageRequest.of(page, size, sort)))));
     }
 
     @Operation(summary = "Create product", description = "Create a new product (Staff/Admin only)")

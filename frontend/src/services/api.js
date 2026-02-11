@@ -37,9 +37,12 @@ api.interceptors.response.use(
       const userRole = user?.role || "GUEST";
       const requestUrl = originalRequest.url;
 
-      console.error(
-        `Access denied (403): User role [${userRole}] does not have permission for [${requestUrl}]`
-      );
+      // Don't log error for cart endpoint (ADMIN/STAFF might not have cart access)
+      if (!requestUrl?.includes("/cart")) {
+        console.error(
+          `Access denied (403): User role [${userRole}] does not have permission for [${requestUrl}]`
+        );
+      }
 
       // Simple role-based protection for specific areas
       if (userRole !== "ADMIN" && requestUrl?.includes("/admin/")) {
@@ -55,6 +58,24 @@ api.interceptors.response.use(
 
     // If error is 401 and we haven't tried to refresh token yet
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Check if this is a public endpoint that doesn't require auth
+      const publicEndpoints = [
+        '/products',
+        '/categories',
+        '/reviews/product',
+        '/reviews/check-eligibility',
+        '/auth/'
+      ];
+      
+      const isPublicEndpoint = publicEndpoints.some(endpoint => 
+        originalRequest.url?.includes(endpoint)
+      );
+
+      // If it's a public endpoint, just return the error without trying to refresh
+      if (isPublicEndpoint && originalRequest.method?.toLowerCase() === 'get') {
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
       try {
@@ -79,7 +100,11 @@ api.interceptors.response.use(
         storage.removeItem("accessToken");
         storage.removeItem("refreshToken");
         storage.removeItem("user");
-        window.location.href = "/login";
+        
+        // Only redirect to login if not on a public page
+        if (!isPublicEndpoint) {
+          window.location.href = "/login";
+        }
         return Promise.reject(refreshError);
       }
     }

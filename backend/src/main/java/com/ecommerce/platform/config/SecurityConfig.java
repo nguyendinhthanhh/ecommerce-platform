@@ -38,61 +38,97 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Swagger UI
+                // ============================================
+                // PUBLIC ENDPOINTS (Guest có thể truy cập)
+                // ============================================
+                
+                // Swagger UI & Payment callback
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api/payment/**").permitAll()
 
-                // Public endpoints
+                // Authentication endpoints
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                
+                // Email check (for registration validation)
                 .requestMatchers(HttpMethod.GET, "/api/users/check-email").permitAll()
 
-                // Review public endpoints (ai cũng xem được)
-                .requestMatchers(HttpMethod.GET, "/api/reviews/product/**").permitAll()
+                // ============================================
+                // PRODUCTS - Public Read Access (như Shopee)
+                // ============================================
+                .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/products/search").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/products/category/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/products/top-selling").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/products/newest").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/products/*").permitAll() // Product detail
 
-                // Cart - authenticated users
-                .requestMatchers("/api/cart/**").authenticated()
+                // ============================================
+                // CATEGORIES - Public Read Access
+                // ============================================
+                .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/categories/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/categories/*/products").permitAll()
 
-                // Order endpoints for customers
-                .requestMatchers(HttpMethod.POST, "/api/orders").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/orders/my-orders").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/orders/*/cancel").authenticated()
+                // ============================================
+                // REVIEWS - Public Read Access (Guest xem được reviews)
+                // ============================================
+                .requestMatchers(HttpMethod.GET, "/api/reviews/product/**").permitAll() // Reviews by product
+                .requestMatchers(HttpMethod.GET, "/api/reviews/*/statistics").permitAll() // Review statistics
+                .requestMatchers(HttpMethod.GET, "/api/reviews/check-eligibility/**").permitAll() // Check eligibility (returns different response for guest vs logged in)
+                .requestMatchers(HttpMethod.GET, "/api/reviews/*").permitAll() // Review detail
 
-                // Review management endpoints for Staff/Admin (đặt trước các pattern chung)
-                .requestMatchers(HttpMethod.GET, "/api/reviews/management").hasAnyRole("STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.GET, "/api/reviews/customer/**").hasAnyRole("STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.PATCH, "/api/reviews/*/status").hasAnyRole("STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/reviews/admin/*").hasRole("ADMIN")
+                // ============================================
+                // AUTHENTICATED USER ACTIONS
+                // ============================================
+                
+                // Cart - Requires login (all roles including ADMIN)
+                .requestMatchers("/api/cart/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
 
-                // Review endpoints for authenticated users (phải đăng nhập để tạo/sửa/xóa review)
-                .requestMatchers(HttpMethod.GET, "/api/reviews/my-reviews").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/reviews/can-review").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/reviews").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/reviews/*").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/reviews/*").authenticated()
+                // Orders - Requires login (all roles)
+                .requestMatchers(HttpMethod.POST, "/api/orders").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/orders/my-orders").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/orders/*").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/orders/*/cancel").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
 
-                // Review detail - public (ai cũng xem được)
-                .requestMatchers(HttpMethod.GET, "/api/reviews/*").permitAll()
+                // Reviews - Write/Update/Delete requires login (all roles)
+                .requestMatchers(HttpMethod.GET, "/api/reviews/my-reviews").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/reviews/can-review").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/reviews").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/reviews/*").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/reviews/*").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/reviews/*/report").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
 
-                // Staff endpoints (product & order management)
+                // User profile management (all roles)
+                .requestMatchers("/api/users/me/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+
+                // ============================================
+                // STAFF/ADMIN ENDPOINTS
+                // ============================================
+                
+                // Product Management (Staff/Admin)
                 .requestMatchers("/api/products/management/**").hasAnyRole("STAFF", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/products").hasAnyRole("STAFF", "ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/products/*").hasAnyRole("STAFF", "ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/products/*").hasAnyRole("STAFF", "ADMIN")
+
+                // Order Management (Staff/Admin)
                 .requestMatchers("/api/orders/management").hasAnyRole("STAFF", "ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/orders/*/status").hasAnyRole("STAFF", "ADMIN")
 
+                // Review Management (Staff/Admin)
+                .requestMatchers(HttpMethod.GET, "/api/reviews/management").hasAnyRole("STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/reviews/customer/**").hasAnyRole("STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/reviews/*/status").hasAnyRole("STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/reviews/*/reply").hasAnyRole("STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/reviews/*/dismiss-report").hasAnyRole("STAFF", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/reviews/admin/*").hasRole("ADMIN")
 
-                // Category management - Admin only
+                // Category Management (Admin only)
                 .requestMatchers(HttpMethod.POST, "/api/categories").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/categories/*").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/categories/*").hasRole("ADMIN")
 
                 // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                
-                // User self-management (authenticated users)
-                .requestMatchers("/api/users/me/**").authenticated()
 
                 // All other requests need authentication
                 .anyRequest().authenticated()

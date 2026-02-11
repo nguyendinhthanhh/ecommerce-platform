@@ -26,12 +26,32 @@ const AdminLayout = ({ children }) => {
   };
 
   const menuItems = [
-    { path: "/admin/dashboard", icon: "dashboard", label: "Dashboard" },
-    { path: "/admin/users", icon: "group", label: "User Management" },
+    {
+      path: user?.role === "STAFF" ? "/staff/dashboard" : "/admin/dashboard",
+      icon: "dashboard",
+      label: "Dashboard",
+    },
+    {
+      path: "/admin/users",
+      icon: "group",
+      label: "User Management",
+      adminOnly: true,
+    },
+    {
+      path: "/admin/roles",
+      icon: "admin_panel_settings",
+      label: "Roles & Permissions",
+      adminOnly: true,
+    },
     {
       path: "/admin/products",
       icon: "inventory_2",
       label: "Product Moderation",
+    },
+    {
+      path: "/admin/orders",
+      icon: "shopping_cart",
+      label: "Order Management",
     },
     {
       path: "/admin/categories",
@@ -39,15 +59,24 @@ const AdminLayout = ({ children }) => {
       label: "Category Management",
     },
     { path: "/admin/reviews", icon: "chat", label: "Content Reviews" },
-    { path: "/admin/reports", icon: "bar_chart", label: "System Reports" },
+    {
+      path: "/admin/reports",
+      icon: "bar_chart",
+      label: "System Reports",
+      adminOnly: true,
+    },
   ];
+
+  const filteredMenuItems = menuItems.filter(
+    (item) => !item.adminOnly || user?.role === "ADMIN",
+  );
 
   const isActive = (path) => location.pathname === path;
 
   return (
     <div className="min-h-screen flex bg-background-light dark:bg-background-dark">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col fixed h-full transition-colors duration-200">
+      <aside className="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col fixed h-full transition-colors duration-200 overflow-y-auto">
         <div className="p-6 flex flex-col gap-8 h-full">
           <Link to="/admin/dashboard" className="flex items-center gap-3">
             <div className="bg-primary rounded-lg p-2 text-white flex items-center justify-center">
@@ -64,15 +93,14 @@ const AdminLayout = ({ children }) => {
           </Link>
 
           <nav className="flex flex-col gap-1 grow">
-            {menuItems.map((item) => (
+            {filteredMenuItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors ${
-                  isActive(item.path)
-                    ? "bg-primary text-white"
-                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                }`}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors ${isActive(item.path)
+                  ? "bg-primary text-white"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
               >
                 <span className="material-symbols-outlined">{item.icon}</span>
                 <span className="text-sm">{item.label}</span>
@@ -201,7 +229,11 @@ const AdminLayout = ({ children }) => {
         </header>
 
         {/* Page Content */}
-        <div className="flex-1">{children}</div>
+        <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-x-hidden">
+          <div className="max-w-[1600px] mx-auto">
+            {children}
+          </div>
+        </div>
       </main>
     </div>
   );

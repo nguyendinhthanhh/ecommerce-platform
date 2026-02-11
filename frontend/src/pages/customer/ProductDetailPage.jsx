@@ -4,6 +4,7 @@ import productService from "../../services/productService";
 import { ProductDetailSkeleton } from "../../components/common/LoadingSpinner";
 import { useCart } from "../../contexts/CartContext";
 import Header from "../../components/layout/Header";
+import ProductReviews from "../../components/reviews/ProductReviews";
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -15,7 +16,7 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [addingToCart, setAddingToCart] = useState(false);
-  const [activeTab, setActiveTab] = useState("reviews");
+  const [activeTab, setActiveTab] = useState("ai-analysis");
 
   // Image interaction states
   const [isZoomed, setIsZoomed] = useState(false);
@@ -161,20 +162,33 @@ const ProductDetailPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      {/* Breadcrumbs */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Link to="/" className="text-blue-600 hover:text-blue-800">
-            🏠 Home
-          </Link>
-          <span>/</span>
-          <Link to="/products" className="text-blue-600 hover:text-blue-800">
-            Electronics
-          </Link>
-          <span>/</span>
-          <span className="text-gray-600">Audio</span>
-          <span>/</span>
-          <span className="text-gray-900 font-medium">{product.name}</span>
+      {/* Breadcrumbs - Redesigned */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <nav className="flex items-center gap-2 text-sm">
+            <Link 
+              to="/" 
+              className="flex items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors group"
+            >
+              <span className="material-symbols-outlined text-lg group-hover:scale-110 transition-transform">home</span>
+              <span className="font-medium">Home</span>
+            </Link>
+            
+            <span className="material-symbols-outlined text-gray-300 text-sm">chevron_right</span>
+            
+            <Link 
+              to={`/products?category=${product.categoryId}`}
+              className="text-gray-500 hover:text-blue-600 transition-colors font-medium hover:underline"
+            >
+              {product.categoryName || 'Products'}
+            </Link>
+            
+            <span className="material-symbols-outlined text-gray-300 text-sm">chevron_right</span>
+            
+            <span className="text-gray-900 font-semibold truncate max-w-[300px] sm:max-w-none">
+              {product.name}
+            </span>
+          </nav>
         </div>
       </div>
 
@@ -200,14 +214,13 @@ const ProductDetailPage = () => {
                 <img
                   src={images[selectedImage]}
                   alt={product.name}
-                  className={`w-full h-full object-contain p-8 transition-transform duration-300 ${
-                    isZoomed ? "scale-150" : "scale-100"
-                  }`}
+                  className={`w-full h-full object-contain p-8 transition-transform duration-300 ${isZoomed ? "scale-150" : "scale-100"
+                    }`}
                   style={
                     isZoomed
                       ? {
-                          transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`,
-                        }
+                        transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                      }
                       : {}
                   }
                   onError={(e) => {
@@ -218,9 +231,8 @@ const ProductDetailPage = () => {
 
                 {/* Zoom hint overlay */}
                 <div
-                  className={`absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity duration-300 ${
-                    isZoomed ? "opacity-0" : "opacity-0 group-hover:opacity-100"
-                  }`}
+                  className={`absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity duration-300 ${isZoomed ? "opacity-0" : "opacity-0 group-hover:opacity-100"
+                    }`}
                 >
                   <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
                     <span className="material-symbols-outlined text-gray-700">
@@ -285,11 +297,10 @@ const ProductDetailPage = () => {
                 <div
                   key={index}
                   onClick={() => setSelectedImage(index)}
-                  className={`w-20 h-20 rounded-xl bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 cursor-pointer shrink-0 overflow-hidden border-2 transition-all duration-300 hover:shadow-md ${
-                    selectedImage === index
-                      ? "border-blue-600 scale-110 shadow-lg ring-2 ring-blue-300"
-                      : "border-transparent opacity-60 hover:opacity-100 hover:scale-105"
-                  }`}
+                  className={`w-20 h-20 rounded-xl bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 cursor-pointer shrink-0 overflow-hidden border-2 transition-all duration-300 hover:shadow-md ${selectedImage === index
+                    ? "border-blue-600 scale-110 shadow-lg ring-2 ring-blue-300"
+                    : "border-transparent opacity-60 hover:opacity-100 hover:scale-105"
+                    }`}
                 >
                   <img
                     src={img}
@@ -311,21 +322,21 @@ const ProductDetailPage = () => {
                   98% AI Match
                 </span>
               </div>
-              <div className="flex items-center text-yellow-500 gap-1">
+              <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
                   <span
                     key={i}
-                    className={
+                    className={`text-xl ${
                       i < Math.floor(product.averageRating)
-                        ? "text-yellow-500"
+                        ? "text-yellow-400"
                         : "text-gray-300"
-                    }
+                    }`}
                   >
-                    ★
+                    {i < Math.floor(product.averageRating) ? "★" : "☆"}
                   </span>
                 ))}
-                <span className="text-gray-600 text-sm ml-1">
-                  {product.averageRating.toFixed(1)} ({product.totalReviews})
+                <span className="text-gray-600 text-sm ml-1 font-medium">
+                  {product.averageRating.toFixed(1)} ({product.totalReviews} reviews)
                 </span>
               </div>
             </div>
@@ -488,32 +499,38 @@ const ProductDetailPage = () => {
         <div className="mt-16">
           <div className="flex border-b border-gray-200 gap-8">
             <button
-              onClick={() => setActiveTab("reviews")}
-              className={`pb-4 border-b-2 font-bold text-base transition-colors ${
-                activeTab === "reviews"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-blue-600"
-              }`}
+              onClick={() => setActiveTab("ai-analysis")}
+              className={`pb-4 border-b-2 font-bold text-base transition-colors ${activeTab === "ai-analysis"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-blue-600"
+                }`}
             >
               AI-Analyzed Reviews
             </button>
             <button
+              onClick={() => setActiveTab("reviews")}
+              className={`pb-4 border-b-2 font-bold text-base transition-colors ${activeTab === "reviews"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-blue-600"
+                }`}
+            >
+              Reviews ({product.totalReviews})
+            </button>
+            <button
               onClick={() => setActiveTab("specs")}
-              className={`pb-4 border-b-2 font-bold text-base transition-colors ${
-                activeTab === "specs"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-blue-600"
-              }`}
+              className={`pb-4 border-b-2 font-bold text-base transition-colors ${activeTab === "specs"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-blue-600"
+                }`}
             >
               Specifications
             </button>
             <button
               onClick={() => setActiveTab("description")}
-              className={`pb-4 border-b-2 font-bold text-base transition-colors ${
-                activeTab === "description"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-blue-600"
-              }`}
+              className={`pb-4 border-b-2 font-bold text-base transition-colors ${activeTab === "description"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-blue-600"
+                }`}
             >
               Description
             </button>
@@ -521,7 +538,7 @@ const ProductDetailPage = () => {
 
           {/* Tab Content */}
           <div className="py-10">
-            {activeTab === "reviews" && (
+            {activeTab === "ai-analysis" && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* Sentiment Analysis */}
                 <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
@@ -602,6 +619,12 @@ const ProductDetailPage = () => {
                     </ul>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeTab === "reviews" && (
+              <div>
+                <ProductReviews productId={id} />
               </div>
             )}
 
@@ -790,11 +813,10 @@ const ProductDetailPage = () => {
                     e.stopPropagation();
                     setSelectedImage(index);
                   }}
-                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                    selectedImage === index
-                      ? "border-white scale-110"
-                      : "border-transparent opacity-50 hover:opacity-100"
-                  }`}
+                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === index
+                    ? "border-white scale-110"
+                    : "border-transparent opacity-50 hover:opacity-100"
+                    }`}
                 >
                   <img
                     src={img}

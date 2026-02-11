@@ -1,15 +1,23 @@
 import React, { useState, useEffect, useCallback } from "react";
 import AdminLayout from "../../components/layout/AdminLayout";
 import { TableRowSkeleton } from "../../components/common/LoadingSpinner";
+import Pagination from "../../components/common/Pagination";
 import categoryService from "../../services/categoryService";
 
 const AdminCategories = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filters, setFilters] = useState({
     keyword: "",
     isActive: "",
     rootOnly: "",
+  });
+  const [pagination, setPagination] = useState({
+    page: 0,
+    size: 10,
+    totalElements: 0,
+    totalPages: 0,
   });
 
   // Modal states
@@ -78,8 +86,14 @@ const AdminCategories = () => {
   };
 
   const loadCategories = useCallback(async () => {
+    const isInitial = categories.length === 0;
     try {
-      setLoading(true);
+      if (isInitial) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+
       const params = {};
 
       if (filters.keyword) params.keyword = filters.keyword;
@@ -88,15 +102,30 @@ const AdminCategories = () => {
       if (filters.rootOnly !== "")
         params.rootOnly = filters.rootOnly === "true";
 
-      const data = await categoryService.getAllCategories(params);
-      setCategories(data || []);
+      params.page = pagination.page;
+      params.size = pagination.size;
+
+      const response = await categoryService.getAllCategories(params);
+
+      if (response && response.content) {
+        setCategories(response.content);
+        setPagination(prev => ({
+          ...prev,
+          totalElements: response.totalElements,
+          totalPages: response.totalPages
+        }));
+      } else {
+        setCategories([]);
+        setPagination(prev => ({ ...prev, totalElements: 0, totalPages: 0 }));
+      }
     } catch (error) {
       console.error("Error loading categories:", error);
       showToast("Failed to load categories", "error");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  }, [filters]);
+  }, [filters, pagination.page, pagination.size]);
 
   useEffect(() => {
     loadCategories();
@@ -237,6 +266,11 @@ const AdminCategories = () => {
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
+    setPagination((prev) => ({ ...prev, page: 0 }));
+  };
+
+  const handlePageChange = (newPage) => {
+    setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
   const getStatusBadge = (isActive) => {
@@ -333,11 +367,11 @@ const AdminCategories = () => {
               className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
             >
               <span
-                className={`material-symbols-outlined text-[18px] ${loading ? "animate-spin" : ""}`}
+                className={`material-symbols-outlined text-[18px] ${loading || refreshing ? "animate-spin" : ""}`}
               >
                 refresh
               </span>
-              {loading ? "Loading..." : "Refresh"}
+              {loading || refreshing ? "Loading..." : "Refresh"}
             </button>
           </div>
         </div>
@@ -371,7 +405,16 @@ const AdminCategories = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 relative">
+                {/* Refresh Overlay */}
+                {refreshing && (
+                  <div className="absolute inset-0 bg-white/50 dark:bg-slate-950/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-xs font-medium text-primary">Updating...</span>
+                    </div>
+                  </div>
+                )}
                 {loading ? (
                   Array.from({ length: 5 }).map((_, index) => (
                     <TableRowSkeleton key={index} columns={7} />
@@ -478,6 +521,18 @@ const AdminCategories = () => {
             </table>
           </div>
         </div>
+
+        {/* Pagination */}
+        {!loading && categories.length > 0 && (
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            totalElements={pagination.totalElements}
+            pageSize={pagination.size}
+            onPageChange={handlePageChange}
+            itemName="categories"
+          />
+        )}
 
         {/* Category Detail Modal */}
         {showDetailModal && (
@@ -669,11 +724,10 @@ const AdminCategories = () => {
                       name="name"
                       value={formData.name}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                        formErrors.name
-                          ? "border-red-500"
-                          : "border-slate-200 dark:border-slate-700"
-                      } bg-slate-50 dark:bg-slate-800`}
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${formErrors.name
+                        ? "border-red-500"
+                        : "border-slate-200 dark:border-slate-700"
+                        } bg-slate-50 dark:bg-slate-800`}
                       placeholder="Enter category name"
                     />
                     {formErrors.name && (
@@ -832,11 +886,10 @@ const AdminCategories = () => {
                       name="name"
                       value={formData.name}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                        formErrors.name
-                          ? "border-red-500"
-                          : "border-slate-200 dark:border-slate-700"
-                      } bg-slate-50 dark:bg-slate-800`}
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${formErrors.name
+                        ? "border-red-500"
+                        : "border-slate-200 dark:border-slate-700"
+                        } bg-slate-50 dark:bg-slate-800`}
                       placeholder="Enter category name"
                     />
                     {formErrors.name && (
@@ -1074,11 +1127,10 @@ const AdminCategories = () => {
         {/* Toast Notification */}
         {toast.show && (
           <div
-            className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg animate-slide-up ${
-              toast.type === "error"
-                ? "bg-red-500 text-white"
-                : "bg-green-500 text-white"
-            }`}
+            className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg animate-slide-in ${toast.type === "error"
+              ? "bg-red-500 text-white"
+              : "bg-green-500 text-white"
+              }`}
           >
             <span className="material-symbols-outlined">
               {toast.type === "error" ? "error" : "check_circle"}

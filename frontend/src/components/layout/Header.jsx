@@ -1,10 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import authService from "../../services/authService";
 import CartIcon from "../common/CartIcon";
 
 const Header = () => {
   const [user, setUser] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const userData = authService.getUser();
@@ -15,6 +17,23 @@ const Header = () => {
     authService.logout();
     setUser(null);
     window.location.href = "/";
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleSearchKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch(e);
+    }
   };
 
   return (
@@ -57,23 +76,43 @@ const Header = () => {
 
           {/* Search Bar */}
           <div className="flex-1 max-w-lg hidden md:block">
-            <div className="relative group">
+            <form onSubmit={handleSearch} className="relative group">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <span className="material-symbols-outlined text-gray-400 group-focus-within:text-blue-600">
                   search
                 </span>
               </div>
               <input
-                className="block w-full pl-10 pr-3 py-2 border-none rounded-lg leading-5 bg-[#f0f2f4] dark:bg-slate-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 sm:text-sm"
-                placeholder="Search products..."
+                className="block w-full pl-10 pr-10 py-2 border-none rounded-lg leading-5 bg-[#f0f2f4] dark:bg-slate-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 sm:text-sm"
+                placeholder="Tìm kiếm sản phẩm..."
                 type="text"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onKeyPress={handleSearchKeyPress}
               />
-              <div className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
-                <span className="material-symbols-outlined text-blue-600 text-[18px]">
-                  auto_awesome
-                </span>
+              <div className="absolute inset-y-0 right-0 pr-2 flex items-center">
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 rounded transition-colors mr-1"
+                  >
+                    <span className="material-symbols-outlined text-gray-400 text-[18px]">
+                      close
+                    </span>
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="p-1 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"
+                  title="Tìm kiếm"
+                >
+                  <span className="material-symbols-outlined text-blue-600 text-[18px]">
+                    auto_awesome
+                  </span>
+                </button>
               </div>
-            </div>
+            </form>
           </div>
 
           {/* User Actions */}
@@ -104,6 +143,15 @@ const Header = () => {
                       account_circle
                     </span>
                     Personal Info
+                  </Link>
+                  <Link
+                    to="/my-orders"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      receipt_long
+                    </span>
+                    My Orders
                   </Link>
                   {user.role === "ADMIN" && (
                     <Link
@@ -152,18 +200,32 @@ const Header = () => {
 
       {/* Mobile Search */}
       <div className="md:hidden px-4 pb-3">
-        <div className="relative">
+        <form onSubmit={handleSearch} className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <span className="material-symbols-outlined text-gray-400">
               search
             </span>
           </div>
           <input
-            className="block w-full pl-10 pr-3 py-2 border-none rounded-lg bg-[#f0f2f4] dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-600"
-            placeholder="Ask AI to find products..."
+            className="block w-full pl-10 pr-10 py-2 border-none rounded-lg bg-[#f0f2f4] dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-600"
+            placeholder="Tìm kiếm sản phẩm..."
             type="text"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            onKeyPress={handleSearchKeyPress}
           />
-        </div>
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+            >
+              <span className="material-symbols-outlined text-gray-400 text-[18px]">
+                close
+              </span>
+            </button>
+          )}
+        </form>
       </div>
     </header>
   );

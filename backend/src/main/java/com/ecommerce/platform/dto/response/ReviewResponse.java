@@ -24,6 +24,10 @@ public class ReviewResponse {
     private List<String> images;
     private String status;
     private LocalDateTime createdAt;
+    private String reply;
+    private LocalDateTime repliedAt;
+    private Boolean isReported;
+    private String reportReason;
 
     @Getter
     @Setter
@@ -36,4 +40,3 @@ public class ReviewResponse {
         private String avatar;
     }
 }
-

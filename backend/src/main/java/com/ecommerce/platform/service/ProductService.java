@@ -9,18 +9,27 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface ProductService {
-    
+
     // Public APIs
     Page<ProductResponse> getAllProducts(Pageable pageable);
+
     Page<ProductResponse> searchProducts(String keyword, Pageable pageable);
+
     Page<ProductResponse> getProductsByCategory(Long categoryId, Pageable pageable);
+
     ProductResponse getProductById(Long id);
+
     List<ProductResponse> getTopSellingProducts(int limit);
+
     List<ProductResponse> getNewestProducts(int limit);
 
     // Staff/Admin APIs
-    Page<ProductResponse> getAllProductsForManagement(Pageable pageable);
+    Page<ProductResponse> getAllProductsForManagement(
+            String status, Long categoryId, Pageable pageable);
+
     ProductResponse createProduct(CreateProductRequest request);
+
     ProductResponse updateProduct(Long id, UpdateProductRequest request);
+
     void deleteProduct(Long id);
 }

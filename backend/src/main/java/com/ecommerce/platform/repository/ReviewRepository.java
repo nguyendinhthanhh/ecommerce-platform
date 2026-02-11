@@ -4,34 +4,36 @@ import com.ecommerce.platform.entity.Review;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface ReviewRepository extends JpaRepository<Review, Long> {
-    
-    Page<Review> findByProductId(Long productId, Pageable pageable);
-    
-    Page<Review> findByProductIdAndStatus(Long productId, Review.ReviewStatus status, Pageable pageable);
+public interface ReviewRepository extends JpaRepository<Review, Long>, JpaSpecificationExecutor<Review> {
 
-    Page<Review> findByCustomerId(Long customerId, Pageable pageable);
-    
-    Optional<Review> findByCustomerIdAndProductIdAndOrderId(Long customerId, Long productId, Long orderId);
-    
-    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.product.id = :productId AND r.status = 'ACTIVE'")
-    Double calculateAverageRating(@Param("productId") Long productId);
-    
-    @Query("SELECT COUNT(r) FROM Review r WHERE r.product.id = :productId AND r.status = 'ACTIVE'")
-    Integer countActiveReviewsByProductId(@Param("productId") Long productId);
-    
-    @Query("SELECT COUNT(r) FROM Review r WHERE r.product.id = :productId AND r.rating = :rating AND r.status = :status")
-    Integer countByProductIdAndRatingAndStatus(@Param("productId") Long productId, @Param("rating") Integer rating, @Param("status") Review.ReviewStatus status);
+        Page<Review> findByProductId(Long productId, Pageable pageable);
 
-    Page<Review> findByStatus(Review.ReviewStatus status, Pageable pageable);
+        Page<Review> findByProductIdAndStatus(Long productId, Review.ReviewStatus status, Pageable pageable);
 
-    // User statistics queries
-    @Query("SELECT COUNT(r) FROM Review r WHERE r.customer.id = :customerId")
-    Long countByCustomerId(@Param("customerId") Long customerId);
+        Page<Review> findByCustomerId(Long customerId, Pageable pageable);
+
+        Optional<Review> findByCustomerIdAndProductIdAndOrderId(Long customerId, Long productId, Long orderId);
+
+        @Query("SELECT AVG(r.rating) FROM Review r WHERE r.product.id = :productId AND r.status = 'ACTIVE'")
+        Double calculateAverageRating(@Param("productId") Long productId);
+
+        @Query("SELECT COUNT(r) FROM Review r WHERE r.product.id = :productId AND r.status = 'ACTIVE'")
+        Integer countActiveReviewsByProductId(@Param("productId") Long productId);
+
+        @Query("SELECT COUNT(r) FROM Review r WHERE r.product.id = :productId AND r.rating = :rating AND r.status = :status")
+        Integer countByProductIdAndRatingAndStatus(@Param("productId") Long productId, @Param("rating") Integer rating,
+                        @Param("status") Review.ReviewStatus status);
+
+        Page<Review> findByStatus(Review.ReviewStatus status, Pageable pageable);
+
+        // User statistics queries
+        @Query("SELECT COUNT(r) FROM Review r WHERE r.customer.id = :customerId")
+        Long countByCustomerId(@Param("customerId") Long customerId);
 }

@@ -69,6 +69,14 @@ const orderService = {
     });
     return response.data; // Should return the payment URL string or an object containing it
   },
+
+  // Get all orders (for admins/staff)
+  getAllOrders: async (status = null, page = 0, size = 10) => {
+    const response = await api.get('/orders/management', {
+      params: { status, page, size }
+    });
+    return response.data.data;
+  },
 };
 
 export default orderService;

@@ -35,6 +35,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserMapper userMapper;
     private final RefreshTokenService refreshTokenService;
+    private final com.ecommerce.platform.service.RoleService roleService;
 
     @Value("${jwt.access-token-expiration}")
     private long accessTokenExpiration;
@@ -42,8 +43,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
         User user = userRepository.findByEmailAndStatusNot(request.getEmail(), User.UserStatus.INACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -58,8 +58,7 @@ public class AuthServiceImpl implements AuthService {
                 user.getId(),
                 user.getEmail(),
                 user.getFullName(),
-                user.getRole().name()
-        );
+                user.getRoles().isEmpty() ? "" : user.getRoles().iterator().next().getName());
     }
 
     @Override
@@ -72,11 +71,16 @@ public class AuthServiceImpl implements AuthService {
         // Staff/Admin accounts are created by Admin
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(User.Role.CUSTOMER);
+
+        // Assign default CUSTOMER role
+        com.ecommerce.platform.entity.Role role = roleService.getRoleByName("CUSTOMER");
+        user.setRoles(java.util.Collections.singleton(role));
+
         user.setStatus(User.UserStatus.ACTIVE);
         user = userRepository.save(user);
 
-        String accessToken = tokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name());
+        String roleName = role.getName();
+        String accessToken = tokenProvider.generateAccessToken(user.getId(), user.getEmail(), roleName);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
         return AuthResponse.of(
@@ -86,8 +90,7 @@ public class AuthServiceImpl implements AuthService {
                 user.getId(),
                 user.getEmail(),
                 user.getFullName(),
-                user.getRole().name()
-        );
+                user.getRoles().isEmpty() ? "" : user.getRoles().iterator().next().getName());
     }
 
     @Override
@@ -95,7 +98,8 @@ public class AuthServiceImpl implements AuthService {
         RefreshToken refreshToken = refreshTokenService.verifyRefreshToken(request.getRefreshToken());
         User user = refreshToken.getUser();
 
-        String newAccessToken = tokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name());
+        String roleName = user.getRoles().isEmpty() ? "" : user.getRoles().iterator().next().getName();
+        String newAccessToken = tokenProvider.generateAccessToken(user.getId(), user.getEmail(), roleName);
 
         return TokenResponse.of(newAccessToken, refreshToken.getToken(), accessTokenExpiration / 1000);
     }

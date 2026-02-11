@@ -17,10 +17,7 @@ public class AdminUpdateUserRequest {
     @Size(min = 2, max = 100, message = "Full name must be between 2 and 100 characters")
     private String fullName;
 
-    @Pattern(
-            regexp = "^$|^(03|05|07|08|09)\\d{8}$",
-            message = "Invalid Vietnamese phone number"
-    )
+    @Pattern(regexp = "^$|^(03|05|07|08|09)\\d{8}$", message = "Invalid Vietnamese phone number")
     private String phone;
 
     @Size(max = 500, message = "Address must not exceed 500 characters")
@@ -30,7 +27,6 @@ public class AdminUpdateUserRequest {
     private String avatar;
 
     @NotBlank(message = "Role is required")
-    @Pattern(regexp = "^(CUSTOMER|STAFF|ADMIN)$", message = "Role must be CUSTOMER, STAFF or ADMIN")
     private String role;
 
     @NotBlank(message = "Status is required")

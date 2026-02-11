@@ -1,5 +1,3 @@
-import React from "react";
-
 // Modern spinning loader
 export const LoadingSpinner = ({ size = "md", className = "" }) => {
   const sizeClasses = {
@@ -120,6 +118,73 @@ export const PageLoading = ({ message = "Đang tải..." }) => {
   );
 };
 
+// Table Loading Overlay - Modern centered loading for tables
+export const TableLoadingOverlay = ({ message = "Loading data..." }) => {
+  return (
+    <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm z-10 flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-slate-200 dark:border-slate-700 rounded-full"></div>
+          <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-primary rounded-full animate-spin"></div>
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-semibold text-slate-900 dark:text-white">
+            {message}
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Please wait a moment
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Pulse Loading Dots - Minimal loading indicator
+export const PulseLoadingDots = () => {
+  return (
+    <div className="flex items-center justify-center gap-2">
+      <div className="w-3 h-3 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></div>
+      <div className="w-3 h-3 bg-primary rounded-full animate-pulse" style={{ animationDelay: '150ms' }}></div>
+      <div className="w-3 h-3 bg-primary rounded-full animate-pulse" style={{ animationDelay: '300ms' }}></div>
+    </div>
+  );
+};
+
+// Spinner with text - Compact inline loading
+export const SpinnerWithText = ({ text = "Loading...", size = "md" }) => {
+  const sizes = {
+    sm: "w-4 h-4 border-2",
+    md: "w-6 h-6 border-2",
+    lg: "w-8 h-8 border-3"
+  };
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="relative">
+        <div className={`${sizes[size]} border-slate-200 dark:border-slate-700 rounded-full`}></div>
+        <div className={`absolute inset-0 ${sizes[size]} border-transparent border-t-primary rounded-full animate-spin`}></div>
+      </div>
+      <span className="text-sm font-medium text-slate-600 dark:text-slate-400">{text}</span>
+    </div>
+  );
+};
+
+// Card Loading Overlay - For card/modal loading states
+export const CardLoadingOverlay = ({ message = "Processing..." }) => {
+  return (
+    <div className="absolute inset-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-xl z-20 flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="relative">
+          <div className="w-12 h-12 border-3 border-slate-200 dark:border-slate-700 rounded-full"></div>
+          <div className="absolute inset-0 w-12 h-12 border-3 border-transparent border-t-primary rounded-full animate-spin"></div>
+        </div>
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{message}</p>
+      </div>
+    </div>
+  );
+};
+
 // Inline loading state
 export const InlineLoading = ({ message = "Đang tải..." }) => {
   return (
@@ -178,51 +243,194 @@ export const ProductTableRowSkeleton = ({ rows = 5 }) => {
           {/* Product Info */}
           <td className="px-6 py-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer flex-shrink-0" />
+              <div className="w-12 h-12 rounded-lg bg-slate-200 dark:bg-slate-700 flex-shrink-0" />
               <div className="space-y-2">
-                <div className="h-4 w-32 rounded bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
-                <div className="h-3 w-16 rounded bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
+                <div className="h-4 w-32 rounded bg-slate-200 dark:bg-slate-700" />
+                <div className="h-3 w-16 rounded bg-slate-200 dark:bg-slate-700" />
               </div>
             </div>
           </td>
           {/* Category */}
           <td className="px-6 py-4">
-            <div className="h-6 w-20 rounded-lg bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
+            <div className="h-6 w-20 rounded-lg bg-slate-200 dark:bg-slate-700" />
           </td>
           {/* Price */}
           <td className="px-6 py-4">
             <div className="space-y-1">
-              <div className="h-4 w-24 rounded bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
-              <div className="h-3 w-20 rounded bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
+              <div className="h-4 w-24 rounded bg-slate-200 dark:bg-slate-700" />
+              <div className="h-3 w-20 rounded bg-slate-200 dark:bg-slate-700" />
             </div>
           </td>
           {/* Stock */}
           <td className="px-6 py-4">
-            <div className="h-4 w-12 rounded bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
+            <div className="h-4 w-12 rounded bg-slate-200 dark:bg-slate-700" />
           </td>
           {/* Sold */}
           <td className="px-6 py-4">
-            <div className="h-4 w-10 rounded bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
+            <div className="h-4 w-10 rounded bg-slate-200 dark:bg-slate-700" />
           </td>
           {/* Rating */}
           <td className="px-6 py-4">
             <div className="flex items-center gap-1">
-              <div className="h-4 w-4 rounded bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
-              <div className="h-4 w-16 rounded bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
+              <div className="h-4 w-4 rounded bg-slate-200 dark:bg-slate-700" />
+              <div className="h-4 w-16 rounded bg-slate-200 dark:bg-slate-700" />
             </div>
           </td>
           {/* Status */}
           <td className="px-6 py-4">
-            <div className="h-6 w-20 rounded-full bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
-          </td>
-          {/* Shop */}
-          <td className="px-6 py-4">
-            <div className="h-4 w-24 rounded bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
+            <div className="h-6 w-20 rounded-full bg-slate-200 dark:bg-slate-700" />
           </td>
           {/* Actions */}
           <td className="px-6 py-4">
             <div className="flex justify-end">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
+              <div className="h-8 w-8 rounded-lg bg-slate-200 dark:bg-slate-700" />
+            </div>
+          </td>
+        </tr>
+      ))}
+    </>
+  );
+};
+
+// Order Table Row Skeleton - Professional with shimmer
+export const OrderTableRowSkeleton = ({ rows = 5 }) => {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, index) => (
+        <tr
+          key={index}
+          className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
+        >
+          {/* Order Code */}
+          <td className="px-6 py-4">
+            <div className="relative h-4 w-24 rounded bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent"></div>
+            </div>
+          </td>
+          {/* Customer */}
+          <td className="px-6 py-4">
+            <div className="space-y-2">
+              <div className="relative h-4 w-32 rounded bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: '0.1s' }}></div>
+              </div>
+              <div className="relative h-3 w-24 rounded bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: '0.15s' }}></div>
+              </div>
+            </div>
+          </td>
+          {/* Total Amount */}
+          <td className="px-6 py-4">
+            <div className="relative h-4 w-20 rounded bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: '0.2s' }}></div>
+            </div>
+          </td>
+          {/* Status */}
+          <td className="px-6 py-4">
+            <div className="relative h-6 w-20 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: '0.25s' }}></div>
+            </div>
+          </td>
+          {/* Date */}
+          <td className="px-6 py-4">
+            <div className="relative h-4 w-24 rounded bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: '0.3s' }}></div>
+            </div>
+          </td>
+          {/* Actions */}
+          <td className="px-6 py-4 text-right">
+            <div className="flex justify-end">
+              <div className="relative h-8 w-8 rounded-lg bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: '0.35s' }}></div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      ))}
+    </>
+  );
+};
+
+// Review Table Row Skeleton - Professional with shimmer
+export const ReviewTableRowSkeleton = ({ rows = 5 }) => {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, index) => (
+        <tr
+          key={index}
+          className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
+        >
+          {/* Checkbox */}
+          <td className="px-6 py-4">
+            <div className="relative h-5 w-5 rounded bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent"></div>
+            </div>
+          </td>
+          {/* Customer */}
+          <td className="px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="relative w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: '0.1s' }}></div>
+              </div>
+              <div className="space-y-2">
+                <div className="relative h-4 w-24 rounded bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                  <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: '0.15s' }}></div>
+                </div>
+              </div>
+            </div>
+          </td>
+          {/* Product */}
+          <td className="px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="relative w-12 h-12 rounded-lg bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: '0.2s' }}></div>
+              </div>
+              <div className="relative h-4 w-32 rounded bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: '0.25s' }}></div>
+              </div>
+            </div>
+          </td>
+          {/* Rating */}
+          <td className="px-6 py-4">
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="relative w-4 h-4 rounded bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                  <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: `${0.3 + i * 0.05}s` }}></div>
+                </div>
+              ))}
+            </div>
+          </td>
+          {/* Comment */}
+          <td className="px-6 py-4">
+            <div className="space-y-2">
+              <div className="relative h-3 w-full rounded bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: '0.5s' }}></div>
+              </div>
+              <div className="relative h-3 w-3/4 rounded bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: '0.55s' }}></div>
+              </div>
+            </div>
+          </td>
+          {/* Status */}
+          <td className="px-6 py-4">
+            <div className="relative h-6 w-20 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: '0.6s' }}></div>
+            </div>
+          </td>
+          {/* Date */}
+          <td className="px-6 py-4">
+            <div className="relative h-4 w-24 rounded bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: '0.65s' }}></div>
+            </div>
+          </td>
+          {/* Actions */}
+          <td className="px-6 py-4 text-right">
+            <div className="flex justify-end gap-2">
+              <div className="relative h-8 w-8 rounded-lg bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: '0.7s' }}></div>
+              </div>
+              <div className="relative h-8 w-8 rounded-lg bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-slate-600/60 to-transparent" style={{ animationDelay: '0.75s' }}></div>
+              </div>
             </div>
           </td>
         </tr>
@@ -236,11 +444,11 @@ export const AdminHeaderSkeleton = () => {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-pulse">
       <div className="space-y-2">
-        <div className="h-8 w-48 rounded-lg bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
-        <div className="h-4 w-72 rounded bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
+        <div className="h-8 w-48 rounded-lg bg-slate-200 dark:bg-slate-700" />
+        <div className="h-4 w-72 rounded bg-slate-200 dark:bg-slate-700" />
       </div>
       <div className="flex items-center gap-3">
-        <div className="h-10 w-24 rounded-xl bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
+        <div className="h-10 w-24 rounded-xl bg-slate-200 dark:bg-slate-700" />
       </div>
     </div>
   );
@@ -251,9 +459,10 @@ export const AdminFilterSkeleton = () => {
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 animate-pulse">
       <div className="flex flex-col lg:flex-row gap-4">
-        <div className="flex-1 h-11 rounded-xl bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
-        <div className="h-11 w-40 rounded-xl bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
-        <div className="h-11 w-40 rounded-xl bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
+        <div className="flex-1 h-11 rounded-xl bg-slate-200 dark:bg-slate-700" />
+        <div className="h-11 w-40 rounded-xl bg-slate-200 dark:bg-slate-700" />
+        <div className="h-11 w-40 rounded-xl bg-slate-200 dark:bg-slate-700" />
+        <div className="h-11 w-40 rounded-xl bg-slate-200 dark:bg-slate-700" />
       </div>
     </div>
   );
@@ -270,12 +479,14 @@ export const StatsRowSkeleton = ({ count = 4 }) => {
           style={{ animationDelay: `${index * 100}ms` }}
         >
           <div className="flex items-center justify-between mb-4">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
-            <div className="h-6 w-16 rounded-full bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
+            <div className="h-10 w-10 rounded-xl bg-slate-200 dark:bg-slate-700" />
+            <div className="h-6 w-16 rounded-full bg-slate-200 dark:bg-slate-700" />
           </div>
           <div className="space-y-2">
-            <div className="h-8 w-24 rounded bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
-            <div className="h-4 w-32 rounded bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer" />
+            <div className="space-y-2">
+              <div className="h-8 w-24 rounded bg-slate-200 dark:bg-slate-700" />
+              <div className="h-4 w-32 rounded bg-slate-200 dark:bg-slate-700" />
+            </div>
           </div>
         </div>
       ))}
