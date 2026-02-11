@@ -51,7 +51,8 @@ const ProfilePage = () => {
 
   const handleLogout = () => {
     authService.logout();
-    navigate("/login");
+    // Force reload to clear all state
+    window.location.href = "/login";
   };
 
   const showToast = (message, type = "success") => {

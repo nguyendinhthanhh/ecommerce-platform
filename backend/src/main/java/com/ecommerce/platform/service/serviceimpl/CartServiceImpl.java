@@ -29,7 +29,7 @@ public class CartServiceImpl implements CartService {
     private final CartMapper cartMapper;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public CartResponse getCart(Long customerId) {
         Cart cart = getOrCreateCart(customerId);
         return buildCartResponse(cart);

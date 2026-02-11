@@ -9,14 +9,29 @@ const Header = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Load initial user
     const userData = authService.getUser();
     setUser(userData);
+
+    // Listen for auth changes (login/logout)
+    const handleAuthChange = () => {
+      const updatedUser = authService.getUser();
+      setUser(updatedUser);
+    };
+
+    window.addEventListener('auth-change', handleAuthChange);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange);
+    };
   }, []);
 
   const handleLogout = () => {
     authService.logout();
     setUser(null);
-    window.location.href = "/";
+    // Force reload to clear all state
+    window.location.href = "/login";
   };
 
   const handleSearch = (e) => {
