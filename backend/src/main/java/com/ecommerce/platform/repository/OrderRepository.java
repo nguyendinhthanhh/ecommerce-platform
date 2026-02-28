@@ -1,5 +1,6 @@
 package com.ecommerce.platform.repository;
 
+import com.ecommerce.platform.dto.request.OrderStatusReport;
 import com.ecommerce.platform.entity.Order;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,4 +36,47 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.customer.id = :customerId AND o.status = 'DELIVERED'")
     Long sumTotalAmountByCustomerId(@Param("customerId") Long customerId);
+
+    @Query("""
+                SELECT new com.ecommerce.platform.dto.request.OrderStatusReport(
+                    o.status,
+                    COUNT(o)
+                )
+                FROM Order o
+                WHERE o.createdAt BETWEEN :from AND :to
+                  AND o.status IN :statuses
+                GROUP BY o.status
+            """)
+    List<OrderStatusReport> countOrdersByStatusIn(
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to,
+            @Param("statuses") List<Order.OrderStatus> statuses
+    );
+
+    long count();
+
+    long countByCreatedAtBetween(
+            LocalDateTime from,
+            LocalDateTime to
+    );
+
+    @Query("""
+                SELECT o FROM Order o
+                WHERE YEAR(o.createdAt) = :year
+                  AND MONTH(o.createdAt) = :month
+                ORDER BY o.createdAt DESC
+            """)
+    List<Order> findOrdersByMonth(
+            @Param("year") int year,
+            @Param("month") int month
+    );
+
+    @Query("""
+                SELECT o FROM Order o
+                WHERE YEAR(o.createdAt) = :year
+                ORDER BY o.createdAt DESC
+            """)
+    List<Order> findOrdersByYear(
+            @Param("year") int year
+    );
 }
