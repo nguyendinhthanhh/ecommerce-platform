@@ -85,26 +85,18 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public byte[] exportOrders(Integer year, Integer month) {
-
-        List<Order> orders = (month != null)
-                ? orderRepository.findOrdersByMonth(year, month)
-                : orderRepository.findOrdersByYear(year);
+    public byte[] exportOrders(Integer year, Integer month, Order.OrderStatus status) {
+        List<Order> orders = orderRepository.findOrdersForExport(year, month, status);
 
         try (Workbook workbook = new XSSFWorkbook()) {
-
             Sheet sheet = workbook.createSheet("Orders");
 
-            // Header
             Row header = sheet.createRow(0);
             String[] columns = {
-                    "Order Code", "Customer",
-                    "Phone", "Status",
-                    "Subtotal", "Shipping Fee",
-                    "Total Amount", "Created At",
+                    "Order Code", "Customer", "Phone", "Status",
+                    "Subtotal", "Shipping Fee", "Total Amount", "Created At",
                     "Shipping Name", "Shipping Phone", "Address"
             };
-
             for (int i = 0; i < columns.length; i++) {
                 header.createCell(i).setCellValue(columns[i]);
             }
@@ -112,10 +104,9 @@ public class ReportServiceImpl implements ReportService {
             int rowIdx = 1;
             for (Order o : orders) {
                 Row row = sheet.createRow(rowIdx++);
-
                 row.createCell(0).setCellValue(o.getOrderCode());
-                row.createCell(1).setCellValue(o.getCustomer().getFullName());
-                row.createCell(2).setCellValue(o.getCustomer().getPhone());
+                row.createCell(1).setCellValue(o.getCustomer() != null ? o.getCustomer().getFullName() : "");
+                row.createCell(2).setCellValue(o.getCustomer() != null ? o.getCustomer().getPhone() : "");
                 row.createCell(3).setCellValue(o.getStatus().name());
                 row.createCell(4).setCellValue(o.getSubtotal().doubleValue());
                 row.createCell(5).setCellValue(o.getShippingFee().doubleValue());
@@ -135,7 +126,7 @@ public class ReportServiceImpl implements ReportService {
             return out.toByteArray();
 
         } catch (Exception e) {
-            throw new RuntimeException("Export excel failed", e);
+            throw new RuntimeException("Export excel failed: " + e.getMessage(), e);
         }
     }
 

@@ -16,5 +16,5 @@ public interface ReportService {
 
     long countOrders(LocalDate from, LocalDate to);
 
-    byte[] exportOrders(Integer year, Integer month);
+    byte[] exportOrders(Integer year, Integer month, Order.OrderStatus status);
 }

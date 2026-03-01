@@ -77,22 +77,20 @@ public class ReportController {
     @GetMapping("/orders/export")
     public ResponseEntity<byte[]> exportOrders(
             @RequestParam int year,
-            @RequestParam(required = false) Integer month
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Order.OrderStatus status
     ) {
-        byte[] file = reportService.exportOrders(year, month);
+        byte[] file = reportService.exportOrders(year, month, status);
 
-        String fileName = (month != null)
-                ? "orders_" + month + "_" + year + ".xlsx"
-                : "orders_" + year + ".xlsx";
+        StringBuilder fileName = new StringBuilder("orders_");
+        if (month != null) fileName.append(month).append("_");
+        fileName.append(year);
+        if (status != null) fileName.append("_").append(status.name().toLowerCase());
+        fileName.append(".xlsx");
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=" + fileName)
-                .contentType(
-                        MediaType.parseMediaType(
-                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                        )
-                )
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName.toString())
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(file);
     }
 
