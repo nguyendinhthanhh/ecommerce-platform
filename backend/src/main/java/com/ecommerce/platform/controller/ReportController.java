@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,11 +32,11 @@ public class ReportController {
     @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @GetMapping("/orders/status")
     public ResponseEntity<ApiResponse<List<OrderStatusReport>>> orderStatusReport(
-            @RequestParam
+            @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate from,
 
-            @RequestParam
+            @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate to,
 
@@ -62,11 +63,10 @@ public class ReportController {
     ) {
         long count = reportService.countOrders(from, to);
 
-        Map<String, Object> data = Map.of(
-                "from", from,
-                "to", to,
-                "totalOrders", count
-        );
+        Map<String, Object> data = new HashMap<>();
+        data.put("from", from);
+        data.put("to", to);
+        data.put("totalOrders", count);
 
         return ResponseEntity.ok(
                 ApiResponse.success("Count orders successfully", data)
@@ -89,7 +89,7 @@ public class ReportController {
         fileName.append(".xlsx");
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName.toString())
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName)
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(file);
     }

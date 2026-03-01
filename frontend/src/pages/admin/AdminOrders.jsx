@@ -52,63 +52,21 @@ const AdminOrders = () => {
       if (orders.length === 0) setLoading(true);
       else setRefreshing(true);
 
-      // Fetch với status filter từ backend
       const data = await orderService.getAllOrders(
         filters.status || null,
         page,
         pagination.size,
       );
 
-      // Apply client-side filters
-      let filteredOrders = data.content;
-
-      // Search filter (order code, customer name, phone)
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        filteredOrders = filteredOrders.filter(
-          (order) =>
-            order.orderCode?.toLowerCase().includes(searchLower) ||
-            order.customerName?.toLowerCase().includes(searchLower) ||
-            order.shippingPhone?.includes(filters.search),
-        );
-      }
-
-      // Date range filter
-      if (filters.dateFrom) {
-        const fromDate = new Date(filters.dateFrom);
-        fromDate.setHours(0, 0, 0, 0);
-        filteredOrders = filteredOrders.filter((order) => {
-          const orderDate = new Date(order.createdAt);
-          return orderDate >= fromDate;
-        });
-      }
-
-      if (filters.dateTo) {
-        const toDate = new Date(filters.dateTo);
-        toDate.setHours(23, 59, 59, 999);
-        filteredOrders = filteredOrders.filter((order) => {
-          const orderDate = new Date(order.createdAt);
-          return orderDate <= toDate;
-        });
-      }
-
-      // Payment status filter
-      if (filters.paymentStatus) {
-        filteredOrders = filteredOrders.filter(
-          (order) => order.payment?.status === filters.paymentStatus,
-        );
-      }
-
-      setOrders(filteredOrders);
-      setPagination({
-        ...pagination,
+      setOrders(data.content);
+      setPagination((prev) => ({
+        ...prev,
         page: data.pageNumber,
         totalPages: data.totalPages,
-        totalElements: filteredOrders.length, // Update với filtered count
-      });
+        totalElements: data.totalElements,
+      }));
 
-      // Calculate stats from filtered data
-      calculateStats(filteredOrders);
+      await fetchStats();
     } catch (error) {
       console.error("Error fetching orders:", error);
       toast.error("Failed to load orders");
@@ -118,24 +76,38 @@ const AdminOrders = () => {
     }
   };
 
-  const calculateStats = (ordersList) => {
-    const newStats = {
-      total: pagination.totalElements,
-      placed: ordersList.filter((o) => o.status === "PLACED").length,
-      confirmed: ordersList.filter((o) => o.status === "CONFIRMED").length,
-      shipped: ordersList.filter((o) => o.status === "SHIPPED").length,
-      delivered: ordersList.filter((o) => o.status === "DELIVERED").length,
-      cancelled: ordersList.filter((o) => o.status === "CANCELLED").length,
-      totalRevenue: ordersList
-        .filter((o) => o.status === "DELIVERED")
-        .reduce((sum, o) => sum + parseFloat(o.totalAmount || 0), 0),
-    };
-    setStats(newStats);
+  const fetchStats = async () => {
+    try {
+      const [statusReport, totalCountData] = await Promise.all([
+        reportService.getOrderStatusReport(null, null),
+        reportService.countOrders(null, null),
+      ]);
+
+      console.log("Dữ liệu Report về:", statusReport);
+
+      const newStats = {
+        total: totalCountData.totalOrders || 0,
+        placed: statusReport.find((r) => r.status === "PLACED")?.total || 0,
+        confirmed:
+          statusReport.find((r) => r.status === "CONFIRMED")?.total || 0,
+        shipped: statusReport.find((r) => r.status === "SHIPPED")?.total || 0,
+        delivered:
+          statusReport.find((r) => r.status === "DELIVERED")?.total || 0,
+        cancelled:
+          statusReport.find((r) => r.status === "CANCELLED")?.total || 0,
+        totalRevenue:
+          statusReport.find((r) => r.status === "DELIVERED")?.revenue || 0,
+      };
+
+      setStats(newStats);
+    } catch (error) {
+      console.error("Lỗi khi lấy stats:", error);
+    }
   };
 
   useEffect(() => {
     fetchOrders(0);
-  }, []); // Chỉ load lần đầu
+  }, []);
 
   const handleUpdateStatus = async (orderId, newStatus) => {
     try {
@@ -153,7 +125,7 @@ const AdminOrders = () => {
   };
 
   const handleSearch = () => {
-    fetchOrders(0); // Apply filters khi click Search
+    fetchOrders(0);
   };
 
   const handleResetFilters = () => {
@@ -164,11 +136,9 @@ const AdminOrders = () => {
       dateTo: "",
       paymentStatus: "",
     });
-    // Fetch lại với filters rỗng
     setTimeout(() => fetchOrders(0), 100);
   };
 
-  // Check if any filter is active
   const hasActiveFilters = () => {
     return (
       filters.status ||
@@ -375,7 +345,6 @@ const AdminOrders = () => {
               <span className="material-symbols-outlined text-lg">
                 download
               </span>
-              {/* Hiển thị text động dựa trên filter */}
               {filters.dateFrom
                 ? `Xuất Excel tháng ${new Date(filters.dateFrom).getMonth() + 1}/${new Date(filters.dateFrom).getFullYear()}`
                 : "Xuất Excel tháng này"}

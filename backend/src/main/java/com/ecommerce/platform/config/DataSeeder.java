@@ -20,6 +20,7 @@ import java.util.Random;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@Profile("dev") // Chỉ chạy trong môi trường dev
 public class DataSeeder implements CommandLineRunner {
 
         private final UserRepository userRepository;

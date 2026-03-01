@@ -32,8 +32,13 @@ public class ReportServiceImpl implements ReportService {
             LocalDate to,
             List<Order.OrderStatus> statuses
     ) {
-        LocalDateTime fromTime = from.atStartOfDay();
-        LocalDateTime toTime = to.atTime(23, 59, 59);
+        LocalDateTime fromTime = (from != null)
+                ? from.atStartOfDay()
+                : LocalDateTime.of(2000, 1, 1, 0, 0);
+
+        LocalDateTime toTime = (to != null)
+                ? to.atTime(23, 59, 59)
+                : LocalDateTime.now();
 
         List<Order.OrderStatus> statusList =
                 (statuses == null || statuses.isEmpty())
