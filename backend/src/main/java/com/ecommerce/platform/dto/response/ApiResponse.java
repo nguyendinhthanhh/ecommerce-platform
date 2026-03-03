@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public class ApiResponse<T> {
     private boolean success;
     private String message;
+    private int code;
     private T data;
     
     public static <T> ApiResponse<T> success(T data) {

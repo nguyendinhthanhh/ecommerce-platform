@@ -34,106 +34,107 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                // ============================================
-                // PUBLIC ENDPOINTS (Guest có thể truy cập)
-                // ============================================
-                
-                // Swagger UI & Payment callback
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api/payment/**").permitAll()
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // ============================================
+                        // PUBLIC ENDPOINTS (Guest có thể truy cập)
+                        // ============================================
 
-                // Authentication endpoints
-                .requestMatchers("/api/auth/**").permitAll()
-                
-                // Email check (for registration validation)
-                .requestMatchers(HttpMethod.GET, "/api/users/check-email").permitAll()
+                        // Swagger UI & Payment callback
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api/payment/**").permitAll()
 
-                // ============================================
-                // PRODUCTS - Public Read Access (như Shopee)
-                // ============================================
-                .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/products/search").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/products/category/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/products/top-selling").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/products/newest").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/products/*").permitAll() // Product detail
+                        // Authentication endpoints
+                        .requestMatchers("/api/auth/**").permitAll()
 
-                // ============================================
-                // CATEGORIES - Public Read Access
-                // ============================================
-                .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/categories/*").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/categories/*/products").permitAll()
+                        // Email check (for registration validation)
+                        .requestMatchers(HttpMethod.GET, "/api/users/check-email").permitAll()
 
-                // ============================================
-                // REVIEWS - Public Read Access (Guest xem được reviews)
-                // ============================================
-                .requestMatchers(HttpMethod.GET, "/api/reviews/product/**").permitAll() // Reviews by product
-                .requestMatchers(HttpMethod.GET, "/api/reviews/*/statistics").permitAll() // Review statistics
-                .requestMatchers(HttpMethod.GET, "/api/reviews/check-eligibility/**").permitAll() // Check eligibility (returns different response for guest vs logged in)
-                .requestMatchers(HttpMethod.GET, "/api/reviews/*").permitAll() // Review detail
+                        // ============================================
+                        // PRODUCTS - Public Read Access (như Shopee)
+                        // ============================================
+                        .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/search").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/category/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/top-selling").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/newest").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/chatbot/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/*").permitAll() // Product detail
 
-                // ============================================
-                // AUTHENTICATED USER ACTIONS
-                // ============================================
-                
-                // Cart - Requires login (all roles including ADMIN)
-                .requestMatchers("/api/cart/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        // ============================================
+                        // CATEGORIES - Public Read Access
+                        // ============================================
+                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/*/products").permitAll()
 
-                // Orders - Requires login (all roles)
-                .requestMatchers(HttpMethod.POST, "/api/orders").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.GET, "/api/orders/my-orders").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.GET, "/api/orders/*").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/orders/*/cancel").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        // ============================================
+                        // REVIEWS - Public Read Access (Guest xem được reviews)
+                        // ============================================
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/product/**").permitAll() // Reviews by product
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/*/statistics").permitAll() // Review statistics
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/check-eligibility/**").permitAll() // Check eligibility (returns different response for guest vs logged in)
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/*").permitAll() // Review detail
 
-                // Reviews - Write/Update/Delete requires login (all roles)
-                .requestMatchers(HttpMethod.GET, "/api/reviews/my-reviews").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.GET, "/api/reviews/can-review").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/reviews").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/reviews/*").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/reviews/*").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/reviews/*/report").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        // ============================================
+                        // AUTHENTICATED USER ACTIONS
+                        // ============================================
 
-                // User profile management (all roles)
-                .requestMatchers("/api/users/me/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        // Cart - Requires login (all roles including ADMIN)
+                        .requestMatchers("/api/cart/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
 
-                // ============================================
-                // STAFF/ADMIN ENDPOINTS
-                // ============================================
-                
-                // Product Management (Staff/Admin)
-                .requestMatchers("/api/products/management/**").hasAnyRole("STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/products").hasAnyRole("STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/products/*").hasAnyRole("STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/products/*").hasAnyRole("STAFF", "ADMIN")
+                        // Orders - Requires login (all roles)
+                        .requestMatchers(HttpMethod.POST, "/api/orders").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/orders/my-orders").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/orders/*").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/orders/*/cancel").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
 
-                // Order Management (Staff/Admin)
-                .requestMatchers("/api/orders/management").hasAnyRole("STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/orders/*/status").hasAnyRole("STAFF", "ADMIN")
+                        // Reviews - Write/Update/Delete requires login (all roles)
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/my-reviews").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/can-review").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/reviews").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/reviews/*").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/reviews/*").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/reviews/*/report").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
 
-                // Review Management (Staff/Admin)
-                .requestMatchers(HttpMethod.GET, "/api/reviews/management").hasAnyRole("STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.GET, "/api/reviews/customer/**").hasAnyRole("STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.PATCH, "/api/reviews/*/status").hasAnyRole("STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/reviews/*/reply").hasAnyRole("STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/reviews/*/dismiss-report").hasAnyRole("STAFF", "ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/reviews/admin/*").hasRole("ADMIN")
+                        // User profile management (all roles)
+                        .requestMatchers("/api/users/me/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
 
-                // Category Management (Admin only)
-                .requestMatchers(HttpMethod.POST, "/api/categories").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/categories/*").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/categories/*").hasRole("ADMIN")
+                        // ============================================
+                        // STAFF/ADMIN ENDPOINTS
+                        // ============================================
 
-                // Admin endpoints
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // Product Management (Staff/Admin)
+                        .requestMatchers("/api/products/management/**").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/products").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/*").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/*").hasAnyRole("STAFF", "ADMIN")
 
-                // All other requests need authentication
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                        // Order Management (Staff/Admin)
+                        .requestMatchers("/api/orders/management").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/orders/*/status").hasAnyRole("STAFF", "ADMIN")
+
+                        // Review Management (Staff/Admin)
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/management").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/customer/**").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/reviews/*/status").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/reviews/*/reply").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/reviews/*/dismiss-report").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/reviews/admin/*").hasRole("ADMIN")
+
+                        // Category Management (Admin only)
+                        .requestMatchers(HttpMethod.POST, "/api/categories").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/categories/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/categories/*").hasRole("ADMIN")
+
+                        // Admin endpoints
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // All other requests need authentication
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -145,7 +146,7 @@ public class SecurityConfig {
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

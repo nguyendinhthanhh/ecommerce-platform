@@ -110,4 +110,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Internal server error: " + ex.getMessage()));
     }
+
+    @ExceptionHandler(ClassificationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleClassificationException(
+            ClassificationException e) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.<Void>builder()
+                        .message("Dịch vụ AI tạm thời không khả dụng. Vui lòng thử lại sau.")
+                        .build()
+                );
+    }
+
 }

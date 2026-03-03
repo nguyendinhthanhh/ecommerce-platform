@@ -61,4 +61,20 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
        @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY p.createdAt DESC")
        List<Product> findNewestProducts(Pageable pageable);
+
+       // ===== AI SEARCH SUPPORT =====
+
+       @Query("""
+    SELECT p FROM Product p 
+    WHERE p.status = 'ACTIVE' AND
+    (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
+""")
+       List<Product> searchByKeyword(@Param("keyword") String keyword);
+
+       List<Product> findByPriceLessThanEqual(java.math.BigDecimal price);
+
+       List<Product> findByAverageRatingGreaterThanEqual(Double rating);
+
+       List<Product> findByStockQuantityGreaterThanEqual(Integer qty);
 }
