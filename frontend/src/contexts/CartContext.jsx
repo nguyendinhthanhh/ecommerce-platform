@@ -104,18 +104,18 @@ export const CartProvider = ({ children }) => {
     } catch (err) {
       // Silently handle errors - don't spam console
       const status = err.response?.status;
-      
+
       // Only log once for debugging
       if (status === 500) {
         console.error("Cart API Error 500:", err.response?.data?.message || "Internal server error");
       } else if (status && status !== 401 && status !== 403 && status !== 404) {
         console.error("Cart API Error:", status, err.response?.data?.message);
       }
-      
+
       // Set empty cart for all error cases
       setCartItems([]);
       setSelectedItems(new Set());
-      
+
       // Only show user-facing error for 500
       if (status === 500) {
         setError("Không thể tải giỏ hàng. Vui lòng thử lại sau.");
@@ -200,8 +200,16 @@ export const CartProvider = ({ children }) => {
     }
 
     try {
-      // Call API first
-      const result = await cartService.addToCart(product.id, quantity);
+      // Xác định chính xác Product ID (hỗ trợ cả trường id hoặc productId từ API)
+      const pId = product.id || product.productId;
+      console.log("Adding to cart - Product:", product.name, "ID:", pId, "Qty:", quantity);
+
+      if (!pId) {
+        throw new Error("Product ID is missing. Check API response structure.");
+      }
+
+      // Call API
+      const result = await cartService.addToCart(pId, quantity);
 
       // Reload cart to get updated data
       await loadCart();
@@ -212,7 +220,8 @@ export const CartProvider = ({ children }) => {
       return result;
     } catch (error) {
       console.error("Error adding to cart:", error);
-      alert("Failed to add item to cart. Please try again.");
+      const message = error.response?.data?.message || "Failed to add item to cart. Please try again.";
+      alert(message);
       throw error;
     }
   };

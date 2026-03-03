@@ -49,6 +49,15 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.success(order));
     }
 
+    @Operation(summary = "Get order detail by code", description = "Get order details by order code")
+    @GetMapping("/code/{orderCode}")
+    public ResponseEntity<ApiResponse<OrderResponse>> getOrderByCode(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable String orderCode) {
+        OrderResponse order = orderService.getOrderByCode(orderCode, principal.getId());
+        return ResponseEntity.ok(ApiResponse.success(order));
+    }
+
     @Operation(summary = "Get my orders", description = "Get paginated list of customer's orders")
     @GetMapping("/my-orders")
     public ResponseEntity<ApiResponse<PageResponse<OrderResponse>>> getMyOrders(

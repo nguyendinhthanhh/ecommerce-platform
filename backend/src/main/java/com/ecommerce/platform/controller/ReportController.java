@@ -1,0 +1,97 @@
+package com.ecommerce.platform.controller;
+
+import com.ecommerce.platform.dto.request.OrderStatusReport;
+import com.ecommerce.platform.dto.response.ApiResponse;
+import com.ecommerce.platform.entity.Order;
+import com.ecommerce.platform.service.ReportService;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/reports")
+@RequiredArgsConstructor
+@Tag(name = "Reports", description = "APIs for browsing reports")
+public class ReportController {
+
+    private final ReportService reportService;
+
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
+    @GetMapping("/orders/status")
+    public ResponseEntity<ApiResponse<List<OrderStatusReport>>> orderStatusReport(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate from,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate to,
+
+            @RequestParam(required = false)
+            List<Order.OrderStatus> statuses
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        reportService.getOrderStatusReport(from, to, statuses)
+                )
+        );
+    }
+
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
+    @GetMapping("/orders/count")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> countOrders(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate from,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate to
+    ) {
+        long count = reportService.countOrders(from, to);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("from", from);
+        data.put("to", to);
+        data.put("totalOrders", count);
+
+        return ResponseEntity.ok(
+                ApiResponse.success("Count orders successfully", data)
+        );
+    }
+
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
+    @GetMapping("/orders/export")
+    public ResponseEntity<byte[]> exportOrders(
+            @RequestParam int year,
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Order.OrderStatus status
+    ) {
+        byte[] file = reportService.exportOrders(year, month, status);
+
+        StringBuilder fileName = new StringBuilder("orders_");
+        if (month != null) fileName.append(month).append("_");
+        fileName.append(year);
+        if (status != null) fileName.append("_").append(status.name().toLowerCase());
+        fileName.append(".xlsx");
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName)
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(file);
+    }
+
+}

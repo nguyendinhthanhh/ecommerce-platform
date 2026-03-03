@@ -14,6 +14,12 @@ const orderService = {
     return response.data.data;
   },
 
+  // Get order by code
+  getOrderByCode: async (orderCode) => {
+    const response = await api.get(`/orders/code/${orderCode}`);
+    return response.data.data;
+  },
+
   // Get my orders
   getMyOrders: async (page = 0, size = 10) => {
     const response = await api.get('/orders/my-orders', {
