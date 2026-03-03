@@ -35,6 +35,7 @@ public class ChatbotController {
 
             return ResponseEntity.ok(
                     ApiResponse.<ChatResponse>builder()
+                            .success(true)
                             .code(200)
                             .message("Chatbot response received")
                             .data(chatResponse)
