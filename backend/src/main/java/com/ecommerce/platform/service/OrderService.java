@@ -13,6 +13,8 @@ public interface OrderService {
     
     OrderResponse getOrderById(Long orderId, Long userId);
     
+    OrderResponse getOrderByCode(String orderCode, Long userId);
+    
     Page<OrderResponse> getCustomerOrders(Long customerId, Pageable pageable);
     
     OrderResponse cancelOrder(Long orderId, Long customerId);

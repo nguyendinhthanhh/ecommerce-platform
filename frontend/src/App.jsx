@@ -18,6 +18,7 @@ import StaffDashboard from "./pages/staff/StaffDashboard";
 import SellerOrders from "./pages/seller/SellerOrders";
 import PlaceOrderPage from "./pages/customer/PlaceOrderPage";
 import MyOrdersPage from "./pages/customer/MyOrdersPage";
+import PaymentResultPage from "./pages/customer/PaymentResultPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./contexts/CartContext";
 import CartDrawer from "./components/common/CartDrawer";
@@ -50,6 +51,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={["CUSTOMER"]}>
                   <PlaceOrderPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/payment-result"
+              element={
+                <ProtectedRoute allowedRoles={["CUSTOMER"]}>
+                  <PaymentResultPage />
                 </ProtectedRoute>
               }
             />

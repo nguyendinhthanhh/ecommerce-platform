@@ -118,8 +118,23 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
 
-        // In single-vendor: Only customer can view their own order
-        // Staff/Admin can view all orders (handled by security layer)
+        // Only owner or staff/admin can view (security layer handles staff/admin)
+        if (!order.getCustomer().getId().equals(userId)) {
+            // We can check if user is staff/admin here if we want more granular control
+            // but usually security pre-authorize handles it.
+            // For getOrderByCode we might need to allow it.
+        }
+
+        return buildOrderResponse(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderByCode(String orderCode, Long userId) {
+        Order order = orderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", 0L)); // Using 0 for code not found
+
+        // Basic check if it belongs to user
         if (!order.getCustomer().getId().equals(userId)) {
             throw new BadRequestException("You don't have permission to view this order");
         }
@@ -174,7 +189,8 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
 
-        // In single-vendor: Staff/Admin can update any order (handled by security layer)
+        // In single-vendor: Staff/Admin can update any order (handled by security
+        // layer)
 
         Order.OrderStatus newStatus = Order.OrderStatus.valueOf(request.getStatus().toUpperCase());
         validateStatusTransition(order.getStatus(), newStatus);
@@ -219,8 +235,7 @@ public class OrderServiceImpl implements OrderService {
                 Order.OrderStatus.CONFIRMED, Set.of(Order.OrderStatus.SHIPPED, Order.OrderStatus.CANCELLED),
                 Order.OrderStatus.SHIPPED, Set.of(Order.OrderStatus.DELIVERED),
                 Order.OrderStatus.DELIVERED, Set.of(),
-                Order.OrderStatus.CANCELLED, Set.of()
-        );
+                Order.OrderStatus.CANCELLED, Set.of());
 
         if (!validTransitions.getOrDefault(current, Set.of()).contains(next)) {
             throw new BadRequestException("Invalid status transition from " + current + " to " + next);

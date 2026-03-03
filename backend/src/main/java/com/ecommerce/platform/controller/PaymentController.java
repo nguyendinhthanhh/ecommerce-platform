@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-
 @RestController
 @RequestMapping("api/payment")
 @Tag(name = "Payment", description = "Payment management APIs")
@@ -39,7 +38,7 @@ public class PaymentController {
     }
 
     @GetMapping("/vn-pay-callback")
-    public ResponseEntity<String> Callback(HttpServletRequest request) {
+    public ResponseEntity<?> Callback(HttpServletRequest request) {
         // 1. Kiểm tra chữ ký bảo mật từ VNPay
         if (paymentService.checkPayment()) {
             String responseCode = request.getParameter("vnp_ResponseCode");
@@ -54,19 +53,27 @@ public class PaymentController {
                 payment.setStatus(Payment.PaymentStatus.COMPLETED);
                 payment.setPaidAt(LocalDateTime.now());
 
-                // Cập nhật trạng thái Order liên kết sang CONFIRMED
+                // Cập nhật trạng thái Order liên kết sang PLACED (chờ nhân viên xác nhận)
                 Order order = payment.getOrder();
-                order.setStatus(Order.OrderStatus.CONFIRMED);
-                order.setConfirmedAt(LocalDateTime.now());
+                order.setStatus(Order.OrderStatus.PLACED);
+                // order.setConfirmedAt(LocalDateTime.now()); // Không set confirmed ở đây
 
                 paymentRepository.save(payment);
-                return ResponseEntity.ok("Thanh toán thành công cho đơn hàng: " + txnRef);
+
+                // Redirect về frontend
+                String frontendUrl = "http://localhost:5173/payment-result?orderCode=" + txnRef + "&status=success";
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .header("Location", frontendUrl)
+                        .build();
             } else {
-                // Thanh toán không thành công (ví dụ: khách hủy giao dịch)
-                return ResponseEntity.ok("Giao dịch thất bại với mã lỗi: " + responseCode);
+                // Thanh toán không thành công
+                String frontendUrl = "http://localhost:5173/payment-result?orderCode=" + txnRef
+                        + "&status=failed&message=" + responseCode;
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .header("Location", frontendUrl)
+                        .build();
             }
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Chữ ký VNPay không hợp lệ hoặc dữ liệu bị giả mạo!");
     }
 }
-
