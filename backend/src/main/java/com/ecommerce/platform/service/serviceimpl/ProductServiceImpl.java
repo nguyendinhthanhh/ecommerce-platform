@@ -1,5 +1,6 @@
 package com.ecommerce.platform.service.serviceimpl;
 
+import com.ecommerce.platform.ai.service.EmbeddingService;
 import com.ecommerce.platform.dto.request.CreateProductRequest;
 import com.ecommerce.platform.dto.request.UpdateProductRequest;
 import com.ecommerce.platform.dto.response.ProductResponse;
@@ -32,6 +33,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
     private final CategoryRepository categoryRepository;
+    private final EmbeddingService embeddingService;
 
     @Override
     @Cacheable(value = "products", key = "'all_' + #pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort")
@@ -94,6 +96,8 @@ public class ProductServiceImpl implements ProductService {
 
         Product savedProduct = productRepository.save(product);
         log.info("Product created: {}", savedProduct.getId());
+        // Generate embedding for the new product
+        embeddingService.embedProduct(savedProduct);
 
         return productMapper.toResponse(savedProduct);
     }
@@ -117,6 +121,8 @@ public class ProductServiceImpl implements ProductService {
 
         Product updatedProduct = productRepository.save(product);
         log.info("Product updated: {}", id);
+        // Re-generate embedding for the updated product
+        embeddingService.embedProduct(updatedProduct);
 
         return productMapper.toResponse(updatedProduct);
     }

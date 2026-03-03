@@ -78,4 +78,25 @@ public class Product {
     public enum ProductStatus {
         ACTIVE, INACTIVE, PENDING, REJECTED
     }
+
+    public String toEmbeddingText() {
+        return String.format("""
+        Sản phẩm %s thuộc danh mục %s.
+        Mô tả: %s.
+        Giá hiện tại %s VNĐ%s.
+        Sản phẩm đã bán %d lần, đánh giá trung bình %.1f sao từ %d lượt đánh giá.
+        Tồn kho còn %d sản phẩm. Trạng thái: %s.
+        """,
+                name,
+                category != null ? category.getName() : "không rõ danh mục",
+                description != null ? description : "không có mô tả",
+                price,
+                discountPrice != null ? ", đang giảm còn " + discountPrice + " VNĐ" : "",
+                soldCount,
+                averageRating,
+                totalReviews,
+                stockQuantity,
+                status
+        );
+    }
 }

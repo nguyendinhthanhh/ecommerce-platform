@@ -34,20 +34,22 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        // ============================================
-                        // PUBLIC ENDPOINTS (Guest có thể truy cập)
-                        // ============================================
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                // ============================================
+                // PUBLIC ENDPOINTS (Guest có thể truy cập)
+                // ============================================
 
-                        // Swagger UI & Payment callback
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api/payment/**")
-                        .permitAll()
+                // Swagger UI & Payment callback
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api/payment/**").permitAll()
 
                         // Authentication endpoints
                         .requestMatchers("/api/auth/**").permitAll()
+
+                        //test ai
+                        .requestMatchers("/api/chatbot/**").permitAll()
 
                         // Email check (for registration validation)
                         .requestMatchers(HttpMethod.GET, "/api/users/check-email").permitAll()
@@ -60,7 +62,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/products/category/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/top-selling").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/newest").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/*").permitAll() // Product detail
+                        .requestMatchers(HttpMethod.GET, "/api/products/*").permitAll()
+                        // Product detail
 
                         // ============================================
                         // CATEGORIES - Public Read Access
