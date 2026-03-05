@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
 import { ProductCardSkeleton } from '../../components/common/LoadingSpinner';
+import ProductCard from '../../components/common/ProductCard';
 import Header from '../../components/layout/Header';
 import vi from '../../utils/translations';
 
@@ -51,7 +52,7 @@ const ProductsPage = () => {
     setError(null);
     try {
       let data;
-      
+
       if (searchQuery) {
         // Search mode - ignore category filter
         data = await productService.searchProducts(searchQuery, page, pageSize);
@@ -79,7 +80,7 @@ const ProductsPage = () => {
   const handleCategoryChange = (categoryId) => {
     setSelectedCategory(categoryId);
     setPage(0);
-    
+
     const newParams = new URLSearchParams(searchParams);
     if (categoryId === 'all') {
       newParams.delete('category');
@@ -120,29 +121,12 @@ const ProductsPage = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
-  };
 
-  const renderStars = (rating) => {
-    const stars = [];
-    for (let i = 1; i <= 5; i++) {
-      stars.push(
-        <span key={i} className={i <= rating ? 'text-yellow-400' : 'text-gray-300'}>
-          {i <= rating ? '★' : '☆'}
-        </span>
-      );
-    }
-    return stars;
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       {/* Breadcrumb */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -162,7 +146,7 @@ const ProductsPage = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
             {searchQuery ? `${vi.product.searchProducts} "${searchQuery}"` : vi.product.products}
           </h1>
-          
+
           {/* Search Bar */}
           <div className="flex gap-4">
             <form onSubmit={handleSearch} className="flex-1 flex gap-2">
@@ -203,11 +187,10 @@ const ProductsPage = () => {
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => handleCategoryChange('all')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                selectedCategory === 'all'
-                  ? 'bg-primary text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-              }`}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedCategory === 'all'
+                ? 'bg-primary text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                }`}
             >
               {vi.common.all}
             </button>
@@ -215,11 +198,10 @@ const ProductsPage = () => {
               <button
                 key={category.id}
                 onClick={() => handleCategoryChange(category.id.toString())}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  selectedCategory === category.id.toString()
-                    ? 'bg-primary text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-                }`}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedCategory === category.id.toString()
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                  }`}
               >
                 {category.name}
               </button>
@@ -247,8 +229,8 @@ const ProductsPage = () => {
 
         {/* Products Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {Array.from({ length: 8 }).map((_, index) => (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {Array.from({ length: 10 }).map((_, index) => (
               <ProductCardSkeleton key={index} />
             ))}
           </div>
@@ -277,64 +259,7 @@ const ProductsPage = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {products.map((product) => (
-              <Link
-                key={product.id}
-                to={`/products/${product.id}`}
-                className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow group"
-              >
-                <div className="aspect-square bg-gray-100 overflow-hidden relative">
-                  {product.thumbnail ? (
-                    <img
-                      src={product.thumbnail}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="48" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                      <div className="text-center">
-                        <span className="material-symbols-outlined text-6xl text-gray-400 mb-2">image</span>
-                        <p className="text-sm text-gray-500">Không có ảnh</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="font-medium text-gray-900 mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                    {product.name}
-                  </h3>
-                  <div className="flex items-center gap-1 mb-2 text-sm">
-                    {renderStars(Math.round(product.averageRating || 0))}
-                    <span className="text-gray-500 ml-1">
-                      ({product.totalReviews || 0})
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-lg font-bold text-primary">
-                        {formatPrice(product.discountPrice || product.price)}
-                      </div>
-                      {product.discountPrice && product.price > product.discountPrice && (
-                        <div className="text-sm text-gray-400 line-through">
-                          {formatPrice(product.price)}
-                        </div>
-                      )}
-                    </div>
-                    {product.stockQuantity > 0 ? (
-                      <span className="text-xs text-green-600 font-medium">
-                        {vi.product.inStock}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-red-600 font-medium">
-                        {vi.product.outOfStock}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Link>
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         )}
@@ -349,7 +274,7 @@ const ProductsPage = () => {
             >
               <span className="material-symbols-outlined">chevron_left</span>
             </button>
-            
+
             {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
               let pageNum;
               if (totalPages <= 5) {
@@ -361,22 +286,21 @@ const ProductsPage = () => {
               } else {
                 pageNum = page - 2 + i;
               }
-              
+
               return (
                 <button
                   key={pageNum}
                   onClick={() => handlePageChange(pageNum)}
-                  className={`w-10 h-10 rounded-lg font-medium transition-colors ${
-                    page === pageNum
-                      ? 'bg-primary text-white'
-                      : 'border border-gray-200 hover:bg-gray-50'
-                  }`}
+                  className={`w-10 h-10 rounded-lg font-medium transition-colors ${page === pageNum
+                    ? 'bg-primary text-white'
+                    : 'border border-gray-200 hover:bg-gray-50'
+                    }`}
                 >
                   {pageNum + 1}
                 </button>
               );
             })}
-            
+
             {totalPages > 5 && page < totalPages - 3 && (
               <>
                 <span className="text-gray-400">...</span>
@@ -388,7 +312,7 @@ const ProductsPage = () => {
                 </button>
               </>
             )}
-            
+
             <button
               onClick={() => handlePageChange(page + 1)}
               disabled={page === totalPages - 1}

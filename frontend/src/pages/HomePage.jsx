@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import productService from "../services/productService";
 import Header from "../components/layout/Header";
-import CategoryGrid from "../components/category/CategoryGrid";
-import CategorySidebar from "../components/category/CategorySidebar";
+import ProductCard from "../components/common/ProductCard";
 import {
   ProductCardSkeleton,
   ProductCarouselSkeleton,
@@ -16,16 +15,12 @@ const HomePage = () => {
   const [topProducts, setTopProducts] = useState([]);
   const [loadingTop, setLoadingTop] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(true);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const pageSize = 6;
-  const carouselRef = React.useRef(null);
 
   // Load top selling products
   const loadTopProducts = useCallback(async () => {
     try {
       setLoadingTop(true);
-      const topData = await productService.getTopSellingProducts(0, 4);
+      const topData = await productService.getTopSellingProducts(0, 5); // 5 cols
       setTopProducts(topData.content || []);
     } catch (error) {
       console.error("Error loading top products:", error);
@@ -34,437 +29,185 @@ const HomePage = () => {
     }
   }, []);
 
-  // Load all products
-  const loadProducts = useCallback(async (page = 0) => {
+  // Load all products (for main sections)
+  const loadProducts = useCallback(async () => {
     try {
       setLoadingProducts(true);
-      const productsData = await productService.getAllProducts(page, pageSize);
+      const productsData = await productService.getAllProducts(0, 10);
       setProducts(productsData.content || []);
-      setTotalPages(productsData.totalPages || 0);
-      setCurrentPage(page);
     } catch (error) {
       console.error("Error loading products:", error);
     } finally {
       setLoadingProducts(false);
     }
-  }, [pageSize]);
+  }, []);
 
   useEffect(() => {
-    // Load data in parallel for faster perceived loading
     loadTopProducts();
-    loadProducts(0);
+    loadProducts();
   }, [loadTopProducts, loadProducts]);
 
-  const handlePageChange = (page) => {
-    if (page >= 0 && page < totalPages) {
-      loadProducts(page);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  const scrollCarousel = (direction) => {
-    if (carouselRef.current) {
-      const scrollAmount = 300;
-      carouselRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 text-[#111418] font-display">
+    <div className="min-h-screen bg-[#f4f6f8] text-[#111418] font-display">
       <Header />
 
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-10">
-        {/* Hero Section */}
-        <section className="rounded-2xl overflow-hidden relative min-h-[400px] flex items-center bg-gray-900">
-          <div className="absolute inset-0 z-0">
+      <main className="max-w-[1200px] mx-auto px-4 py-6 space-y-8">
+        {/* 1. Hero Section & Banners */}
+        <div className="flex gap-4 h-[380px]">
+          <div className="w-2/3 h-full rounded overflow-hidden">
+            {/* Slider placeholder */}
             <img
-              alt="Abstract blue futuristic digital waves background"
-              className="w-full h-full object-cover opacity-60"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDz9fohaXE-RwPNbWKl4IHyMRjA2hKn8jzE5Nygb0t0KIPNRWO9aZENc4AqGevOLEHUVjDIH_8FjNber18MozDS8wB8CfFRKIyJmZy4xMBDO_rz2w8qS61d-yYAknw6fXDsGp35_Ec4JR4KkFcQXrY5LF1d8O0NarhCnNYPzRB6k66EwOREgjlzwihCONAB0sXw4U-E4uzP8MDXnzkGD5rRS-0-oDQI05BcnLuaRa_sJPcShl72WrVcn5Pdi5y4ejVWsak0MvqV1xg"
+              src="https://via.placeholder.com/800x400/137fec/ffffff?text=GEARVN+BANNER+1"
+              className="w-full h-full object-cover"
+              alt="Banner 1"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
           </div>
-          <div className="relative z-10 px-8 md:px-12 max-w-2xl text-white space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 border border-primary/30 backdrop-blur-sm">
-              <span className="material-symbols-outlined text-primary text-sm">
-                auto_awesome
-              </span>
-              <span className="text-xs font-semibold tracking-wide uppercase text-primary-50">
-                Được cá nhân hóa cho bạn
-              </span>
+          <div className="w-1/3 flex flex-col gap-4 h-full">
+            <div className="flex-1 rounded overflow-hidden">
+              <img
+                src="https://via.placeholder.com/400x180/e30019/ffffff?text=SALE+LAPTOP+GAMING"
+                className="w-full h-full object-cover"
+                alt="Banner 2"
+              />
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight tracking-tight">
-              Mua sắm thông minh <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-primary">
-                Được hỗ trợ bởi AI
-              </span>
-            </h1>
-            <p className="text-lg text-gray-200 leading-relaxed max-w-lg">
-              Ngừng tìm kiếm, bắt đầu khám phá. AI của chúng tôi phân tích sở thích của bạn để gợi ý sản phẩm bạn thực sự yêu thích ngay lập tức.
-            </p>
-            <div className="flex flex-wrap gap-4 pt-2">
-              <button className="bg-primary hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-bold text-base transition-colors flex items-center gap-2 shadow-lg shadow-blue-500/30">
-                Bắt đầu mua sắm
-                <span className="material-symbols-outlined">arrow_forward</span>
-              </button>
-              <button className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 px-8 py-3 rounded-lg font-bold text-base transition-colors">
-                Cách hoạt động
-              </button>
+            <div className="flex-1 rounded overflow-hidden">
+              <img
+                src="https://via.placeholder.com/400x180/333333/ffffff?text=PC+GAMING+CUSTOM"
+                className="w-full h-full object-cover"
+                alt="Banner 3"
+              />
             </div>
-          </div>
-        </section>
-
-        {/* Category Grid */}
-        <CategoryGrid />
-
-        {/* AI Picks Carousel */}
-        <section>
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                <span className="material-symbols-outlined">psychology</span>
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Gợi ý AI cho bạn
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Dựa trên xu hướng trong khu vực của bạn
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => scrollCarousel('left')}
-                className="size-8 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                <span className="material-symbols-outlined text-sm">
-                  chevron_left
-                </span>
-              </button>
-              <button 
-                onClick={() => scrollCarousel('right')}
-                className="size-8 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                <span className="material-symbols-outlined text-sm">
-                  chevron_right
-                </span>
-              </button>
-            </div>
-          </div>
-
-          <div ref={carouselRef} className="flex overflow-x-auto gap-6 pb-4 no-scrollbar snap-x scroll-smooth">
-            {/* Product Cards */}
-            {loadingTop ? (
-              <ProductCarouselSkeleton count={4} />
-            ) : topProducts.length > 0 ? (
-              topProducts.map((product) => (
-                <Link
-                  to={`/products/${product.id}`}
-                  key={product.id}
-                  className="min-w-[280px] snap-center bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden group hover:shadow-lg transition-all duration-300"
-                >
-                  <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
-                    <div className="absolute top-3 left-3 z-10 bg-green-500/90 backdrop-blur text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px]">
-                        verified
-                      </span>{" "}
-                      Bán chạy
-                    </div>
-                    <img
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      src={
-                        product.thumbnail ||
-                        product.imageUrl ||
-                        "https://via.placeholder.com/400x300?text=Product"
-                      }
-                    />
-                    <button className="absolute bottom-3 right-3 bg-white text-gray-900 p-2 rounded-full shadow-md opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:bg-primary hover:text-white">
-                      <span className="material-symbols-outlined text-[20px]">
-                        add_shopping_cart
-                      </span>
-                    </button>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                      {product.name}
-                    </h3>
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold text-primary">
-                        ${product.price.toFixed(2)}
-                      </span>
-                      <div className="flex items-center text-yellow-400 text-xs">
-                        <span className="material-symbols-outlined text-[16px] fill-current">
-                          star
-                        </span>
-                        <span className="text-gray-500 dark:text-gray-400 ml-1">
-                          ({product.averageRating || "0.0"})
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))
-            ) : (
-              <div className="flex items-center justify-center w-full py-12">
-                <div className="text-center">
-                  <span className="material-symbols-outlined text-4xl text-gray-300 dark:text-gray-600 mb-2">
-                    trending_up
-                  </span>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    Chưa có sản phẩm nổi bật
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Main Content Area */}
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar Filters */}
-          <aside className="w-full lg:w-64 flex-shrink-0 space-y-6">
-            <CategorySidebar />
-          </aside>
-
-          {/* Product Grid */}
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-bold text-xl">Tất cả gợi ý</h3>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500 hidden sm:block">
-                  Sắp xếp:
-                </span>
-                <select className="text-sm border-gray-200 dark:border-slate-700 rounded-lg py-1.5 pl-3 pr-8 focus:ring-primary focus:border-primary bg-white dark:bg-slate-800">
-                  <option>AI gợi ý</option>
-                  <option>Giá: Thấp đến cao</option>
-                  <option>Giá: Cao đến thấp</option>
-                  <option>Mới nhất</option>
-                </select>
-              </div>
-            </div>
-
-            {loadingProducts ? (
-              <ProductGridSkeleton count={6} />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-                {/* Product Cards */}
-                {products.length > 0 ? (
-                  products.map((product) => (
-                    <Link
-                      to={`/products/${product.id}`}
-                      key={product.id}
-                      className="group bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all"
-                    >
-                      <div className="relative aspect-square overflow-hidden bg-gray-100">
-                        <img
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          src={
-                            product.thumbnail ||
-                            product.imageUrl ||
-                            "https://via.placeholder.com/400?text=Product"
-                          }
-                        />
-                      </div>
-                      <div className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-medium text-gray-900 dark:text-white group-hover:text-primary transition-colors">
-                            {product.name}
-                          </h4>
-                          <span className="bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded">
-                            {product.stockQuantity > 0 ? "Còn hàng" : "Hết"}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-500 mb-3 line-clamp-2">
-                          {product.description}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-lg">
-                            ${product.price.toFixed(2)}
-                          </span>
-                          <button
-                            onClick={(e) => e.preventDefault()}
-                            className="size-8 rounded-full bg-gray-100 dark:bg-slate-700 hover:bg-primary hover:text-white flex items-center justify-center transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">
-                              add
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                    </Link>
-                  ))
-                ) : (
-                  <div className="col-span-full flex items-center justify-center py-12">
-                    <div className="text-center">
-                      <span className="material-symbols-outlined text-4xl text-gray-300 dark:text-gray-600 mb-2">
-                        inventory_2
-                      </span>
-                      <p className="text-gray-500 dark:text-gray-400">
-                        Không có sản phẩm nào
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-10 flex justify-center">
-                <nav className="flex items-center gap-1">
-                  <button 
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 0}
-                    className="size-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-sm">
-                      chevron_left
-                    </span>
-                  </button>
-                  
-                  {/* Page numbers */}
-                  {[...Array(Math.min(totalPages, 5))].map((_, idx) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = idx;
-                    } else if (currentPage < 3) {
-                      pageNum = idx;
-                    } else if (currentPage > totalPages - 4) {
-                      pageNum = totalPages - 5 + idx;
-                    } else {
-                      pageNum = currentPage - 2 + idx;
-                    }
-                    
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => handlePageChange(pageNum)}
-                        className={`size-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
-                          currentPage === pageNum
-                            ? 'bg-primary text-white'
-                            : 'border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800'
-                        }`}
-                      >
-                        {pageNum + 1}
-                      </button>
-                    );
-                  })}
-                  
-                  {totalPages > 5 && currentPage < totalPages - 3 && (
-                    <>
-                      <span className="px-2 text-gray-400">...</span>
-                      <button
-                        onClick={() => handlePageChange(totalPages - 1)}
-                        className="size-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-sm font-medium"
-                      >
-                        {totalPages}
-                      </button>
-                    </>
-                  )}
-                  
-                  <button 
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages - 1}
-                    className="size-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-sm">
-                      chevron_right
-                    </span>
-                  </button>
-                </nav>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* 2. Flash Sale Section */}
+        <section className="bg-primary rounded-lg p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <h2 className="text-2xl font-black italic text-yellow-400 uppercase tracking-wide">
+                ⚡ FLASH SALE
+              </h2>
+              <div className="flex items-center gap-1 text-white font-bold">
+                <span>KẾT THÚC SAU:</span>
+                <span className="bg-black px-2 py-1 rounded text-sm ml-2">02</span> :
+                <span className="bg-black px-2 py-1 rounded text-sm">45</span> :
+                <span className="bg-black px-2 py-1 rounded text-sm">12</span>
+              </div>
+            </div>
+            <a href="#" className="flex items-center gap-1 text-white hover:text-yellow-200 text-sm font-bold items-center">
+              XEM TẤT CẢ
+              <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+            </a>
+          </div>
+
+          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+            {loadingTop ? (
+              <ProductCarouselSkeleton count={5} />
+            ) : topProducts.length > 0 ? (
+              topProducts.map((product) => (
+                <div key={product.id} className="w-[calc(20%-12px)] min-w-[200px] flex-shrink-0">
+                  <ProductCard product={product} />
+                </div>
+              ))
+            ) : (
+              <div className="text-white text-center w-full">Đang cập nhật Flash Sale</div>
+            )}
+          </div>
+        </section>
+
+        {/* 3. Laptop Gaming Section */}
+        <section className="bg-white rounded-lg p-4">
+          <div className="flex items-center justify-between border-b-2 border-gray-100 mb-4 pb-2">
+            <h2 className="text-xl font-bold uppercase text-gray-800 border-b-2 border-primary -mb-[10px] pb-2 inline-block">
+              LAPTOP GAMING BÁN CHẠY
+            </h2>
+            <div className="flex gap-4 text-sm font-medium text-gray-600">
+              <a href="#" className="hover:text-primary transition-colors">ASUS</a>
+              <a href="#" className="hover:text-primary transition-colors">MSI</a>
+              <a href="#" className="hover:text-primary transition-colors">ACER</a>
+              <a href="#" className="hover:text-primary transition-colors">DELL</a>
+              <a href="#" className="text-primary hover:underline ml-4">Xem tất cả </a>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-5 gap-4">
+            {loadingProducts ? (
+              <ProductGridSkeleton count={5} />
+            ) : (
+              products.slice(0, 5).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))
+            )}
+          </div>
+        </section>
+
+        {/* 4. PC GVN Section */}
+        <section className="bg-white rounded-lg p-4">
+          <div className="flex items-center justify-between border-b-2 border-gray-100 mb-4 pb-2">
+            <h2 className="text-xl font-bold uppercase text-gray-800 border-b-2 border-primary -mb-[10px] pb-2 inline-block">
+              DÀN PC GAMING GVN
+            </h2>
+            <div className="flex gap-4 text-sm font-medium text-gray-600">
+              <a href="#" className="hover:text-primary transition-colors">Dưới 15 Triệu</a>
+              <a href="#" className="hover:text-primary transition-colors">15 - 25 Triệu</a>
+              <a href="#" className="hover:text-primary transition-colors">25 - 40 Triệu</a>
+              <a href="#" className="hover:text-primary transition-colors">Trên 40 Triệu</a>
+              <a href="#" className="text-primary hover:underline ml-4">Xem tất cả </a>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-5 gap-4">
+            {loadingProducts ? (
+              <ProductGridSkeleton count={5} />
+            ) : (
+              products.slice(5, 10).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))
+            )}
+          </div>
+        </section>
+
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 mt-20">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+      {/* Footer Refactor */}
+      <footer className="bg-slate-900 border-t-4 border-primary mt-12 text-gray-300">
+        <div className="max-w-[1200px] mx-auto px-4 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-gray-900 dark:text-white">
-                <div className="size-6 text-primary flex items-center justify-center">
-                  <span className="material-symbols-outlined text-2xl">
-                    smart_toy
-                  </span>
-                </div>
-                <h2 className="text-lg font-bold">AI Shop</h2>
+              <div className="flex items-center gap-2 text-white">
+                <h2 className="text-2xl font-black italic text-primary">GEARVN</h2>
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Experience the future of shopping. Our AI-driven platform
-                connects you with products you'll love, instantly.
+              <p className="text-sm">
+                Hệ thống showroom chuyên cung cấp Laptop Gaming, PC High-end, Màn hình, Phụ kiện hàng đầu Việt Nam.
               </p>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Shop</h3>
-              <ul className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
-                <li>
-                  <a href="#" className="hover:text-primary">
-                    All Products
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-primary">
-                    Categories
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-primary">
-                    Deals
-                  </a>
-                </li>
+              <h3 className="text-white font-bold uppercase mb-4">Tổng đài hỗ trợ</h3>
+              <ul className="space-y-2 text-sm">
+                <li>Mua hàng: <span className="text-white font-bold">1800 6975</span></li>
+                <li>Khiếu nại: <span className="text-white font-bold">1800 6173</span></li>
+                <li>Email: cskh@gearvn.com</li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
-                <li>
-                  <a href="#" className="hover:text-primary">
-                    Help Center
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-primary">
-                    Contact Us
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-primary">
-                    Returns
-                  </a>
-                </li>
+              <h3 className="text-white font-bold uppercase mb-4">Thông tin</h3>
+              <ul className="space-y-2 text-sm">
+                <li><a href="#" className="hover:text-primary">Hệ thống cửa hàng</a></li>
+                <li><a href="#" className="hover:text-primary">Chính sách bảo hành</a></li>
+                <li><a href="#" className="hover:text-primary">Chính sách thanh toán</a></li>
+                <li><a href="#" className="hover:text-primary">Vận chuyển & Giao hàng</a></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
-                <li>
-                  <a href="#" className="hover:text-primary">
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-primary">
-                    Careers
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-primary">
-                    Privacy
-                  </a>
-                </li>
-              </ul>
+              <h3 className="text-white font-bold uppercase mb-4">Đăng ký nhận tin</h3>
+              <div className="flex">
+                <input type="email" placeholder="Nhập email của bạn" className="px-3 py-2 bg-slate-800 text-white w-full focus:outline-none focus:ring-1 focus:ring-primary" />
+                <button className="bg-primary text-white px-4 py-2 font-bold hover:bg-red-700 transition-colors">GỬI</button>
+              </div>
             </div>
           </div>
-          <div className="border-t border-gray-200 dark:border-slate-800 pt-8 text-center text-sm text-gray-500 dark:text-gray-400">
-            © 2024 AI Shop. All rights reserved.
+          <div className="border-t border-slate-800 pt-6 mt-8 text-center text-xs text-slate-500">
+            © 2024 GEARVN. All rights reserved.
           </div>
         </div>
       </footer>

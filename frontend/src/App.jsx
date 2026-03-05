@@ -23,6 +23,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./contexts/CartContext";
 import CartDrawer from "./components/common/CartDrawer";
 import GlobalModals from "./components/common/GlobalModals";
+import Chatbot from "./components/common/Chatbot";
 import CartErrorBoundary from "./components/CartErrorBoundary";
 import "./App.css";
 
@@ -161,6 +162,7 @@ function App() {
           </Routes>
           <CartDrawer />
           <GlobalModals />
+          <Chatbot />
         </Router>
       </CartProvider>
     </CartErrorBoundary>
