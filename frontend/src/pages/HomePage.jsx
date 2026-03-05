@@ -57,7 +57,7 @@ const HomePage = () => {
           <div className="w-2/3 h-full rounded overflow-hidden">
             {/* Slider placeholder */}
             <img
-              src="https://via.placeholder.com/800x400/137fec/ffffff?text=GEARVN+BANNER+1"
+              src="https://cdn.tgdd.vn/2024/03/banner/Mac-NPP-2880-800-1920x533.png"
               className="w-full h-full object-cover"
               alt="Banner 1"
             />
@@ -65,14 +65,14 @@ const HomePage = () => {
           <div className="w-1/3 flex flex-col gap-4 h-full">
             <div className="flex-1 rounded overflow-hidden">
               <img
-                src="https://via.placeholder.com/400x180/e30019/ffffff?text=SALE+LAPTOP+GAMING"
+                src="https://cdn.tgdd.vn/2024/03/banner/ipad-chung-2880-800-1920x533.png"
                 className="w-full h-full object-cover"
                 alt="Banner 2"
               />
             </div>
             <div className="flex-1 rounded overflow-hidden">
               <img
-                src="https://via.placeholder.com/400x180/333333/ffffff?text=PC+GAMING+CUSTOM"
+                src="https://cdn.tgdd.vn/2024/02/banner/S24-Ultra-2880-800-1920x533.png"
                 className="w-full h-full object-cover"
                 alt="Banner 3"
               />

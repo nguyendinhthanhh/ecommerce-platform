@@ -11,6 +11,7 @@ const ProductDetailPage = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const [product, setProduct] = useState(null);
+  const [category, setCategory] = useState(null); // additional state for category info
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -26,6 +27,24 @@ const ProductDetailPage = () => {
     // Scroll to top when page loads
     window.scrollTo(0, 0);
   }, [id]);
+
+  // once we have a product, also pull category details in case API didn't include the name
+  useEffect(() => {
+    const fetchCategory = async () => {
+      if (product?.categoryId) {
+        try {
+          const data = await import("../../services/categoryService").then(m => m.default.getCategoryById(product.categoryId));
+          setCategory(data);
+        } catch (err) {
+          // we'll just ignore errors – breadcrumb will fall back to whatever the product provided
+          console.error("Failed to load category info", err);
+          setCategory(null);
+        }
+      }
+    };
+
+    fetchCategory();
+  }, [product]);
 
   // Keyboard navigation for lightbox
   useEffect(() => {
@@ -128,7 +147,7 @@ const ProductDetailPage = () => {
             <Link to="/" className="hover:text-primary">Trang chủ</Link>
             <span className="material-symbols-outlined text-[14px]">chevron_right</span>
             <Link to={`/products?category=${product.categoryId}`} className="hover:text-primary">
-              {product.categoryName || 'Sản phẩm'}
+              {category?.name || product.categoryName || 'Sản phẩm'}
             </Link>
             <span className="material-symbols-outlined text-[14px]">chevron_right</span>
             <span className="text-gray-900 truncate font-medium">{product.name}</span>
@@ -191,7 +210,7 @@ const ProductDetailPage = () => {
                     <span className="text-gray-500 ml-1 text-[13px]">({product.totalReviews || 0} đánh giá)</span>
                   </div>
                   <span className="text-gray-400">|</span>
-                  <span className="text-gray-500">Mã SP: <strong className="text-gray-700">{product.id?.substring(0, 8).toUpperCase()}</strong></span>
+                  <span className="text-gray-500">Mã SP: <strong className="text-gray-700">{String(product.id).substring(0, 8).toUpperCase()}</strong></span>
                   <span className="text-gray-400">|</span>
                   <span className="text-gray-500">Tình trạng: <strong className="text-primary">{product.stockQuantity > 0 ? 'Còn hàng' : 'Hết hàng'}</strong></span>
                 </div>
@@ -330,7 +349,7 @@ const ProductDetailPage = () => {
                 </div>
                 <div className="flex py-2.5 border-b border-gray-100 px-2">
                   <span className="w-1/3 text-gray-500 font-medium">SKU</span>
-                  <span className="w-2/3 text-gray-900 font-bold text-right">{product.id?.substring(0, 8).toUpperCase()}</span>
+                  <span className="w-2/3 text-gray-900 font-bold text-right">{String(product.id).substring(0, 8).toUpperCase()}</span>
                 </div>
               </div>
 

@@ -8,6 +8,8 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
+  const [categories, setCategories] = useState([]);
+
   useEffect(() => {
     // Load initial user
     const userData = authService.getUser();
@@ -20,6 +22,18 @@ const Header = () => {
     };
 
     window.addEventListener('auth-change', handleAuthChange);
+
+    // Load categories for red nav bar
+    const fetchCategories = async () => {
+      try {
+        const module = await import("../../services/categoryService");
+        const data = await module.default.getCategoriesHierarchy();
+        setCategories(data?.slice(0, 7) || []);
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    };
+    fetchCategories();
 
     // Cleanup
     return () => {
@@ -174,13 +188,11 @@ const Header = () => {
             DANH MỤC SẢN PHẨM
           </Link>
           <nav className="flex items-center flex-1 ml-4 justify-between">
-            <Link to="/products?category=laptop" className="px-3 h-full flex items-center hover:bg-black/10 transition-colors">LAPTOP GAMING</Link>
-            <Link to="/products?category=pc" className="px-3 h-full flex items-center hover:bg-black/10 transition-colors">PC GVN</Link>
-            <Link to="/products?category=linh-kien" className="px-3 h-full flex items-center hover:bg-black/10 transition-colors">LINH KIỆN PC</Link>
-            <Link to="/products?category=man-hinh" className="px-3 h-full flex items-center hover:bg-black/10 transition-colors">MÀN HÌNH</Link>
-            <Link to="/products?category=ban-phim" className="px-3 h-full flex items-center hover:bg-black/10 transition-colors">BÀN PHÍM</Link>
-            <Link to="/products?category=chuot" className="px-3 h-full flex items-center hover:bg-black/10 transition-colors">CHUỘT</Link>
-            <Link to="/products?category=tai-nghe" className="px-3 h-full flex items-center hover:bg-black/10 transition-colors">TAI NGHE</Link>
+            {categories.map((cat) => (
+              <Link key={cat.id} to={`/products?category=${cat.id}`} className="px-3 h-full flex items-center hover:bg-black/10 transition-colors uppercase">
+                {cat.name}
+              </Link>
+            ))}
           </nav>
         </div>
       </div>
