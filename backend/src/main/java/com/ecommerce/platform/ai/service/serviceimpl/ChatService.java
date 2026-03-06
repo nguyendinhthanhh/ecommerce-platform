@@ -96,7 +96,7 @@ public class ChatService {
                 .totalReviews(p.getTotalReviews())
                 .stockQuantity(p.getStockQuantity())
                 .imageUrl(p.getThumbnail() != null ? p.getThumbnail().toString() : null)
-                .detailUrl(frontendBaseUrl + "/product/" + p.getId())
+                .detailUrl(frontendBaseUrl + "/api/products/" + p.getId())
                 .build();
     }
 
