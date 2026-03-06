@@ -94,7 +94,7 @@ const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
             <h1 className="text-3xl font-black italic tracking-tighter text-primary">
-              GEARVN
+              Shop-AI
             </h1>
           </Link>
 

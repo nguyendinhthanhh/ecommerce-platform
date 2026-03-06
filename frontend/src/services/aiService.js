@@ -1,7 +1,7 @@
 import axios from 'axios';
 import vi from '../utils/translations';
 
-const AI_API_URL = '/api/chatbot';
+const AI_API_URL = 'http://localhost:8080/api/chatbot';
 
 // Fallback response for development/errors
 const fallbackResponse = {

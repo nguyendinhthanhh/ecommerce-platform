@@ -45,13 +45,16 @@ const Chatbot = () => {
         setIsTyping(true);
 
         try {
-            // Call backend API
             const response = await aiService.sendMessage(textToSend);
+
+            // Log ra để kiểm tra cấu trúc chính xác trong Console
+            console.log("Dữ liệu từ BE:", response);
 
             const botMsg = {
                 id: Date.now() + 1,
                 sender: 'bot',
-                text: response.reply,
+                // Thử cấu trúc này nếu response là object chứa data từ API
+                text: response.data?.message || response.message || "Không có dữ liệu",
                 timestamp: new Date()
             };
 
