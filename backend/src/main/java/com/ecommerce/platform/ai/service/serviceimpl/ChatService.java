@@ -3,7 +3,8 @@ package com.ecommerce.platform.ai.service.serviceimpl;
 
 import com.ecommerce.platform.ai.service.EmbeddingService;
 import com.ecommerce.platform.dto.request.ChatRequest;
-import com.ecommerce.platform.dto.request.ChatResponse;
+import com.ecommerce.platform.dto.request.ProductSuggestionRequest;
+import com.ecommerce.platform.dto.response.ChatResponse;
 import com.ecommerce.platform.dto.request.IntentResult;
 import com.ecommerce.platform.entity.Product;
 import com.ecommerce.platform.repository.ProductRepository;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,9 @@ public class ChatService {
     private final IntentClassifierService intentClassifierService;
     private final EmbeddingService embeddingService;
     private final ProductRepository productRepository;
+
+    @Value("${app.frontend.base-url}")
+    private String frontendBaseUrl;
 
 
 
@@ -57,15 +62,23 @@ public class ChatService {
             IntentResult intent = intentClassifierService.classify(request.getMessage());
             log.info("Intent: {}", intent.getIntent());
 
-            // 2. Context
-            String context = retrieveContext(intent);
+            // Lấy sản phẩm liên quan
+            List<Product> products = retrieveProducts(intent);
+            // Chuyển đổi thành suggestions với link
+            List<ProductSuggestionRequest> suggestions = products.stream()
+                    .map(this::toProductSuggestion)
+                    .collect(Collectors.toList());
 
-            // 3. LLM
+            // Context cho LLM
+            String context = retrieveContext(intent, products);
+
+
+            // Generate response
             String response = generateResponse(request.getMessage(), context);
 
             long time = System.currentTimeMillis() - start;
 
-            return ChatResponse.success(response, time);
+            return ChatResponse.success(response, suggestions, time);
 
         } catch (Exception e) {
             log.error("Chat error", e);
@@ -73,24 +86,39 @@ public class ChatService {
         }
     }
 
+    private ProductSuggestionRequest toProductSuggestion(Product p) {
+        return ProductSuggestionRequest.builder()
+                .id(p.getId())
+                .name(p.getName())
+                .price(p.getPrice())
+                .discountPrice(p.getDiscountPrice())
+                .rating(p.getAverageRating())
+                .totalReviews(p.getTotalReviews())
+                .stockQuantity(p.getStockQuantity())
+                .imageUrl(p.getThumbnail() != null ? p.getThumbnail().toString() : null)
+                .detailUrl(frontendBaseUrl + "/product/" + p.getId())
+                .build();
+    }
+
 
 
     // ================= CONTEXT RETRIEVAL =================
 
-    private String retrieveContext(IntentResult intent) {
+    private String retrieveContext(IntentResult intent, List<Product> products) {
+
         StringBuilder context = new StringBuilder();
 
         switch (intent.getIntent()) {
 
             case PRODUCT_SEARCH -> {
-                List<Product> dbProducts = retrieveProducts(intent);
+
                 List<Document> semantic = embeddingService.searchSimilar(intent.getRawQuery());
 
                 context.append("=== SẢN PHẨM ===\n");
 
-                if (!dbProducts.isEmpty()) {
+                if (!products.isEmpty()) {
                     context.append("\nTừ database:\n");
-                    dbProducts.forEach(p -> context.append(formatProduct(p)).append("\n"));
+                    products.forEach(p -> context.append(formatProduct(p)).append("\n"));
                 }
 
                 if (!semantic.isEmpty()) {
@@ -101,10 +129,11 @@ public class ChatService {
             }
 
             case STOCK_CHECK -> {
-                List<Product> products = retrieveProducts(intent);
+
                 context.append("=== TỒN KHO ===\n");
 
                 products.forEach(p -> {
+
                     String priceText = p.getDiscountPrice() != null
                             ? String.format("%s → %s", p.getPrice(), p.getDiscountPrice())
                             : p.getPrice().toString();
@@ -124,44 +153,57 @@ public class ChatService {
             }
 
             case BULK_ORDER -> {
+
                 context.append("=== MUA SỐ LƯỢNG LỚN ===\n");
                 context.append("- Liên hệ để nhận giá tốt hơn khi mua nhiều.\n");
 
                 if (intent.getQuantity() != null) {
+
                     List<Product> available =
                             productRepository.findByStockQuantityGreaterThanEqual(intent.getQuantity());
 
                     context.append("\nSản phẩm đủ số lượng:\n");
-                    available.forEach(p -> context.append(formatProduct(p)).append("\n"));
+
+                    available.forEach(p ->
+                            context.append(formatProduct(p)).append("\n"));
                 }
             }
 
             case REVIEW_QUERY -> {
-                List<Product> products = retrieveProducts(intent);
+
                 context.append("=== ĐÁNH GIÁ ===\n");
-                products.forEach(p -> context.append(String.format(
-                        "- %s: %.1f⭐ (%d reviews)\n",
-                        p.getName(),
-                        p.getAverageRating(),
-                        p.getTotalReviews()
-                )));
+
+                products.forEach(p ->
+                        context.append(String.format(
+                                "- %s: %.1f⭐ (%d reviews)\n",
+                                p.getName(),
+                                p.getAverageRating(),
+                                p.getTotalReviews()
+                        )));
             }
 
             case PRICE_COMPARE -> {
-                List<Product> products = retrieveProducts(intent);
+
                 context.append("=== SO SÁNH GIÁ ===\n");
-                products.forEach(p -> context.append(formatProduct(p)).append("\n"));
+
+                products.forEach(p ->
+                        context.append(formatProduct(p)).append("\n"));
             }
 
             case DISCOUNT_POLICY -> {
+
                 context.append("=== KHUYẾN MÃI ===\n");
                 context.append("- Giá giảm hiển thị trực tiếp trên sản phẩm.\n");
                 context.append("- Có thể có flash sale hoặc voucher theo thời điểm.\n");
             }
 
             case GENERAL_CHAT -> {
-                List<Document> docs = embeddingService.searchSimilar(intent.getRawQuery());
-                docs.forEach(d -> context.append(d.getText()).append("\n---\n"));
+
+                List<Document> docs =
+                        embeddingService.searchSimilar(intent.getRawQuery());
+
+                docs.forEach(d ->
+                        context.append(d.getText()).append("\n---\n"));
             }
         }
 

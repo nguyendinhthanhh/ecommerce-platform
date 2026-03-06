@@ -3,7 +3,7 @@ package com.ecommerce.platform.controller;
 
 import com.ecommerce.platform.ai.service.serviceimpl.ChatService;
 import com.ecommerce.platform.dto.request.ChatRequest;
-import com.ecommerce.platform.dto.request.ChatResponse;
+import com.ecommerce.platform.dto.response.ChatResponse;
 import com.ecommerce.platform.dto.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
