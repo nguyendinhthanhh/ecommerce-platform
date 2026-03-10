@@ -63,6 +63,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/products/top-selling").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/newest").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/*").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/ekyc/**").permitAll()
                         // Product detail
 
                         // ============================================
