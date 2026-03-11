@@ -55,6 +55,9 @@ public class SecurityConfig {
                         // Email check (for registration validation)
                         .requestMatchers(HttpMethod.GET, "/api/users/check-email").permitAll()
 
+                        //Ekyc
+                        .requestMatchers(HttpMethod.POST, "/api/ekyc/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+
                         // ============================================
                         // PRODUCTS - Public Read Access (như Shopee)
                         // ============================================
@@ -64,6 +67,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/products/top-selling").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/newest").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/*").permitAll()
+
                         // Product detail
 
                         // ============================================
@@ -79,13 +83,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/reviews/product/**").permitAll() // Reviews by product
                         .requestMatchers(HttpMethod.GET, "/api/reviews/*/statistics").permitAll() // Review statistics
                         .requestMatchers(HttpMethod.GET, "/api/reviews/check-eligibility/**").permitAll() // Check
-                                                                                                          // eligibility
-                                                                                                          // (returns
-                                                                                                          // different
-                                                                                                          // response
-                                                                                                          // for guest
-                                                                                                          // vs logged
-                                                                                                          // in)
+                        // eligibility
+                        // (returns
+                        // different
+                        // response
+                        // for guest
+                        // vs logged
+                        // in)
                         .requestMatchers(HttpMethod.GET, "/api/reviews/*").permitAll() // Review detail
 
                         // ============================================
