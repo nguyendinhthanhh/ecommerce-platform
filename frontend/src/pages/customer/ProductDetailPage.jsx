@@ -9,7 +9,7 @@ import ProductReviews from "../../components/reviews/ProductReviews";
 const ProductDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart, closeCart } = useCart();
   const [product, setProduct] = useState(null);
   const [category, setCategory] = useState(null); // additional state for category info
   const [loading, setLoading] = useState(true);
@@ -93,17 +93,9 @@ const ProductDetailPage = () => {
     }
   };
 
-  const handleBuyNow = async () => {
-    try {
-      setAddingToCart(true);
-      const result = await addToCart(product, quantity);
-      if (result?.requiresLogin) return;
-      navigate("/cart");
-    } catch (err) {
-      console.error("Failed to buy now:", err);
-    } finally {
-      setAddingToCart(false);
-    }
+  const handleBuyNow = () => {
+    closeCart();
+    navigate("/place-order", { state: { directBuy: true, product, quantity } });
   };
 
   const formatPrice = (price) => {

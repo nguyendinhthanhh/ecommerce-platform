@@ -6,7 +6,8 @@ const ProductCard = ({ product }) => {
 
     const handleAddToCart = async (e) => {
         e.preventDefault(); // Prevent navigating to product detail
-        const result = await addToCart(product);
+        e.stopPropagation(); // Stop link click
+        await addToCart(product);
         // Modal handles login requirement if needed
     };
 
@@ -73,7 +74,7 @@ const ProductCard = ({ product }) => {
                             ))}
                         </div>
                         <span className="text-[11px] text-gray-500">
-                            ({product.reviewsCount || Math.floor(Math.random() * 100) + 1})
+                            ({product.reviewsCount || 0})
                         </span>
                     </div>
                 </div>

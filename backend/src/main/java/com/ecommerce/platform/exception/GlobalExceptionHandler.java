@@ -20,105 +20,107 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(ResourceNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
+        @ExceptionHandler(ResourceNotFoundException.class)
+        public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(ResourceNotFoundException ex) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(ApiResponse.error(ex.getMessage()));
+        }
 
-    @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBadRequest(BadRequestException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
+        @ExceptionHandler(BadRequestException.class)
+        public ResponseEntity<ApiResponse<Void>> handleBadRequest(BadRequestException ex) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .body(ApiResponse.error(ex.getMessage()));
+        }
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("Invalid email or password"));
-    }
+        @ExceptionHandler(BadCredentialsException.class)
+        public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                .body(ApiResponse.error("Invalid email or password"));
+        }
 
-    @ExceptionHandler(DisabledException.class)
-    public ResponseEntity<ApiResponse<Void>> handleDisabled(DisabledException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("Account is disabled"));
-    }
+        @ExceptionHandler(DisabledException.class)
+        public ResponseEntity<ApiResponse<Void>> handleDisabled(DisabledException ex) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                .body(ApiResponse.error("Account is disabled"));
+        }
 
-    @ExceptionHandler(LockedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleLocked(LockedException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("Account is locked"));
-    }
+        @ExceptionHandler(LockedException.class)
+        public ResponseEntity<ApiResponse<Void>> handleLocked(LockedException ex) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                .body(ApiResponse.error("Account is locked"));
+        }
 
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAuthentication(AuthenticationException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("Authentication failed: " + ex.getMessage()));
-    }
+        @ExceptionHandler(AuthenticationException.class)
+        public ResponseEntity<ApiResponse<Void>> handleAuthentication(AuthenticationException ex) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                .body(ApiResponse.error("Authentication failed: " + ex.getMessage()));
+        }
 
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("Access denied: You don't have permission to access this resource"));
-    }
+        @ExceptionHandler(AccessDeniedException.class)
+        public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                .body(ApiResponse.error(
+                                                "Access denied: You don't have permission to access this resource"));
+        }
 
-    @ExceptionHandler(NoHandlerFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleNoHandlerFound(NoHandlerFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error("Endpoint not found: " + ex.getRequestURL()));
-    }
+        @ExceptionHandler(NoHandlerFoundException.class)
+        public ResponseEntity<ApiResponse<Void>> handleNoHandlerFound(NoHandlerFoundException ex) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(ApiResponse.error("Endpoint not found: " + ex.getRequestURL()));
+        }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationErrors(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach(error -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.<Map<String, String>>builder()
-                        .success(false)
-                        .message("Validation failed")
-                        .data(errors)
-                        .build());
-    }
+        @ExceptionHandler(MethodArgumentNotValidException.class)
+        public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationErrors(
+                        MethodArgumentNotValidException ex) {
+                Map<String, String> errors = new HashMap<>();
+                ex.getBindingResult().getAllErrors().forEach(error -> {
+                        String fieldName = ((FieldError) error).getField();
+                        String errorMessage = error.getDefaultMessage();
+                        errors.put(fieldName, errorMessage);
+                });
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .body(ApiResponse.<Map<String, String>>builder()
+                                                .success(false)
+                                                .message("Validation failed")
+                                                .data(errors)
+                                                .build());
+        }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
+        @ExceptionHandler(IllegalArgumentException.class)
+        public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .body(ApiResponse.error(ex.getMessage()));
+        }
 
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ApiResponse<Void>> handleIllegalState(IllegalStateException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
+        @ExceptionHandler(IllegalStateException.class)
+        public ResponseEntity<ApiResponse<Void>> handleIllegalState(IllegalStateException ex) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                                .body(ApiResponse.error(ex.getMessage()));
+        }
 
-    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
-    public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(
-            org.springframework.dao.DataIntegrityViolationException ex) {
-        String message = "This item cannot be deleted or modified because it is being used by other records.";
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error(message));
-    }
+        @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+        public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(
+                        org.springframework.dao.DataIntegrityViolationException ex) {
+                String message = "Data Integrity Violation: " + ex.getMostSpecificCause().getMessage();
+                ex.printStackTrace(); // Log stack trace for debugging
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                                .body(ApiResponse.error(message));
+        }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
-        ex.printStackTrace(); // Log stack trace for debugging
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("Internal server error: " + ex.getMessage()));
-    }
+        @ExceptionHandler(Exception.class)
+        public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
+                ex.printStackTrace(); // Log stack trace for debugging
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(ApiResponse.error("Internal server error: " + ex.getMessage()));
+        }
 
-    @ExceptionHandler(ClassificationException.class)
-    public ResponseEntity<ApiResponse<Void>> handleClassificationException(
-            ClassificationException e) {
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(ApiResponse.<Void>builder()
-                        .message("Dịch vụ AI tạm thời không khả dụng. Vui lòng thử lại sau.")
-                        .build()
-                );
-    }
+        @ExceptionHandler(ClassificationException.class)
+        public ResponseEntity<ApiResponse<Void>> handleClassificationException(
+                        ClassificationException e) {
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                                .body(ApiResponse.<Void>builder()
+                                                .message("Dịch vụ AI tạm thời không khả dụng. Vui lòng thử lại sau.")
+                                                .build());
+        }
 
 }

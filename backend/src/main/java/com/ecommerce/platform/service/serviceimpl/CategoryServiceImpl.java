@@ -53,7 +53,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .build();
 
         // Set parent and calculate level
-        if (request.getParentId() != null) {
+        if (request.getParentId() != null && request.getParentId() > 0) {
             Category parent = categoryRepository.findById(request.getParentId())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Parent category not found with id: " + request.getParentId()));
@@ -84,12 +84,12 @@ public class CategoryServiceImpl implements CategoryService {
         if (request.getIsActive() != null) {
             category.setIsActive(request.getIsActive());
         }
-        
+
         // Update enterprise fields
         if (request.getSlug() != null) {
             // Validate slug uniqueness
-            if (!request.getSlug().equals(category.getSlug()) && 
-                categoryRepository.existsBySlug(request.getSlug())) {
+            if (!request.getSlug().equals(category.getSlug()) &&
+                    categoryRepository.existsBySlug(request.getSlug())) {
                 throw new BadRequestException("Slug already exists: " + request.getSlug());
             }
             category.setSlug(request.getSlug());
@@ -112,26 +112,43 @@ public class CategoryServiceImpl implements CategoryService {
         if (request.getMetaDescription() != null) {
             category.setMetaDescription(request.getMetaDescription());
         }
-        
+
         // Update parent and recalculate level
         if (request.getParentId() != null) {
             if (request.getParentId().equals(id)) {
                 throw new BadRequestException("Category cannot be its own parent");
             }
-            Category parent = categoryRepository.findById(request.getParentId())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Parent category not found with id: " + request.getParentId()));
-            category.setParent(parent);
-            category.setLevel(parent.getLevel() + 1);
-            
-            // Update levels of all children recursively
-            updateChildrenLevels(category);
+            if (request.getParentId() <= 0) {
+                category.setParent(null);
+                category.setLevel(0);
+                updateChildrenLevels(category);
+            } else {
+                Category parent = categoryRepository.findById(request.getParentId())
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Parent category not found with id: " + request.getParentId()));
+
+                // Prevent circular reference
+                Category current = parent;
+                while (current != null) {
+                    if (current.getId().equals(id)) {
+                        throw new BadRequestException(
+                                "Circular reference detected: category cannot be a descendant of itself");
+                    }
+                    current = current.getParent();
+                }
+
+                category.setParent(parent);
+                category.setLevel(parent.getLevel() + 1);
+
+                // Update levels of all children recursively
+                updateChildrenLevels(category);
+            }
         }
 
         Category updatedCategory = categoryRepository.save(category);
         return categoryMapper.toResponse(updatedCategory);
     }
-    
+
     private void updateChildrenLevels(Category parent) {
         if (parent.getChildren() != null && !parent.getChildren().isEmpty()) {
             for (Category child : parent.getChildren()) {

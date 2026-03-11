@@ -8,18 +8,20 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface OrderService {
-    
+
     List<OrderResponse> placeOrder(Long customerId, PlaceOrderRequest request);
-    
+
     OrderResponse getOrderById(Long orderId, Long userId);
-    
+
     OrderResponse getOrderByCode(String orderCode, Long userId);
-    
+
     Page<OrderResponse> getCustomerOrders(Long customerId, Pageable pageable);
-    
+
     OrderResponse cancelOrder(Long orderId, Long customerId);
-    
+
     Page<OrderResponse> getAllOrders(String status, Pageable pageable);
-    
+
     OrderResponse updateOrderStatus(Long orderId, Long staffId, UpdateOrderStatusRequest request);
+
+    OrderResponse confirmOrderReceived(Long orderId, Long customerId);
 }

@@ -187,11 +187,26 @@ const Header = () => {
             <span className="material-symbols-outlined text-[18px]">menu</span>
             DANH MỤC SẢN PHẨM
           </Link>
-          <nav className="flex items-center flex-1 ml-4 justify-between">
+          <nav className="flex items-center flex-1 ml-4 gap-2">
             {categories.map((cat) => (
-              <Link key={cat.id} to={`/products?category=${cat.id}`} className="px-3 h-full flex items-center hover:bg-black/10 transition-colors uppercase">
-                {cat.name}
-              </Link>
+              <div key={cat.id} className="group relative h-full">
+                <Link to={`/products?category=${cat.id}`} className="px-3 h-full flex items-center hover:bg-black/10 transition-colors uppercase gap-1">
+                  {cat.name}
+                  {cat.children && cat.children.length > 0 && (
+                    <span className="material-symbols-outlined text-[14px]">expand_more</span>
+                  )}
+                </Link>
+                {/* Custom Submenu */}
+                {cat.children && cat.children.length > 0 && (
+                  <div className="absolute top-full left-0 min-w-[200px] bg-white shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 text-gray-700 font-normal normal-case">
+                    {cat.children.filter(child => child.isActive).map(child => (
+                      <Link key={child.id} to={`/products?category=${child.id}`} className="block px-4 py-2 hover:bg-gray-50 hover:text-primary border-b border-gray-50 last:border-0 truncate">
+                        {child.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
         </div>

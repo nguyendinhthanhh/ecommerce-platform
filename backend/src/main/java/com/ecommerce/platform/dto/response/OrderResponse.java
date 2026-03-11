@@ -17,6 +17,7 @@ public class OrderResponse {
     private String customerName;
     private List<OrderItemResponse> items;
     private BigDecimal subtotal;
+    private BigDecimal taxAmount;
     private BigDecimal shippingFee;
     private BigDecimal totalAmount;
     private String shippingName;
@@ -27,9 +28,11 @@ public class OrderResponse {
     private PaymentInfo payment;
     private LocalDateTime createdAt;
     private LocalDateTime confirmedAt;
+    private LocalDateTime processingAt;
     private LocalDateTime shippedAt;
     private LocalDateTime deliveredAt;
-    
+    private LocalDateTime completedAt;
+
     @Getter
     @Setter
     @NoArgsConstructor
@@ -44,7 +47,7 @@ public class OrderResponse {
         private BigDecimal unitPrice;
         private BigDecimal totalPrice;
     }
-    
+
     @Getter
     @Setter
     @NoArgsConstructor

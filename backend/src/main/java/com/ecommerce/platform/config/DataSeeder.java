@@ -551,9 +551,9 @@ public class DataSeeder implements CommandLineRunner {
                                 .toList();
 
                 Order.OrderStatus[] statuses = {
-                                Order.OrderStatus.PLACED,
+                                Order.OrderStatus.PENDING,
                                 Order.OrderStatus.CONFIRMED,
-                                Order.OrderStatus.SHIPPED,
+                                Order.OrderStatus.SHIPPING,
                                 Order.OrderStatus.DELIVERED,
                                 Order.OrderStatus.DELIVERED,
                                 Order.OrderStatus.DELIVERED
@@ -604,18 +604,34 @@ public class DataSeeder implements CommandLineRunner {
 
                         order.setItems(orderItems);
                         order.setSubtotal(subtotal);
-                        order.setTotalAmount(subtotal.add(order.getShippingFee()));
+                        BigDecimal tax = subtotal.multiply(new BigDecimal("0.1"));
+                        order.setTaxAmount(tax);
+                        order.setTotalAmount(subtotal.add(order.getShippingFee()).add(tax));
 
                         // Cập nhật timestamps theo status
-                        if (status == Order.OrderStatus.CONFIRMED || status == Order.OrderStatus.SHIPPED ||
-                                        status == Order.OrderStatus.DELIVERED) {
-                                order.setConfirmedAt(LocalDateTime.now().minusDays(random.nextInt(5) + 1));
+                        if (status == Order.OrderStatus.CONFIRMED || status == Order.OrderStatus.PROCESSING
+                                        || status == Order.OrderStatus.SHIPPING ||
+                                        status == Order.OrderStatus.DELIVERED
+                                        || status == Order.OrderStatus.COMPLETED) {
+                                order.setConfirmedAt(LocalDateTime.now().minusDays(random.nextInt(5) + 3));
                         }
-                        if (status == Order.OrderStatus.SHIPPED || status == Order.OrderStatus.DELIVERED) {
-                                order.setShippedAt(LocalDateTime.now().minusDays(random.nextInt(3)));
+                        if (status == Order.OrderStatus.PROCESSING || status == Order.OrderStatus.SHIPPING ||
+                                        status == Order.OrderStatus.DELIVERED
+                                        || status == Order.OrderStatus.COMPLETED) {
+                                order.setProcessingAt(LocalDateTime.now().minusDays(random.nextInt(4) + 2));
                         }
-                        if (status == Order.OrderStatus.DELIVERED) {
+                        if (status == Order.OrderStatus.SHIPPING || status == Order.OrderStatus.DELIVERED
+                                        || status == Order.OrderStatus.COMPLETED) {
+                                order.setShippedAt(LocalDateTime.now().minusDays(random.nextInt(3) + 1));
+                        }
+                        if (status == Order.OrderStatus.DELIVERED || status == Order.OrderStatus.COMPLETED) {
                                 order.setDeliveredAt(LocalDateTime.now().minusDays(random.nextInt(2)));
+                        }
+                        if (status == Order.OrderStatus.COMPLETED) {
+                                order.setCompletedAt(LocalDateTime.now());
+                        }
+                        if (status == Order.OrderStatus.CANCELLED) {
+                                order.setCancelledAt(LocalDateTime.now().minusDays(random.nextInt(2)));
                         }
 
                         order = orderRepository.save(order);
@@ -626,8 +642,10 @@ public class DataSeeder implements CommandLineRunner {
                                         .amount(order.getTotalAmount())
                                         .method(random.nextBoolean() ? Payment.PaymentMethod.COD
                                                         : Payment.PaymentMethod.VNPAY)
-                                        .status(status == Order.OrderStatus.DELIVERED ? Payment.PaymentStatus.COMPLETED
-                                                        : Payment.PaymentStatus.PENDING)
+                                        .status((status == Order.OrderStatus.DELIVERED
+                                                        || status == Order.OrderStatus.COMPLETED)
+                                                                        ? Payment.PaymentStatus.COMPLETED
+                                                                        : Payment.PaymentStatus.PENDING)
                                         .build();
 
                         if (payment.getMethod() == Payment.PaymentMethod.VNPAY &&

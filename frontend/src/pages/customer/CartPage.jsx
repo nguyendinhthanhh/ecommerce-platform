@@ -198,6 +198,10 @@ const CartPage = () => {
                   <span>Phí giao hàng</span>
                   <span className="font-bold text-green-600 uppercase">Miễn phí</span>
                 </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>Thuế VAT (10%)</span>
+                  <span className="font-bold text-gray-900">{formatPrice(tax)}</span>
+                </div>
               </div>
 
               <div className="border-t border-gray-100 pt-3 flex justify-between items-end">
@@ -212,8 +216,8 @@ const CartPage = () => {
                 onClick={() => navigate("/place-order")}
                 disabled={selectedItemsCount === 0}
                 className={`w-full py-4 mt-2 rounded font-bold uppercase flex flex-col items-center justify-center transition-all ${selectedItemsCount > 0
-                    ? "bg-primary text-white hover:bg-red-700"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  ? "bg-primary text-white hover:bg-red-700"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   }`}
               >
                 <span className="text-[16px]">Tiến hành thanh toán</span>
