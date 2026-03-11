@@ -43,11 +43,11 @@ public class CartServiceImpl implements CartService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product", request.getProductId()));
 
         if (product.getStatus() != Product.ProductStatus.ACTIVE) {
-            throw new BadRequestException("Product is not available");
+            throw new BadRequestException("Sản phẩm không khả dụng");
         }
 
         if (product.getStockQuantity() < request.getQuantity()) {
-            throw new BadRequestException("Insufficient stock. Available: " + product.getStockQuantity());
+            throw new BadRequestException("Kho không đủ. Còn lại: " + product.getStockQuantity());
         }
 
         Optional<CartItem> existingItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), product.getId());
@@ -56,7 +56,7 @@ public class CartServiceImpl implements CartService {
             CartItem item = existingItem.get();
             int newQuantity = item.getQuantity() + request.getQuantity();
             if (newQuantity > product.getStockQuantity()) {
-                throw new BadRequestException("Cannot add more. Stock limit: " + product.getStockQuantity());
+                throw new BadRequestException("Không thể thêm số lượng. Giới hạn kho: " + product.getStockQuantity());
             }
             item.setQuantity(newQuantity);
             cartItemRepository.save(item);
@@ -81,14 +81,14 @@ public class CartServiceImpl implements CartService {
                 .orElseThrow(() -> new ResourceNotFoundException("Cart item", cartItemId));
 
         if (!item.getCart().getId().equals(cart.getId())) {
-            throw new BadRequestException("Cart item does not belong to your cart");
+            throw new BadRequestException("Sản phẩm không thuộc giỏ hàng của bạn");
         }
 
         if (quantity <= 0) {
             cartItemRepository.delete(item);
         } else {
             if (quantity > item.getProduct().getStockQuantity()) {
-                throw new BadRequestException("Insufficient stock. Available: " + item.getProduct().getStockQuantity());
+                throw new BadRequestException("Kho không đủ. Còn lại: " + item.getProduct().getStockQuantity());
             }
             item.setQuantity(quantity);
             cartItemRepository.save(item);
@@ -105,7 +105,7 @@ public class CartServiceImpl implements CartService {
                 .orElseThrow(() -> new ResourceNotFoundException("Cart item", cartItemId));
 
         if (!item.getCart().getId().equals(cart.getId())) {
-            throw new BadRequestException("Cart item does not belong to your cart");
+            throw new BadRequestException("Sản phẩm không thuộc giỏ hàng của bạn");
         }
 
         cartItemRepository.delete(item);

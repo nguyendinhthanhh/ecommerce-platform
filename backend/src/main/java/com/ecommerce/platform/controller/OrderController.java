@@ -37,7 +37,7 @@ public class OrderController {
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody PlaceOrderRequest request) {
         List<OrderResponse> orders = orderService.placeOrder(principal.getId(), request);
-        return ResponseEntity.ok(ApiResponse.success("Order placed successfully", orders));
+        return ResponseEntity.ok(ApiResponse.success("Đặt hàng thành công", orders));
     }
 
     @Operation(summary = "Get order detail", description = "Get order details by ID")
@@ -47,6 +47,16 @@ public class OrderController {
             @PathVariable Long orderId) {
         OrderResponse order = orderService.getOrderById(orderId, principal.getId());
         return ResponseEntity.ok(ApiResponse.success(order));
+    }
+
+    @Operation(summary = "Confirm order received", description = "Customer confirms they received the order")
+    @PostMapping("/{orderId}/confirm-received")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponse<OrderResponse>> confirmOrderReceived(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long orderId) {
+        OrderResponse order = orderService.confirmOrderReceived(orderId, principal.getId());
+        return ResponseEntity.ok(ApiResponse.success("Đã xác nhận nhận hàng", order));
     }
 
     @Operation(summary = "Get order detail by code", description = "Get order details by order code")
@@ -76,7 +86,7 @@ public class OrderController {
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long orderId) {
         OrderResponse order = orderService.cancelOrder(orderId, principal.getId());
-        return ResponseEntity.ok(ApiResponse.success("Order cancelled", order));
+        return ResponseEntity.ok(ApiResponse.success("Đã hủy đơn hàng", order));
     }
 
     @Operation(summary = "Get all orders", description = "Get paginated list of all orders (Staff/Admin only)")
@@ -100,6 +110,6 @@ public class OrderController {
             @PathVariable Long orderId,
             @Valid @RequestBody UpdateOrderStatusRequest request) {
         OrderResponse order = orderService.updateOrderStatus(orderId, principal.getId(), request);
-        return ResponseEntity.ok(ApiResponse.success("Order status updated", order));
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái đơn hàng thành công", order));
     }
 }

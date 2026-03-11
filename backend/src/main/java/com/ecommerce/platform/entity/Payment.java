@@ -13,24 +13,24 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class Payment {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(unique = true)
     private String transactionId;
 
     @Column(unique = true)
     private String ContenPayment;
-    
+
     @OneToOne
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
-    
+
     @Column(precision = 12, scale = 2, nullable = false)
     private BigDecimal amount;
-    
+
     @Enumerated(EnumType.STRING)
     private PaymentMethod method;
 
@@ -38,21 +38,22 @@ public class Payment {
     private PaymentStatus status;
 
     private String gatewayResponse;
-    
+
     private LocalDateTime createdAt;
     private LocalDateTime paidAt;
-    
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        if (status == null) status = PaymentStatus.PENDING;
+        if (status == null)
+            status = PaymentStatus.PENDING;
     }
-    
+
     public enum PaymentMethod {
         COD, VNPAY, MOMO, BANK_TRANSFER
     }
-    
+
     public enum PaymentStatus {
-        PENDING, COMPLETED, FAILED, REFUNDED
+        PENDING, PROCESSING, COMPLETED, FAILED, REFUNDED
     }
 }

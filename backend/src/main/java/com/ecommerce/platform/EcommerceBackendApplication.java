@@ -19,5 +19,17 @@ public class EcommerceBackendApplication {
             embeddingService.embedAllProducts();
         };
     }
-}
 
+    @Bean
+    CommandLineRunner fixDatabaseConstraints(org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
+        return args -> {
+            try {
+                // Drop the constraint that prevents the new PROCESSING status
+                jdbcTemplate.execute("ALTER TABLE \"ecommerce-platform\".payments DROP CONSTRAINT IF EXISTS payments_status_check;");
+                System.out.println("Successfully dropped payments_status_check constraint.");
+            } catch (Exception e) {
+                System.err.println("Notice: Could not drop constraint (might not exist): " + e.getMessage());
+            }
+        };
+    }
+}

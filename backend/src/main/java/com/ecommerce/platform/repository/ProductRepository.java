@@ -23,13 +23,25 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
        Page<Product> findByCategoryIdWithGraph(@Param("categoryId") Long categoryId, Pageable pageable);
 
        @EntityGraph(attributePaths = { "category" })
+       @Query("SELECT p FROM Product p WHERE p.category.id IN :categoryIds AND p.status = 'ACTIVE'")
+       Page<Product> findByCategoryIdInWithGraph(@Param("categoryIds") List<Long> categoryIds, Pageable pageable);
+
+       @EntityGraph(attributePaths = { "category" })
        @Query("SELECT p FROM Product p WHERE p.id = :id")
        Optional<Product> findByIdWithGraph(@Param("id") Long id);
 
        @EntityGraph(attributePaths = { "category" })
-       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND " +
+       @Query(value = "SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND " +
                      "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-                     "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+                     "LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                     "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+                     "ORDER BY CASE " +
+                     "WHEN LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 1 " +
+                     "WHEN LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 2 " +
+                     "ELSE 3 END ASC", countQuery = "SELECT count(p) FROM Product p WHERE p.status = 'ACTIVE' AND " +
+                                   "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                                   "LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                                   "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
        Page<Product> searchProductsWithGraph(@Param("keyword") String keyword, Pageable pageable);
 
        @EntityGraph(attributePaths = { "category" })
@@ -49,11 +61,36 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                      @Param("categoryId") Long categoryId,
                      Pageable pageable);
 
+       @Query(value = "SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND " +
+                     "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                     "p.category.id IN :categoryIds OR " +
+                     "LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                     "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+                     "ORDER BY CASE " +
+                     "WHEN LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 1 " +
+                     "WHEN LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 2 " +
+                     "WHEN p.category.id IN :categoryIds THEN 3 " +
+                     "ELSE 4 END ASC", countQuery = "SELECT count(p) FROM Product p WHERE p.status = 'ACTIVE' AND " +
+                                   "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                                   "p.category.id IN :categoryIds OR " +
+                                   "LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                                   "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+       Page<Product> searchProductsByKeywordOrCategoryIds(@Param("keyword") String keyword,
+                     @Param("categoryIds") List<Long> categoryIds, Pageable pageable);
+
        Page<Product> findByCategoryId(Long categoryId, Pageable pageable);
 
-       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND " +
+       @Query(value = "SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND " +
                      "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-                     "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+                     "LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                     "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+                     "ORDER BY CASE " +
+                     "WHEN LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 1 " +
+                     "WHEN LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 2 " +
+                     "ELSE 3 END ASC", countQuery = "SELECT count(p) FROM Product p WHERE p.status = 'ACTIVE' AND " +
+                                   "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                                   "LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                                   "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
        Page<Product> searchProducts(@Param("keyword") String keyword, Pageable pageable);
 
        @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY p.soldCount DESC")
@@ -65,11 +102,16 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
        // ===== AI SEARCH SUPPORT =====
 
        @Query("""
-    SELECT p FROM Product p 
-    WHERE p.status = 'ACTIVE' AND
-    (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
-    OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
-""")
+                         SELECT p FROM Product p
+                         WHERE p.status = 'ACTIVE' AND
+                         (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                         OR LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                         OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
+                         ORDER BY CASE
+                         WHEN LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 1
+                         WHEN LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 2
+                         ELSE 3 END ASC
+                     """)
        List<Product> searchByKeyword(@Param("keyword") String keyword);
 
        List<Product> findByPriceLessThanEqual(java.math.BigDecimal price);

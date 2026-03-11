@@ -39,7 +39,7 @@ public class CartController {
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody AddToCartRequest request) {
         CartResponse cart = cartService.addToCart(principal.getId(), request);
-        return ResponseEntity.ok(ApiResponse.success("Product added to cart", cart));
+        return ResponseEntity.ok(ApiResponse.success("Đã thêm sản phẩm vào giỏ hàng", cart));
     }
 
     @Operation(summary = "Update cart item", description = "Update quantity of cart item")
@@ -49,7 +49,7 @@ public class CartController {
             @PathVariable Long itemId,
             @RequestParam Integer quantity) {
         CartResponse cart = cartService.updateCartItem(principal.getId(), itemId, quantity);
-        return ResponseEntity.ok(ApiResponse.success("Cart updated", cart));
+        return ResponseEntity.ok(ApiResponse.success("Đã cập nhật giỏ hàng", cart));
     }
 
     @Operation(summary = "Remove from cart", description = "Remove item from shopping cart")
@@ -58,13 +58,13 @@ public class CartController {
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long itemId) {
         CartResponse cart = cartService.removeFromCart(principal.getId(), itemId);
-        return ResponseEntity.ok(ApiResponse.success("Item removed from cart", cart));
+        return ResponseEntity.ok(ApiResponse.success("Đã xóa sản phẩm khỏi giỏ hàng", cart));
     }
 
     @Operation(summary = "Clear cart", description = "Remove all items from shopping cart")
     @DeleteMapping
     public ResponseEntity<ApiResponse<Void>> clearCart(@AuthenticationPrincipal UserPrincipal principal) {
         cartService.clearCart(principal.getId());
-        return ResponseEntity.ok(ApiResponse.success("Cart cleared", null));
+        return ResponseEntity.ok(ApiResponse.success("Đã xóa toàn bộ giỏ hàng", null));
     }
 }

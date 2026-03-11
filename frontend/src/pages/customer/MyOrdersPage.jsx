@@ -10,7 +10,8 @@ const MyOrdersPage = () => {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [cancellingOrderId, setCancellingOrderId] = useState(null);
-    
+    const [confirmingOrderId, setConfirmingOrderId] = useState(null);
+
     const [filters, setFilters] = useState({
         status: 'ALL'
     });
@@ -30,13 +31,13 @@ const MyOrdersPage = () => {
         try {
             setLoading(true);
             const data = await orderService.getMyOrders(pagination.page, pagination.size);
-            
+
             // Apply status filter
             let filteredOrders = data.content;
             if (filters.status !== 'ALL') {
                 filteredOrders = filteredOrders.filter(order => order.status === filters.status);
             }
-            
+
             setOrders(filteredOrders);
             setPagination({
                 ...pagination,
@@ -52,45 +53,67 @@ const MyOrdersPage = () => {
     };
 
     const handleCancelOrder = async (orderId) => {
-        if (!window.confirm('Are you sure you want to cancel this order?')) {
+        if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) {
             return;
         }
 
         try {
             setCancellingOrderId(orderId);
             await orderService.cancelOrder(orderId);
-            toast.success('Order cancelled successfully');
+            toast.success('Đơn hàng đã được hủy');
             fetchMyOrders();
             if (selectedOrder?.id === orderId) {
                 setShowDetailModal(false);
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to cancel order');
+            toast.error(error.response?.data?.message || 'Không thể hủy đơn hàng');
         } finally {
             setCancellingOrderId(null);
         }
     };
 
+    const handleConfirmReceived = async (orderId) => {
+        if (!window.confirm('Bạn có chắc chắn muốn xác nhận rằng bạn đã nhận được đơn hàng này không?')) {
+            return;
+        }
+
+        try {
+            setConfirmingOrderId(orderId);
+            await orderService.confirmReceived(orderId);
+            toast.success('Đơn hàng được xác nhận là đã nhận');
+            fetchMyOrders();
+            if (selectedOrder?.id === orderId) {
+                setShowDetailModal(false);
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Không thể xác nhận đơn hàng');
+        } finally {
+            setConfirmingOrderId(null);
+        }
+    };
+
     const getStatusColor = (status) => {
         const colors = {
-            PLACED: 'bg-blue-100 text-blue-700 border-blue-200',
+            PENDING: 'bg-blue-100 text-blue-700 border-blue-200',
             CONFIRMED: 'bg-indigo-100 text-indigo-700 border-indigo-200',
-            SHIPPED: 'bg-orange-100 text-orange-700 border-orange-200',
+            PROCESSING: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+            SHIPPING: 'bg-orange-100 text-orange-700 border-orange-200',
             DELIVERED: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-            CANCELLED: 'bg-rose-100 text-rose-700 border-rose-200',
-            RETURNED: 'bg-purple-100 text-purple-700 border-purple-200'
+            COMPLETED: 'bg-green-100 text-green-700 border-green-200',
+            CANCELLED: 'bg-rose-100 text-rose-700 border-rose-200'
         };
         return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200';
     };
 
     const getStatusIcon = (status) => {
         const icons = {
-            PLACED: 'shopping_cart',
+            PENDING: 'shopping_cart',
             CONFIRMED: 'check_circle',
-            SHIPPED: 'local_shipping',
+            PROCESSING: 'autorenew',
+            SHIPPING: 'local_shipping',
             DELIVERED: 'done_all',
-            CANCELLED: 'cancel',
-            RETURNED: 'keyboard_return'
+            COMPLETED: 'task_alt',
+            CANCELLED: 'cancel'
         };
         return icons[status] || 'receipt';
     };
@@ -110,15 +133,16 @@ const MyOrdersPage = () => {
     };
 
     const getOrderProgress = (status) => {
-        const steps = ['PLACED', 'CONFIRMED', 'SHIPPED', 'DELIVERED'];
+        const steps = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPING', 'DELIVERED', 'COMPLETED'];
         const currentIndex = steps.indexOf(status);
+        if (currentIndex === -1) return 0;
         return ((currentIndex + 1) / steps.length) * 100;
     };
 
     return (
         <div className="min-h-screen bg-gray-50">
             <Header />
-            
+
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Page Header */}
                 <div className="mb-8">
@@ -127,34 +151,35 @@ const MyOrdersPage = () => {
                             <span className="material-symbols-outlined">home</span>
                         </Link>
                         <span className="text-gray-400">/</span>
-                        <span className="text-gray-900 font-medium">My Orders</span>
+                        <span className="text-gray-900 font-medium">Đơn hàng của tôi</span>
                     </div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                         <span className="material-symbols-outlined text-4xl text-blue-600">receipt_long</span>
-                        My Orders
+                        Đơn hàng của tôi
                     </h1>
-                    <p className="text-gray-600 mt-2">Track and manage your orders</p>
+                    <p className="text-gray-600 mt-2">Theo dõi và quản lý đơn hàng của bạn</p>
                 </div>
 
                 {/* Filter Tabs */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
                     <div className="flex overflow-x-auto">
                         {[
-                            { label: 'All Orders', value: 'ALL', icon: 'list_alt' },
-                            { label: 'Placed', value: 'PLACED', icon: 'shopping_cart' },
-                            { label: 'Confirmed', value: 'CONFIRMED', icon: 'check_circle' },
-                            { label: 'Shipping', value: 'SHIPPED', icon: 'local_shipping' },
-                            { label: 'Delivered', value: 'DELIVERED', icon: 'done_all' },
-                            { label: 'Cancelled', value: 'CANCELLED', icon: 'cancel' }
+                            { label: 'Tất cả', value: 'ALL', icon: 'list_alt' },
+                            { label: 'Chờ xác nhận', value: 'PENDING', icon: 'shopping_cart' },
+                            { label: 'Đã xác nhận', value: 'CONFIRMED', icon: 'check_circle' },
+                            { label: 'Đang xử lý', value: 'PROCESSING', icon: 'autorenew' },
+                            { label: 'Đang giao hàng', value: 'SHIPPING', icon: 'local_shipping' },
+                            { label: 'Đã giao hàng', value: 'DELIVERED', icon: 'done_all' },
+                            { label: 'Hoàn thành', value: 'COMPLETED', icon: 'task_alt' },
+                            { label: 'Đã hủy', value: 'CANCELLED', icon: 'cancel' }
                         ].map((tab) => (
                             <button
                                 key={tab.value}
                                 onClick={() => setFilters({ ...filters, status: tab.value })}
-                                className={`flex-1 min-w-[140px] px-6 py-4 flex items-center justify-center gap-2 font-medium transition-all border-b-2 ${
-                                    filters.status === tab.value
-                                        ? 'border-blue-600 text-blue-600 bg-blue-50'
-                                        : 'border-transparent text-gray-600 hover:bg-gray-50'
-                                }`}
+                                className={`flex-1 min-w-[140px] px-6 py-4 flex items-center justify-center gap-2 font-medium transition-all border-b-2 ${filters.status === tab.value
+                                    ? 'border-blue-600 text-blue-600 bg-blue-50'
+                                    : 'border-transparent text-gray-600 hover:bg-gray-50'
+                                    }`}
                             >
                                 <span className="material-symbols-outlined text-xl">{tab.icon}</span>
                                 <span className="text-sm">{tab.label}</span>
@@ -184,14 +209,14 @@ const MyOrdersPage = () => {
                         <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                             <span className="material-symbols-outlined text-5xl text-gray-400">shopping_bag</span>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">No orders yet</h3>
-                        <p className="text-gray-600 mb-6">Start shopping to see your orders here</p>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">Chưa có đơn hàng nào</h3>
+                        <p className="text-gray-600 mb-6">Bắt đầu mua sắm để thấy đơn hàng của bạn ở đây</p>
                         <Link
                             to="/"
                             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                         >
                             <span className="material-symbols-outlined">shopping_cart</span>
-                            Start Shopping
+                            Bắt đầu mua sắm
                         </Link>
                     </div>
                 ) : (
@@ -207,7 +232,7 @@ const MyOrdersPage = () => {
                                         <div>
                                             <div className="flex items-center gap-3 mb-2">
                                                 <h3 className="text-lg font-bold text-gray-900">
-                                                    Order #{order.orderCode}
+                                                    Đơn hàng #{order.orderCode}
                                                 </h3>
                                                 <span className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1 ${getStatusColor(order.status)}`}>
                                                     <span className="material-symbols-outlined text-sm">{getStatusIcon(order.status)}</span>
@@ -215,19 +240,19 @@ const MyOrdersPage = () => {
                                                 </span>
                                             </div>
                                             <p className="text-sm text-gray-600">
-                                                Placed on {formatDate(order.createdAt)}
+                                                Đặt ngày {formatDate(order.createdAt)}
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-3">
                                             <div className="text-right">
-                                                <p className="text-sm text-gray-600">Total Amount</p>
+                                                <p className="text-sm text-gray-600">Tổng tiền</p>
                                                 <p className="text-xl font-bold text-blue-600">{formatPrice(order.totalAmount)}</p>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Progress Bar */}
-                                    {!['CANCELLED', 'RETURNED'].includes(order.status) && (
+                                    {!['CANCELLED'].includes(order.status) && (
                                         <div className="mt-4">
                                             <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                                                 <div
@@ -255,14 +280,14 @@ const MyOrdersPage = () => {
                                                 />
                                                 <div className="flex-1 min-w-0">
                                                     <h4 className="font-medium text-gray-900 truncate">{item.productName}</h4>
-                                                    <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                                                    <p className="text-sm text-gray-600">Số lượng: {item.quantity}</p>
                                                 </div>
                                                 <p className="font-bold text-gray-900">{formatPrice(item.unitPrice)}</p>
                                             </div>
                                         ))}
                                         {order.items.length > 2 && (
                                             <p className="text-sm text-gray-600 italic">
-                                                +{order.items.length - 2} more items
+                                                +{order.items.length - 2} sản phẩm khác
                                             </p>
                                         )}
                                     </div>
@@ -278,9 +303,28 @@ const MyOrdersPage = () => {
                                         className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-1 transition-colors"
                                     >
                                         <span className="material-symbols-outlined text-lg">visibility</span>
-                                        View Details
+                                        Xem chi tiết
                                     </button>
-                                    {order.status === 'PLACED' && (
+                                    {order.status === 'DELIVERED' && (
+                                        <button
+                                            onClick={() => handleConfirmReceived(order.id)}
+                                            disabled={confirmingOrderId === order.id}
+                                            className="px-4 py-2 border border-green-200 text-green-600 rounded-lg hover:bg-green-50 transition-colors font-medium text-sm flex items-center gap-1 disabled:opacity-50"
+                                        >
+                                            {confirmingOrderId === order.id ? (
+                                                <>
+                                                    <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                                                    Đang xác nhận...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="material-symbols-outlined text-lg">check_circle</span>
+                                                    Đã nhận hàng
+                                                </>
+                                            )}
+                                        </button>
+                                    )}
+                                    {order.status === 'PENDING' && (
                                         <button
                                             onClick={() => handleCancelOrder(order.id)}
                                             disabled={cancellingOrderId === order.id}
@@ -289,12 +333,12 @@ const MyOrdersPage = () => {
                                             {cancellingOrderId === order.id ? (
                                                 <>
                                                     <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
-                                                    Cancelling...
+                                                    Đang hủy...
                                                 </>
                                             ) : (
                                                 <>
                                                     <span className="material-symbols-outlined text-lg">cancel</span>
-                                                    Cancel Order
+                                                    Hủy đơn hàng
                                                 </>
                                             )}
                                         </button>
@@ -337,7 +381,7 @@ const MyOrdersPage = () => {
                         <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h2 className="text-2xl font-bold text-gray-900 mb-1">Order Details</h2>
+                                    <h2 className="text-2xl font-bold text-gray-900 mb-1">Chi tiết đơn hàng</h2>
                                     <p className="text-gray-600">#{selectedOrder.orderCode}</p>
                                 </div>
                                 <button
@@ -354,59 +398,63 @@ const MyOrdersPage = () => {
                             {/* Status & Timeline */}
                             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="font-bold text-gray-900">Order Status</h3>
+                                    <h3 className="font-bold text-gray-900">Trạng thái đơn hàng</h3>
                                     <span className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1 ${getStatusColor(selectedOrder.status)}`}>
                                         <span className="material-symbols-outlined text-sm">{getStatusIcon(selectedOrder.status)}</span>
                                         {selectedOrder.status}
                                     </span>
                                 </div>
-                                
+
                                 {/* Timeline */}
-                                <div className="space-y-3">
-                                    {selectedOrder.createdAt && (
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
-                                                <span className="material-symbols-outlined text-white text-sm">shopping_cart</span>
+                                <div className="py-2">
+                                    {[
+                                        { key: 'createdAt', title: 'Chờ xác nhận', icon: 'shopping_cart', color: 'blue', status: 'PENDING' },
+                                        { key: 'confirmedAt', title: 'Đã xác nhận', icon: 'check_circle', color: 'indigo', status: 'CONFIRMED' },
+                                        { key: 'processingAt', title: 'Đang xử lý', icon: 'inventory_2', color: 'purple', status: 'PROCESSING' },
+                                        { key: 'shippedAt', title: 'Đang giao hàng', icon: 'local_shipping', color: 'orange', status: 'SHIPPING' },
+                                        { key: 'deliveredAt', title: 'Đã giao hàng', icon: 'done_all', color: 'emerald', status: 'DELIVERED' },
+                                        { key: 'completedAt', title: 'Hoàn thành', icon: 'task_alt', color: 'green', status: 'COMPLETED' },
+                                        { key: 'cancelledAt', title: 'Đã hủy', icon: 'cancel', color: 'rose', status: 'CANCELLED' }
+                                    ].filter(e => selectedOrder[e.key]).map((event, index, array) => {
+                                        const isLast = index === array.length - 1;
+                                        const isCurrent = isLast; // The last recorded timestamp is the current status
+
+                                        const getColors = () => {
+                                            if (!isCurrent) return { bg: 'bg-white border-2 border-slate-200', text: 'text-slate-400', ring: '' };
+                                            const colors = {
+                                                blue: { bg: 'bg-blue-600', text: 'text-white', ring: 'ring-4 ring-blue-50' },
+                                                indigo: { bg: 'bg-indigo-600', text: 'text-white', ring: 'ring-4 ring-indigo-50' },
+                                                purple: { bg: 'bg-purple-600', text: 'text-white', ring: 'ring-4 ring-purple-50' },
+                                                orange: { bg: 'bg-orange-600', text: 'text-white', ring: 'ring-4 ring-orange-50' },
+                                                emerald: { bg: 'bg-emerald-600', text: 'text-white', ring: 'ring-4 ring-emerald-50' },
+                                                green: { bg: 'bg-green-600', text: 'text-white', ring: 'ring-4 ring-green-50' },
+                                                rose: { bg: 'bg-rose-600', text: 'text-white', ring: 'ring-4 ring-rose-50' }
+                                            };
+                                            return colors[event.color];
+                                        };
+                                        const style = getColors();
+
+                                        return (
+                                            <div key={event.key} className="relative flex gap-4 pb-6 last:pb-0">
+                                                {!isLast && (
+                                                    <div className="absolute left-4 top-8 bottom-[-8px] w-0.5 bg-slate-200" />
+                                                )}
+                                                <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${style.bg} ${style.ring}`}>
+                                                    <span className={`material-symbols-outlined text-[16px] ${style.text}`}>
+                                                        {event.icon}
+                                                    </span>
+                                                </div>
+                                                <div className="flex-1 pt-1.5">
+                                                    <p className={`text-sm font-bold ${isCurrent ? 'text-gray-900' : 'text-gray-500'}`}>
+                                                        {event.title}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        {formatDate(selectedOrder[event.key])}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">Order Placed</p>
-                                                <p className="text-sm text-gray-600">{formatDate(selectedOrder.createdAt)}</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {selectedOrder.confirmedAt && (
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
-                                                <span className="material-symbols-outlined text-white text-sm">check_circle</span>
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">Order Confirmed</p>
-                                                <p className="text-sm text-gray-600">{formatDate(selectedOrder.confirmedAt)}</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {selectedOrder.shippedAt && (
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center flex-shrink-0">
-                                                <span className="material-symbols-outlined text-white text-sm">local_shipping</span>
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">Order Shipped</p>
-                                                <p className="text-sm text-gray-600">{formatDate(selectedOrder.shippedAt)}</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {selectedOrder.deliveredAt && (
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center flex-shrink-0">
-                                                <span className="material-symbols-outlined text-white text-sm">done_all</span>
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">Order Delivered</p>
-                                                <p className="text-sm text-gray-600">{formatDate(selectedOrder.deliveredAt)}</p>
-                                            </div>
-                                        </div>
-                                    )}
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -462,8 +510,20 @@ const MyOrdersPage = () => {
                                         </tbody>
                                         <tfoot className="bg-gray-50 border-t border-gray-200">
                                             <tr>
-                                                <td colSpan="2" className="px-4 py-3 text-right font-bold text-gray-900">Total:</td>
-                                                <td className="px-4 py-3 text-right font-bold text-blue-600 text-lg">{formatPrice(selectedOrder.totalAmount)}</td>
+                                                <td colSpan="2" className="px-4 py-2 pt-4 text-right font-medium text-gray-600">Subtotal:</td>
+                                                <td className="px-4 py-2 pt-4 text-right font-medium text-gray-900">{formatPrice(selectedOrder.subtotal)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td colSpan="2" className="px-4 py-2 text-right font-medium text-gray-600">Shipping:</td>
+                                                <td className="px-4 py-2 text-right font-medium text-gray-900">{formatPrice(selectedOrder.shippingFee)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td colSpan="2" className="px-4 py-2 pb-4 text-right font-medium text-gray-600">Tax (10%):</td>
+                                                <td className="px-4 py-2 pb-4 text-right font-medium text-gray-900">{formatPrice(selectedOrder.taxAmount)}</td>
+                                            </tr>
+                                            <tr className="border-t border-gray-200 bg-white">
+                                                <td colSpan="2" className="px-4 py-4 text-right font-bold text-gray-900 text-lg">Total:</td>
+                                                <td className="px-4 py-4 text-right font-black text-blue-600 text-xl">{formatPrice(selectedOrder.totalAmount)}</td>
                                             </tr>
                                         </tfoot>
                                     </table>
@@ -479,7 +539,26 @@ const MyOrdersPage = () => {
                             >
                                 Close
                             </button>
-                            {selectedOrder.status === 'PLACED' && (
+                            {selectedOrder.status === 'DELIVERED' && (
+                                <button
+                                    onClick={() => handleConfirmReceived(selectedOrder.id)}
+                                    disabled={confirmingOrderId === selectedOrder.id}
+                                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {confirmingOrderId === selectedOrder.id ? (
+                                        <>
+                                            <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                                            Confirming...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="material-symbols-outlined text-lg">check_circle</span>
+                                            Confirm Received
+                                        </>
+                                    )}
+                                </button>
+                            )}
+                            {selectedOrder.status === 'PENDING' && (
                                 <button
                                     onClick={() => handleCancelOrder(selectedOrder.id)}
                                     disabled={cancellingOrderId === selectedOrder.id}

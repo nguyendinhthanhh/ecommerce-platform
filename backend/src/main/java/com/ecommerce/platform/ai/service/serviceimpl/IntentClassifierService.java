@@ -19,31 +19,36 @@ public class IntentClassifierService {
     private final ObjectMapper objectMapper;
 
     private static final String INTENT_PROMPT = """
-        Bạn là AI phân loại intent cho hệ thống ecommerce.
-        Phân tích câu hỏi và trả về JSON:
+            Bạn là AI phân loại intent cho hệ thống ecommerce.
+            Phân tích câu hỏi và trả về JSON:
 
-        {
-          "intent": "PRODUCT_SEARCH | STOCK_CHECK | BULK_ORDER | PRICE_COMPARE | REVIEW_QUERY | DISCOUNT_POLICY | GENERAL_CHAT",
-          "maxPrice": số tiền tối đa (VNĐ),
-          "minPrice": số tiền tối thiểu (VNĐ),
-          "keyword": từ khóa sản phẩm,
-          "quantity": số lượng (nếu có),
-          "rating": số sao mong muốn (nếu có)
-        }
+            {
+              "intent": "PRODUCT_SEARCH | STOCK_CHECK | BULK_ORDER | PRICE_COMPARE | REVIEW_QUERY | DISCOUNT_POLICY | GENERAL_CHAT",
+              "maxPrice": số tiền tối đa (VNĐ),
+              "minPrice": số tiền tối thiểu (VNĐ),
+              "keyword": từ khóa sản phẩm (bao gồm thương hiệu, danh mục, tên sản phẩm hoặc tính năng),
+              "quantity": số lượng (nếu có),
+              "rating": số sao mong muốn (nếu có)
+            }
 
-        Quy tắc:
-        - PRODUCT_SEARCH: tìm sản phẩm, gợi ý, lọc theo giá/danh mục
-        - STOCK_CHECK: còn hàng không, tồn kho
-        - BULK_ORDER: mua số lượng lớn
-        - PRICE_COMPARE: so sánh giá
-        - REVIEW_QUERY: hỏi đánh giá, rating
-        - DISCOUNT_POLICY: khuyến mãi
-        - GENERAL_CHAT: còn lại
+            Mẹo trích xuất "keyword" thông minh:
+            - Nếu người dùng mô tả (vd: "điện thoại chụp ảnh đẹp"), rút gọn thành các từ khóa chính xác như "điện thoại chụp ảnh".
+            - Nhận diện danh mục (vd: "laptop", "tai nghe", "chuột", "bàn phím").
+            - Bỏ các từ thừa như "tôi muốn tìm", "cho tôi hỏi".
 
-        Chỉ trả JSON.
+            Quy tắc:
+            - PRODUCT_SEARCH: tìm sản phẩm, gợi ý, lọc theo giá/danh mục
+            - STOCK_CHECK: còn hàng không, tồn kho
+            - BULK_ORDER: mua số lượng lớn
+            - PRICE_COMPARE: so sánh giá
+            - REVIEW_QUERY: hỏi đánh giá, rating
+            - DISCOUNT_POLICY: khuyến mãi
+            - GENERAL_CHAT: còn lại
 
-        Câu hỏi: %s
-        """;
+            Chỉ trả JSON. Không sinh text bổ sung.
+
+            Câu hỏi: %s
+            """;
 
     public IntentResult classify(String userMessage) {
         log.info("Classifying intent: {}", userMessage);

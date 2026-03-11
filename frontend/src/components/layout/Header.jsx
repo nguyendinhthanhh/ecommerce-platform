@@ -8,6 +8,8 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
+  const [categories, setCategories] = useState([]);
+
   useEffect(() => {
     // Load initial user
     const userData = authService.getUser();
@@ -20,6 +22,18 @@ const Header = () => {
     };
 
     window.addEventListener('auth-change', handleAuthChange);
+
+    // Load categories for red nav bar
+    const fetchCategories = async () => {
+      try {
+        const module = await import("../../services/categoryService");
+        const data = await module.default.getCategoriesHierarchy();
+        setCategories(data?.slice(0, 7) || []);
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    };
+    fetchCategories();
 
     // Cleanup
     return () => {
@@ -52,195 +66,150 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-[#f0f2f4] dark:border-slate-800">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
+    <header className="sticky top-0 z-50 w-full shadow-sm bg-white font-display">
+      {/* 1. Top Bar */}
+      <div className="bg-gray-100 hidden md:block">
+        <div className="max-w-[1200px] mx-auto px-4 h-8 flex items-center justify-between text-[11px] font-medium text-gray-500">
+          <div className="flex gap-4">
+            <span className="flex items-center gap-1 hover:text-primary cursor-pointer transition-colors">
+              <span className="material-symbols-outlined text-[14px]">headset_mic</span>
+              Hotline: 1800 6975
+            </span>
+            <span className="flex items-center gap-1 hover:text-primary cursor-pointer transition-colors">
+              <span className="material-symbols-outlined text-[14px]">storefront</span>
+              Hệ thống Showroom
+            </span>
+          </div>
+          <div className="flex gap-4">
+            <span className="hover:text-primary cursor-pointer transition-colors">Khuyến mãi</span>
+            <span className="hover:text-primary cursor-pointer transition-colors">Tin công nghệ</span>
+            <span className="hover:text-primary cursor-pointer transition-colors">Tuyển dụng</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Main Header */}
+      <div className="bg-white border-b border-gray-100 py-3">
+        <div className="max-w-[1200px] mx-auto px-4 flex items-center justify-between gap-4 md:gap-8">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-            <div className="size-8 text-blue-600 flex items-center justify-center">
-              <span className="material-symbols-outlined text-3xl">
-                smart_toy
-              </span>
-            </div>
-            <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-              ShopAI
+            <h1 className="text-3xl font-black italic tracking-tighter text-primary">
+              Shop-AI
             </h1>
           </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-6">
-            <Link
-              to="/"
-              className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              Shop
-            </Link>
-            <a
-              className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-              href="#"
-            >
-              Deals
-            </a>
-            <a
-              className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-              href="#"
-            >
-              What's New
-            </a>
-          </nav>
-
           {/* Search Bar */}
-          <div className="flex-1 max-w-lg hidden md:block">
-            <form onSubmit={handleSearch} className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="material-symbols-outlined text-gray-400 group-focus-within:text-blue-600">
-                  search
-                </span>
-              </div>
+          <div className="flex-1 max-w-2xl">
+            <form onSubmit={handleSearch} className="relative group flex items-center h-10 bg-gray-100 rounded focus-within:ring-1 focus-within:ring-primary focus-within:bg-white overflow-hidden transition-all">
               <input
-                className="block w-full pl-10 pr-10 py-2 border-none rounded-lg leading-5 bg-[#f0f2f4] dark:bg-slate-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 sm:text-sm"
-                placeholder="Tìm kiếm sản phẩm..."
+                className="w-full h-full pl-4 pr-12 bg-transparent border-none text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-0"
+                placeholder="Bạn cần tìm sản phẩm nào..."
                 type="text"
                 value={searchQuery}
                 onChange={handleSearchChange}
                 onKeyPress={handleSearchKeyPress}
               />
-              <div className="absolute inset-y-0 right-0 pr-2 flex items-center">
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery("")}
-                    className="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 rounded transition-colors mr-1"
-                  >
-                    <span className="material-symbols-outlined text-gray-400 text-[18px]">
-                      close
-                    </span>
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  className="p-1 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"
-                  title="Tìm kiếm"
-                >
-                  <span className="material-symbols-outlined text-blue-600 text-[18px]">
-                    auto_awesome
-                  </span>
-                </button>
-              </div>
+              <button
+                type="submit"
+                className="absolute right-0 h-full px-3 text-gray-500 hover:text-primary flex items-center justifying-center transition-colors"
+                title="Tìm kiếm"
+              >
+                <span className="material-symbols-outlined text-[20px]">search</span>
+              </button>
             </form>
           </div>
 
           {/* User Actions */}
-          <div className="flex items-center gap-2">
-            <CartIcon />
-            <button className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-              <span className="material-symbols-outlined">favorite</span>
-            </button>
+          <div className="flex items-center gap-4 flex-shrink-0">
+            {/* Account Info */}
             {user ? (
-              <div className="relative group">
-                <button className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-                  <span className="material-symbols-outlined">person</span>
-                </button>
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                  <div className="p-3 border-b border-gray-200 dark:border-slate-700">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+              <div className="relative group hidden md:flex items-center gap-2 text-left cursor-pointer hover:text-primary transition-colors text-gray-700">
+                <span className="material-symbols-outlined text-[28px]">account_circle</span>
+                <div className="flex flex-col">
+                  <span className="text-[11px] text-gray-500">Xin chào,</span>
+                  <span className="text-sm font-bold truncate max-w-[100px]">{user.fullName || 'User'}</span>
+                </div>
+                <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 py-1">
+                  <div className="p-3 border-b border-gray-100">
+                    <p className="text-sm font-bold text-gray-900 group-hover:text-gray-900">
                       {user.fullName}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-gray-500">
                       {user.email}
                     </p>
                   </div>
-                  <Link
-                    to="/profile"
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">
-                      account_circle
-                    </span>
-                    Personal Info
+                  <Link to="/profile" className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary">
+                    <span className="material-symbols-outlined text-[18px]">person</span>
+                    Tài khoản
                   </Link>
-                  <Link
-                    to="/my-orders"
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">
-                      receipt_long
-                    </span>
-                    My Orders
+                  <Link to="/my-orders" className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary">
+                    <span className="material-symbols-outlined text-[18px]">receipt_long</span>
+                    Đơn hàng
                   </Link>
                   {user.role === "ADMIN" && (
-                    <Link
-                      to="/admin/dashboard"
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">
-                        admin_panel_settings
-                      </span>
-                      Admin Dashboard
+                    <Link to="/admin/dashboard" className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary">
+                      <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+                      Admin
                     </Link>
                   )}
                   {user.role === "SELLER" && (
-                    <Link
-                      to="/seller/dashboard"
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">
-                        storefront
-                      </span>
-                      Seller Dashboard
+                    <Link to="/seller/dashboard" className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary">
+                      <span className="material-symbols-outlined text-[18px]">storefront</span>
+                      Seller
                     </Link>
                   )}
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">
-                      logout
-                    </span>
-                    Logout
+                  <button onClick={handleLogout} className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-primary hover:bg-red-50">
+                    <span className="material-symbols-outlined text-[18px]">logout</span>
+                    Đăng xuất
                   </button>
                 </div>
               </div>
             ) : (
-              <Link
-                to="/login"
-                className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-              >
-                <span className="material-symbols-outlined">person</span>
+              <Link to="/login" className="hidden md:flex items-center gap-2 text-left hover:text-primary transition-colors text-gray-700">
+                <span className="material-symbols-outlined text-[28px]">account_circle</span>
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-medium">Đăng nhập /</span>
+                  <span className="text-sm font-bold">Tài khoản</span>
+                </div>
               </Link>
             )}
+
+            {/* Cart Icon */}
+            <CartIcon />
           </div>
         </div>
       </div>
 
-      {/* Mobile Search */}
-      <div className="md:hidden px-4 pb-3">
-        <form onSubmit={handleSearch} className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <span className="material-symbols-outlined text-gray-400">
-              search
-            </span>
-          </div>
-          <input
-            className="block w-full pl-10 pr-10 py-2 border-none rounded-lg bg-[#f0f2f4] dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-600"
-            placeholder="Tìm kiếm sản phẩm..."
-            type="text"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            onKeyPress={handleSearchKeyPress}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
-            >
-              <span className="material-symbols-outlined text-gray-400 text-[18px]">
-                close
-              </span>
-            </button>
-          )}
-        </form>
+      {/* 3. Category Nav (Red Bar) */}
+      <div className="bg-primary text-white hidden md:block border-t border-red-700">
+        <div className="max-w-[1200px] mx-auto px-4 flex items-center h-10 text-[12px] font-bold uppercase tracking-wide">
+          <Link to="/products" className="flex items-center gap-2 px-4 h-full bg-black/20 hover:bg-black/30 transition-colors">
+            <span className="material-symbols-outlined text-[18px]">menu</span>
+            DANH MỤC SẢN PHẨM
+          </Link>
+          <nav className="flex items-center flex-1 ml-4 gap-2">
+            {categories.map((cat) => (
+              <div key={cat.id} className="group relative h-full">
+                <Link to={`/products?category=${cat.id}`} className="px-3 h-full flex items-center hover:bg-black/10 transition-colors uppercase gap-1">
+                  {cat.name}
+                  {cat.children && cat.children.length > 0 && (
+                    <span className="material-symbols-outlined text-[14px]">expand_more</span>
+                  )}
+                </Link>
+                {/* Custom Submenu */}
+                {cat.children && cat.children.length > 0 && (
+                  <div className="absolute top-full left-0 min-w-[200px] bg-white shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 text-gray-700 font-normal normal-case">
+                    {cat.children.filter(child => child.isActive).map(child => (
+                      <Link key={child.id} to={`/products?category=${child.id}`} className="block px-4 py-2 hover:bg-gray-50 hover:text-primary border-b border-gray-50 last:border-0 truncate">
+                        {child.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </nav>
+        </div>
       </div>
     </header>
   );

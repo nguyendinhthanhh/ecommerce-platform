@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../../components/layout/Header";
 import { useCart } from "../../contexts/CartContext";
 import orderService from "../../services/orderService";
@@ -7,9 +7,11 @@ import authService from "../../services/authService";
 
 const PlaceOrderPage = () => {
     const navigate = useNavigate();
-    const { cartItems, selectedItems, subtotal, tax, total, clearCart } = useCart();
+    const location = useLocation();
+    const { cartItems, selectedItems, subtotal: cartSubtotal, tax: cartTax, total: cartTotal } = useCart();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const isSubmitting = useRef(false);
 
     const [formData, setFormData] = useState({
         firstName: "",
@@ -21,8 +23,28 @@ const PlaceOrderPage = () => {
         paymentMethod: "VNPAY", // Set VNPay as default
     });
 
+    const directBuy = location.state?.directBuy || false;
+    const directProduct = location.state?.product || null;
+    const directQuantity = location.state?.quantity || 1;
+
     // Get selected items to display in order summary
-    const selectedCartItems = cartItems.filter((item) => selectedItems.has(item.id));
+    const selectedCartItems = directBuy && directProduct
+        ? [{
+            id: directProduct.id,
+            productId: directProduct.id,
+            name: directProduct.name,
+            price: directProduct.discountPrice || directProduct.price,
+            quantity: directQuantity,
+            image: directProduct.thumbnail || directProduct.images?.[0]
+        }]
+        : cartItems.filter((item) => selectedItems.has(item.id));
+
+    const subtotal = directBuy && directProduct
+        ? (directProduct.discountPrice || directProduct.price) * directQuantity
+        : cartSubtotal;
+
+    const tax = directBuy && directProduct ? subtotal * 0.1 : cartTax;
+    const total = directBuy && directProduct ? subtotal + tax : cartTotal;
 
     useEffect(() => {
         const user = authService.getUser();
@@ -31,11 +53,11 @@ const PlaceOrderPage = () => {
             return;
         }
 
-        // If no items are selected for checkout, redirect back to cart
-        if (selectedItems.size === 0) {
+        // If no items are selected for checkout and not direct buy, redirect back to cart
+        if (!directBuy && selectedItems.size === 0) {
             navigate("/cart");
         }
-    }, [selectedItems, navigate]);
+    }, [selectedItems, navigate, directBuy]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -83,12 +105,22 @@ const PlaceOrderPage = () => {
 
     const handlePlaceOrder = async (e) => {
         e.preventDefault();
+
+        // Strict synchronous guard against double-clicks
+        if (isSubmitting.current) {
+            console.warn("Chặn click đúp: Yêu cầu đang được xử lý.");
+            return;
+        }
+
+        isSubmitting.current = true;
         setLoading(true);
         setError(null);
 
         try {
             const orderData = {
-                cartItemIds: Array.from(selectedItems),
+                cartItemIds: directBuy ? null : Array.from(selectedItems),
+                productId: directBuy ? directProduct.id : null,
+                quantity: directBuy ? directQuantity : null,
                 shippingName: `${formData.firstName} ${formData.lastName}`.trim(),
                 shippingPhone: formData.shippingPhone,
                 shippingAddress: `${formData.address}, ${formData.city}, ${formData.zipCode}`.trim(),
@@ -141,7 +173,7 @@ const PlaceOrderPage = () => {
                 } catch (payErr) {
                     console.error("Payment initiation error detail:", payErr);
                     const errorMessage = payErr.response?.data?.message || payErr.message || "Unknown error";
-                    alert(`Order created, but payment failed: ${errorMessage}. You can pay later from your profile.`);
+                    alert(`Đã tạo đơn hàng nhưng thanh toán thất bại: ${errorMessage}. Bạn có thể thanh toán sau trong hồ sơ.`);
                     navigate("/profile");
                     return;
                 }
@@ -152,12 +184,13 @@ const PlaceOrderPage = () => {
             // For now, let's assume clearCart or similar logic
             // Actually, we should only clear selected items.
 
-            alert("Order placed successfully!");
+            alert("Đặt hàng thành công!");
             navigate("/profile"); // Navigate to profile or orders page
         } catch (err) {
             console.error("Error placing order:", err);
-            setError(err.response?.data?.message || "Failed to place order. Please try again.");
+            setError(err.response?.data?.message || "Không thể đặt hàng. Vui lòng thử lại.");
         } finally {
+            isSubmitting.current = false;
             setLoading(false);
         }
     };
@@ -181,26 +214,26 @@ const PlaceOrderPage = () => {
                             <div className="size-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold z-10">
                                 1
                             </div>
-                            <span className="absolute -bottom-7 text-sm font-bold text-blue-600 whitespace-nowrap uppercase tracking-wider">Shipping</span>
+                            <span className="absolute -bottom-7 text-sm font-bold text-blue-600 whitespace-nowrap uppercase tracking-wider">Giao hàng</span>
                         </div>
                         <div className="flex-1 h-1 bg-blue-100 mx-4 rounded-full"></div>
                         <div className="flex flex-col items-center relative text-gray-400">
                             <div className="size-10 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center font-bold z-10 transition-all">
                                 2
                             </div>
-                            <span className="absolute -bottom-7 text-sm font-medium whitespace-nowrap uppercase tracking-wider">Payment</span>
+                            <span className="absolute -bottom-7 text-sm font-medium whitespace-nowrap uppercase tracking-wider">Thanh toán</span>
                         </div>
                         <div className="flex-1 h-1 bg-gray-100 mx-4 rounded-full"></div>
                         <div className="flex flex-col items-center relative text-gray-400">
                             <div className="size-10 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center font-bold z-10 transition-all">
                                 3
                             </div>
-                            <span className="absolute -bottom-7 text-sm font-medium whitespace-nowrap uppercase tracking-wider">Review</span>
+                            <span className="absolute -bottom-7 text-sm font-medium whitespace-nowrap uppercase tracking-wider">Xác nhận</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-16">
+                <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-16">
                     {/* Left Side - Forms */}
                     <div className="lg:col-span-8 space-y-8">
                         {/* Shipping Address */}
@@ -208,7 +241,7 @@ const PlaceOrderPage = () => {
                             <div className="flex items-center justify-between mb-8">
                                 <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
                                     <span className="material-symbols-outlined text-blue-600">local_shipping</span>
-                                    Shipping Address
+                                    Địa chỉ giao hàng
                                 </h2>
                                 <button
                                     type="button"
@@ -217,13 +250,13 @@ const PlaceOrderPage = () => {
                                     className="text-sm font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 group disabled:opacity-50"
                                 >
                                     <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">person_pin_circle</span>
-                                    Use saved address
+                                    Dùng địa chỉ lưu sẵn
                                 </button>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-widest pl-1">First Name</label>
+                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-widest pl-1">Tên</label>
                                     <input
                                         type="text"
                                         name="firstName"
@@ -235,7 +268,7 @@ const PlaceOrderPage = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-widest pl-1">Last Name</label>
+                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-widest pl-1">Họ</label>
                                     <input
                                         type="text"
                                         name="lastName"
@@ -247,7 +280,7 @@ const PlaceOrderPage = () => {
                                     />
                                 </div>
                                 <div className="space-y-2 col-span-full">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-widest pl-1">Phone Number</label>
+                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-widest pl-1">Số điện thoại</label>
                                     <input
                                         type="tel"
                                         name="shippingPhone"
@@ -259,7 +292,7 @@ const PlaceOrderPage = () => {
                                     />
                                 </div>
                                 <div className="space-y-2 col-span-full">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-widest pl-1">Address</label>
+                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-widest pl-1">Địa chỉ</label>
                                     <input
                                         type="text"
                                         name="address"
@@ -271,7 +304,7 @@ const PlaceOrderPage = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-widest pl-1">City</label>
+                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-widest pl-1">Thành phố</label>
                                     <input
                                         type="text"
                                         name="city"
@@ -283,7 +316,7 @@ const PlaceOrderPage = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-widest pl-1">Zip Code</label>
+                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-widest pl-1">Mã bưu chính</label>
                                     <input
                                         type="text"
                                         name="zipCode"
@@ -301,7 +334,7 @@ const PlaceOrderPage = () => {
                         <section className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
                             <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-2">
                                 <span className="material-symbols-outlined text-blue-600">rocket_launch</span>
-                                Shipping Method
+                                Phương thức Giao hàng
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <label className="flex items-center justify-between p-6 rounded-2xl border-2 border-blue-600 bg-blue-50/50 cursor-pointer transition-all hover:shadow-md group">
@@ -310,12 +343,14 @@ const PlaceOrderPage = () => {
                                             <span className="material-symbols-outlined">package_2</span>
                                         </div>
                                         <div>
-                                            <p className="font-bold text-gray-900 text-lg">Standard Shipping</p>
-                                            <p className="text-sm text-gray-500">3-5 business days</p>
+                                            <p className="font-bold text-gray-900 text-lg">Vận chuyển tiêu chuẩn
+                                            </p>
+                                            <p className="text-sm text-gray-500">3-5 ngày làm việc
+                                            </p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <span className="font-black text-gray-900">Free</span>
+                                        <span className="font-black text-gray-900">Miễn phí</span>
                                         <div className="size-6 border-2 border-blue-600 rounded-full flex items-center justify-center">
                                             <div className="size-3 bg-blue-600 rounded-full"></div>
                                         </div>
@@ -328,12 +363,13 @@ const PlaceOrderPage = () => {
                                             <span className="material-symbols-outlined">bolt</span>
                                         </div>
                                         <div>
-                                            <p className="font-bold text-gray-900 text-lg">Express Delivery</p>
-                                            <p className="text-sm text-gray-500">1-2 business days</p>
+                                            <p className="font-bold text-gray-900 text-lg">Chuyển phát nhanh
+                                            </p>
+                                            <p className="text-sm text-gray-500">1-2 ngày làm việc</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <span className="font-black text-gray-900">$15.00</span>
+                                        <span className="font-black text-gray-900">15.000đ</span>
                                         <div className="size-6 border-2 border-gray-200 group-hover:border-blue-200 rounded-full"></div>
                                     </div>
                                     <input type="radio" name="shippingMethod" className="hidden" />
@@ -344,8 +380,8 @@ const PlaceOrderPage = () => {
                         {/* Payment Method */}
                         <section className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
                             <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-2">
-                                <span className="material-symbols-outlined text-blue-600">account_balance_wallet</span>
-                                Payment Method
+                                <span className="material-symbols-outlined text-blue-600">payments</span>
+                                Phương thức thanh toán
                             </h2>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -355,7 +391,7 @@ const PlaceOrderPage = () => {
                                     </div>
                                     <div className="text-center">
                                         <p className="font-black text-gray-900 text-lg">VNPay</p>
-                                        <p className="text-xs text-gray-500 mt-1 uppercase font-bold tracking-tighter">Instant Online</p>
+                                        <p className="text-xs text-gray-500 mt-1 uppercase font-bold tracking-tighter">Thanh toán trực tuyến</p>
                                     </div>
                                     <input
                                         type="radio"
@@ -372,11 +408,11 @@ const PlaceOrderPage = () => {
 
                                 <label className={`flex flex-col items-center gap-4 p-6 rounded-2xl border-2 cursor-pointer transition-all hover:shadow-lg ${formData.paymentMethod === 'MOMO' ? 'border-blue-600 bg-blue-50/50 ring-4 ring-blue-50' : 'border-gray-100 hover:border-blue-200 hover:bg-gray-50/50'}`}>
                                     <div className="size-16 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
-                                        <span className="material-symbols-outlined text-3xl">wallet</span>
+                                        <span className="material-symbols-outlined text-3xl">account_balance_wallet</span>
                                     </div>
                                     <div className="text-center">
                                         <p className="font-black text-gray-900 text-lg">MoMo</p>
-                                        <p className="text-xs text-gray-500 mt-1 uppercase font-bold tracking-tighter">Fast E-Wallet</p>
+                                        <p className="text-xs text-gray-500 mt-1 uppercase font-bold tracking-tighter">Ví điện tử</p>
                                     </div>
                                     <input
                                         type="radio"
@@ -391,24 +427,24 @@ const PlaceOrderPage = () => {
                                     </div>
                                 </label>
 
-                                <label className={`flex flex-col items-center gap-4 p-6 rounded-2xl border-2 cursor-pointer transition-all hover:shadow-lg ${formData.paymentMethod === 'CASH' ? 'border-blue-600 bg-blue-50/50 ring-4 ring-blue-50' : 'border-gray-100 hover:border-blue-200 hover:bg-gray-50/50'}`}>
+                                <label className={`flex flex-col items-center gap-4 p-6 rounded-2xl border-2 cursor-pointer transition-all hover:shadow-lg ${formData.paymentMethod === 'COD' ? 'border-blue-600 bg-blue-50/50 ring-4 ring-blue-50' : 'border-gray-100 hover:border-blue-200 hover:bg-gray-50/50'}`}>
                                     <div className="size-16 rounded-full bg-green-100 flex items-center justify-center text-green-600">
                                         <span className="material-symbols-outlined text-3xl">local_shipping</span>
                                     </div>
                                     <div className="text-center">
                                         <p className="font-black text-gray-900 text-lg">COD</p>
-                                        <p className="text-xs text-gray-500 mt-1 uppercase font-bold tracking-tighter">Pay on Delivery</p>
+                                        <p className="text-xs text-gray-500 mt-1 uppercase font-bold tracking-tighter">Thanh toán khi nhận hàng</p>
                                     </div>
                                     <input
                                         type="radio"
                                         name="paymentMethod"
-                                        value="CASH"
-                                        checked={formData.paymentMethod === 'CASH'}
+                                        value="COD"
+                                        checked={formData.paymentMethod === 'COD'}
                                         onChange={handleInputChange}
                                         className="hidden"
                                     />
-                                    <div className={`mt-auto size-6 border-2 rounded-full flex items-center justify-center ${formData.paymentMethod === 'CASH' ? 'border-blue-600' : 'border-gray-200'}`}>
-                                        {formData.paymentMethod === 'CASH' && <div className="size-3 bg-blue-600 rounded-full"></div>}
+                                    <div className={`mt-auto size-6 border-2 rounded-full flex items-center justify-center ${formData.paymentMethod === 'COD' ? 'border-blue-600' : 'border-gray-200'}`}>
+                                        {formData.paymentMethod === 'COD' && <div className="size-3 bg-blue-600 rounded-full"></div>}
                                     </div>
                                 </label>
                             </div>
@@ -430,8 +466,8 @@ const PlaceOrderPage = () => {
                     <div className="lg:col-span-4">
                         <div className="bg-white rounded-2xl p-8 shadow-xl border border-gray-200 sticky top-24">
                             <h2 className="text-2xl font-black text-gray-900 mb-8 flex flex-col gap-1">
-                                Order Summary
-                                <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">{selectedCartItems.length} items selected</span>
+                                Tóm tắt đơn hàng
+                                <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Đã chọn {selectedCartItems.length} sản phẩm</span>
                             </h2>
 
                             <div className="space-y-6 mb-8 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
@@ -450,7 +486,7 @@ const PlaceOrderPage = () => {
                                         </div>
                                         <div className="flex-1 min-w-0 flex flex-col justify-center">
                                             <h4 className="font-bold text-gray-900 truncate text-base leading-tight group-hover:text-blue-600 transition-colors">{item.name}</h4>
-                                            <p className="text-xs font-bold text-gray-400 mt-1 uppercase tracking-tighter">Qty: {item.quantity} | {item.size || 'One Size'}</p>
+                                            <p className="text-xs font-bold text-gray-400 mt-1 uppercase tracking-tighter">SL: {item.quantity} | {item.size || 'Mặc định'}</p>
                                             <p className="font-black text-blue-600 mt-2">{formatPrice(item.price)}</p>
                                         </div>
                                     </div>
@@ -462,42 +498,35 @@ const PlaceOrderPage = () => {
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-[20px]">sell</span>
                                     <input
                                         type="text"
-                                        placeholder="Promo Code"
+                                        placeholder="Mã giảm giá"
                                         className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-gray-100 bg-gray-50 text-sm focus:border-blue-600 focus:bg-white outline-none transition-all placeholder:font-medium"
                                     />
                                 </div>
-                                <button className="px-6 py-3 bg-gray-900 text-white rounded-xl text-sm font-black hover:bg-blue-600 transition-all hover:shadow-lg hover:shadow-blue-200 uppercase tracking-widest">Apply</button>
+                                <button type="button" className="px-6 py-3 bg-gray-900 text-white rounded-xl text-sm font-black hover:bg-blue-600 transition-all hover:shadow-lg hover:shadow-blue-200 uppercase tracking-widest">Áp dụng</button>
                             </div>
 
                             <div className="space-y-4 mb-8 border-y border-gray-100 py-8">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm font-bold text-gray-500 uppercase tracking-widest">Subtotal</span>
+                                    <span className="text-sm font-bold text-gray-500 uppercase tracking-widest">Tạm tính</span>
                                     <span className="font-black text-gray-900">{formatPrice(subtotal)}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm font-bold text-gray-500 uppercase tracking-widest">Shipping</span>
+                                    <span className="text-sm font-bold text-gray-500 uppercase tracking-widest">Phí vận chuyển</span>
                                     <div className="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 rounded-full">
                                         <span className="material-symbols-outlined text-[14px]">bolt</span>
-                                        <span className="text-xs font-black uppercase tracking-widest">Free</span>
+                                        <span className="text-xs font-black uppercase tracking-widest">Miễn phí</span>
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm font-bold text-gray-500 uppercase tracking-widest">Estimated Tax</span>
+                                    <span className="text-sm font-bold text-gray-500 uppercase tracking-widest">Thuế (10%)</span>
                                     <span className="font-black text-gray-900">{formatPrice(tax)}</span>
                                 </div>
                             </div>
 
                             <div className="flex justify-between items-end mb-10">
                                 <div className="flex flex-col">
-                                    <span className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Grand Total</span>
+                                    <span className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Tổng cộng</span>
                                     <span className="text-3xl font-black text-blue-600">{formatPrice(total)}</span>
-                                </div>
-                                <div className="flex items-end gap-0.5 h-10">
-                                    <div className="w-1.5 bg-blue-100 rounded-full h-4"></div>
-                                    <div className="w-1.5 bg-blue-200 rounded-full h-6"></div>
-                                    <div className="w-1.5 bg-blue-300 rounded-full h-5"></div>
-                                    <div className="w-1.5 bg-blue-400 rounded-full h-8"></div>
-                                    <div className="w-1.5 bg-blue-600 rounded-full h-10"></div>
                                 </div>
                             </div>
 
@@ -509,7 +538,7 @@ const PlaceOrderPage = () => {
                             )}
 
                             <button
-                                onClick={handlePlaceOrder}
+                                type="submit"
                                 disabled={loading}
                                 className={`w-full py-5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-lg flex items-center justify-center gap-3 transition-all shadow-xl shadow-blue-200 hover:shadow-blue-300 hover:-translate-y-1 active:scale-95 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
@@ -517,7 +546,7 @@ const PlaceOrderPage = () => {
                                     <span className="size-6 border-4 border-white/30 border-t-white rounded-full animate-spin"></span>
                                 ) : (
                                     <>
-                                        Confirm Payment
+                                        Thanh toán ngay
                                         <span className="material-symbols-outlined font-black">arrow_forward</span>
                                     </>
                                 )}
@@ -525,7 +554,7 @@ const PlaceOrderPage = () => {
 
                             <div className="mt-8 flex flex-col items-center gap-2">
                                 <p className="text-[10px] text-gray-400 text-center font-bold uppercase tracking-widest">
-                                    Secure Transaction Guarantee
+                                    Giao dịch an toàn được bảo mật
                                 </p>
                                 <div className="flex gap-4 opacity-30 grayscale hover:opacity-100 hover:grayscale-0 transition-all cursor-not-allowed">
                                     <span className="material-symbols-outlined">brand_family</span>
@@ -535,8 +564,8 @@ const PlaceOrderPage = () => {
                             </div>
                         </div>
                     </div>
-                </div>
-            </main>
+                </form >
+            </main >
 
             <footer className="mt-24 border-t border-gray-200 py-16 bg-white">
                 <div className="max-w-[1200px] mx-auto px-4">
@@ -557,7 +586,7 @@ const PlaceOrderPage = () => {
                     </div>
                 </div>
             </footer>
-        </div>
+        </div >
     );
 };
 

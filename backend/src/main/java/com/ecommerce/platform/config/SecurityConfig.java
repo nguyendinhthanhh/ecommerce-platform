@@ -43,12 +43,13 @@ public class SecurityConfig {
                         // ============================================
 
                         // Swagger UI & Payment callback
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api/payment/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api/payment/**")
+                        .permitAll()
 
                         // Authentication endpoints
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        //test ai
+                        // test ai
                         .requestMatchers("/api/chatbot/**").permitAll()
 
                         // Email check (for registration validation)
@@ -96,29 +97,34 @@ public class SecurityConfig {
                         // ============================================
 
                         // Cart - Requires login (all roles including ADMIN)
-                        .requestMatchers("/api/cart/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .requestMatchers("/api/cart/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN", "SELLER")
 
                         // Orders - Requires login (all roles)
-                        .requestMatchers(HttpMethod.POST, "/api/orders").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/orders")
+                        .hasAnyRole("CUSTOMER", "STAFF", "ADMIN", "SELLER")
                         .requestMatchers(HttpMethod.GET, "/api/orders/my-orders")
-                        .hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/orders/*").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .hasAnyRole("CUSTOMER", "STAFF", "ADMIN", "SELLER")
+                        .requestMatchers(HttpMethod.GET, "/api/orders/*")
+                        .hasAnyRole("CUSTOMER", "STAFF", "ADMIN", "SELLER")
                         .requestMatchers(HttpMethod.PUT, "/api/orders/*/cancel")
-                        .hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .hasAnyRole("CUSTOMER", "STAFF", "ADMIN", "SELLER")
 
                         // Reviews - Write/Update/Delete requires login (all roles)
                         .requestMatchers(HttpMethod.GET, "/api/reviews/my-reviews")
-                        .hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .hasAnyRole("CUSTOMER", "STAFF", "ADMIN", "SELLER")
                         .requestMatchers(HttpMethod.GET, "/api/reviews/can-review")
-                        .hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/reviews").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/reviews/*").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/reviews/*").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .hasAnyRole("CUSTOMER", "STAFF", "ADMIN", "SELLER")
+                        .requestMatchers(HttpMethod.POST, "/api/reviews")
+                        .hasAnyRole("CUSTOMER", "STAFF", "ADMIN", "SELLER")
+                        .requestMatchers(HttpMethod.PUT, "/api/reviews/*")
+                        .hasAnyRole("CUSTOMER", "STAFF", "ADMIN", "SELLER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/reviews/*")
+                        .hasAnyRole("CUSTOMER", "STAFF", "ADMIN", "SELLER")
                         .requestMatchers(HttpMethod.POST, "/api/reviews/*/report")
-                        .hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .hasAnyRole("CUSTOMER", "STAFF", "ADMIN", "SELLER")
 
                         // User profile management (all roles)
-                        .requestMatchers("/api/users/me/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .requestMatchers("/api/users/me/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN", "SELLER")
 
                         // ============================================
                         // STAFF/ADMIN ENDPOINTS

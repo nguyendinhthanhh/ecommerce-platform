@@ -44,14 +44,47 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Page<ProductResponse> searchProducts(String keyword, Pageable pageable) {
-        return productRepository.searchProductsWithGraph(keyword, pageable)
-                .map(productMapper::toResponse);
+        com.ecommerce.platform.dto.request.CategoryFilterRequest filter = new com.ecommerce.platform.dto.request.CategoryFilterRequest();
+        filter.setKeyword(keyword);
+        Page<Category> matchingCategories = categoryRepository.findAll(
+                com.ecommerce.platform.repository.specification.CategorySpecification.filter(filter),
+                PageRequest.of(0, 50));
+
+        java.util.List<Long> categoryIds = new java.util.ArrayList<>();
+        for (Category category : matchingCategories.getContent()) {
+            collectCategoryIds(category, categoryIds);
+        }
+
+        if (categoryIds.isEmpty()) {
+            return productRepository.searchProductsWithGraph(keyword, pageable)
+                    .map(productMapper::toResponse);
+        } else {
+            return productRepository.searchProductsByKeywordOrCategoryIds(keyword, categoryIds, pageable)
+                    .map(productMapper::toResponse);
+        }
     }
 
     @Override
     public Page<ProductResponse> getProductsByCategory(Long categoryId, Pageable pageable) {
-        return productRepository.findByCategoryIdWithGraph(categoryId, pageable)
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Category", categoryId));
+
+        java.util.List<Long> categoryIds = new java.util.ArrayList<>();
+        collectCategoryIds(category, categoryIds);
+
+        return productRepository.findByCategoryIdInWithGraph(categoryIds, pageable)
                 .map(productMapper::toResponse);
+    }
+
+    private void collectCategoryIds(Category category, java.util.List<Long> ids) {
+        if (Boolean.TRUE.equals(category.getIsActive())) {
+            ids.add(category.getId());
+            if (category.getChildren() != null) {
+                for (Category child : category.getChildren()) {
+                    collectCategoryIds(child, ids);
+                }
+            }
+        }
     }
 
     @Override
@@ -90,6 +123,10 @@ public class ProductServiceImpl implements ProductService {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category", request.getCategoryId()));
 
+        if (category.getChildren() != null && !category.getChildren().isEmpty()) {
+            throw new BadRequestException("Product can only be attached to the lowest level category");
+        }
+
         Product product = productMapper.toEntity(request);
         product.setCategory(category);
         product.setStatus(parseStatus(request.getStatus()));
@@ -113,6 +150,11 @@ public class ProductServiceImpl implements ProductService {
         if (!product.getCategory().getId().equals(request.getCategoryId())) {
             Category category = categoryRepository.findById(request.getCategoryId())
                     .orElseThrow(() -> new ResourceNotFoundException("Category", request.getCategoryId()));
+
+            if (category.getChildren() != null && !category.getChildren().isEmpty()) {
+                throw new BadRequestException("Product can only be attached to the lowest level category");
+            }
+
             product.setCategory(category);
         }
 

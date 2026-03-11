@@ -8,7 +8,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateOrderStatusRequest {
-    
+
     @NotBlank(message = "Status is required")
-    private String status; // CONFIRMED, SHIPPED, DELIVERED, CANCELLED
+    private String status; // CONFIRMED, PROCESSING, SHIPPING, DELIVERED, COMPLETED, CANCELLED
 }
