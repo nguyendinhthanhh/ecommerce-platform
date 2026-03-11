@@ -3,8 +3,9 @@ package com.ecommerce.platform.service.serviceimpl;
 import com.ecommerce.platform.client.VnptEkycClient;
 import com.ecommerce.platform.dto.request.EkycVerifyRequest;
 import com.ecommerce.platform.dto.response.EkycVerifyResponse;
-import com.ecommerce.platform.entity.EkycResultEntity;
-import com.ecommerce.platform.repository.EkycRepository;
+import com.ecommerce.platform.entity.User;
+import com.ecommerce.platform.exception.EkycVerificationException;
+import com.ecommerce.platform.repository.UserRepository;
 import com.ecommerce.platform.service.EkycService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,10 +17,9 @@ import java.util.Map;
 public class EkycServiceImpl implements EkycService {
 
     private final VnptEkycClient vnptClient;
-    private final EkycRepository ekycRepository;
-
+    private final UserRepository userRepository;
     @Override
-    public EkycVerifyResponse verify(EkycVerifyRequest request) {
+    public EkycVerifyResponse verify(EkycVerifyRequest request, String email) {
         try {
             String clientSession = java.util.UUID.randomUUID().toString();
 
@@ -68,21 +68,27 @@ public class EkycServiceImpl implements EkycService {
                 }
             }
 
+            if (score < 85) {
+                throw new EkycVerificationException("Face match score too low: " + score);
+            }
+
             boolean verified = score >= 85;
 
             System.out.println("Face score = " + score);
             System.out.println("Verified = " + verified);
 
-            // Save to DB
-            EkycResultEntity result = new EkycResultEntity();
-            result.setName(name);
-            result.setGender(gender);
-            result.setIdNumber(idNumber);
-            result.setBirthDay(birthDay);
-            result.setAddress(address);
-            result.setFaceMatchScore(score);
-            result.setVerified(verified);
-            ekycRepository.save(result);
+
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            user.setEmail(user.getEmail());
+            user.setFullName(name);
+            user.setIdNumber(idNumber);
+            user.setBirthDay(birthDay);
+            user.setAddress(address);
+            user.setGender(gender);
+            user.setFaceMatchScore(score);
+            user.setVerified(verified);
+            userRepository.save(user);
 
             return EkycVerifyResponse.builder()
                     .name(name)
@@ -94,7 +100,11 @@ public class EkycServiceImpl implements EkycService {
                     .verified(verified)
                     .build();
 
-        } catch (Exception e) {
+        }
+        catch (EkycVerificationException e) {
+            throw e;
+        }
+        catch (Exception e) {
             throw new RuntimeException("eKYC verification failed", e);
         }
     }
