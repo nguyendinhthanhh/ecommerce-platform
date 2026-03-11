@@ -8,6 +8,7 @@ import com.ecommerce.platform.service.EkycService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -19,9 +20,10 @@ public class EkycController {
     private final EkycService ekycService;
 
     @PostMapping("/verify")
-    public ResponseEntity<ApiResponse<EkycVerifyResponse>> verify(@ModelAttribute EkycVerifyRequest request) {
+    public ResponseEntity<ApiResponse<EkycVerifyResponse>> verify(@ModelAttribute EkycVerifyRequest request, Authentication authentication) {
 
-        EkycVerifyResponse ekycResponse = ekycService.verify(request);
+        String email = authentication.getName();
+        EkycVerifyResponse ekycResponse = ekycService.verify(request, email);
 
         return ResponseEntity.ok(
                 ApiResponse.<EkycVerifyResponse>builder()

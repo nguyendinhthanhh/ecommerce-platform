@@ -32,6 +32,14 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(EkycVerificationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleEkycException(EkycVerificationException ex) {
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("eKYC verification failed: " + ex.getMessage()));
+    }
+
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -120,5 +128,6 @@ public class GlobalExceptionHandler {
                         .build()
                 );
     }
+
 
 }

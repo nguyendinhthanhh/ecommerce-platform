@@ -32,6 +32,16 @@ public class User {
 
     private String avatar;
 
+    private String birthDay;
+
+    private String gender;
+
+    private String idNumber;
+
+    private Double faceMatchScore;
+
+    private Boolean verified;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "users_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private java.util.Set<Role> roles = new java.util.HashSet<>();
