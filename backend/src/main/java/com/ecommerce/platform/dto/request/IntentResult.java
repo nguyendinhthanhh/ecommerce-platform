@@ -26,6 +26,9 @@ public class IntentResult {
         PRICE_COMPARE,
         REVIEW_QUERY,
         DISCOUNT_POLICY,
-        GENERAL_CHAT
+        GENERAL_CHAT,
+        CHEAPEST_PRODUCT,
+        MOST_EXPENSIVE_PRODUCT,
+        PRODUCTS_COUNT
     }
 }

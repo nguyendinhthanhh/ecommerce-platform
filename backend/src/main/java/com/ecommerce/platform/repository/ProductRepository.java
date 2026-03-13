@@ -61,6 +61,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                      @Param("categoryId") Long categoryId,
                      Pageable pageable);
 
+       @EntityGraph(attributePaths = { "category" })
        @Query(value = "SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND " +
                      "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
                      "p.category.id IN :categoryIds OR " +
@@ -70,7 +71,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                      "WHEN LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 1 " +
                      "WHEN LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 2 " +
                      "WHEN p.category.id IN :categoryIds THEN 3 " +
-                     "ELSE 4 END ASC", countQuery = "SELECT count(p) FROM Product p WHERE p.status = 'ACTIVE' AND " +
+                     "ELSE 4 END ASC, COALESCE(p.discountPrice, p.price) ASC", countQuery = "SELECT count(p) FROM Product p WHERE p.status = 'ACTIVE' AND " +
                                    "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
                                    "p.category.id IN :categoryIds OR " +
                                    "LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
@@ -80,6 +81,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
        Page<Product> findByCategoryId(Long categoryId, Pageable pageable);
 
+       @EntityGraph(attributePaths = { "category" })
        @Query(value = "SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND " +
                      "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
                      "LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
@@ -93,14 +95,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                                    "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
        Page<Product> searchProducts(@Param("keyword") String keyword, Pageable pageable);
 
+       @EntityGraph(attributePaths = { "category" })
        @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY p.soldCount DESC")
        List<Product> findTopSellingProducts(Pageable pageable);
 
+       @EntityGraph(attributePaths = { "category" })
        @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY p.createdAt DESC")
        List<Product> findNewestProducts(Pageable pageable);
 
        // ===== AI SEARCH SUPPORT =====
 
+       @EntityGraph(attributePaths = { "category" })
        @Query("""
                          SELECT p FROM Product p
                          WHERE p.status = 'ACTIVE' AND
@@ -114,22 +119,50 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                      """)
        List<Product> searchByKeyword(@Param("keyword") String keyword);
 
+       @EntityGraph(attributePaths = { "category" })
        List<Product> findByPriceLessThanEqual(java.math.BigDecimal price);
 
+       @EntityGraph(attributePaths = { "category" })
        List<Product> findByAverageRatingGreaterThanEqual(Double rating);
 
+       @EntityGraph(attributePaths = { "category" })
        List<Product> findByStockQuantityGreaterThanEqual(Integer qty);
 
        // New: consider effective price (discountPrice if present, otherwise price)
+       @EntityGraph(attributePaths = { "category" })
        @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND COALESCE(p.discountPrice, p.price) <= :maxPrice ORDER BY COALESCE(p.discountPrice, p.price) ASC")
        List<Product> findByEffectivePriceLessThanEqual(@Param("maxPrice") java.math.BigDecimal maxPrice);
 
+       @EntityGraph(attributePaths = { "category" })
        @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND COALESCE(p.discountPrice, p.price) BETWEEN :minPrice AND :maxPrice ORDER BY COALESCE(p.discountPrice, p.price) ASC")
        List<Product> findByEffectivePriceBetween(@Param("minPrice") java.math.BigDecimal minPrice, @Param("maxPrice") java.math.BigDecimal maxPrice);
 
-       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND COALESCE(p.discountPrice, p.price) <= :maxPrice ORDER BY CASE WHEN LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 1 WHEN LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 2 ELSE 3 END ASC")
+       @EntityGraph(attributePaths = { "category" })
+       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND COALESCE(p.discountPrice, p.price) <= :maxPrice ORDER BY CASE WHEN LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 1 WHEN LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 2 ELSE 3 END ASC, COALESCE(p.discountPrice, p.price) ASC")
        List<Product> searchByKeywordAndMaxPrice(@Param("keyword") String keyword, @Param("maxPrice") java.math.BigDecimal maxPrice);
 
-       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND COALESCE(p.discountPrice, p.price) BETWEEN :minPrice AND :maxPrice ORDER BY CASE WHEN LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 1 WHEN LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 2 ELSE 3 END ASC")
+       @EntityGraph(attributePaths = { "category" })
+       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND COALESCE(p.discountPrice, p.price) BETWEEN :minPrice AND :maxPrice ORDER BY CASE WHEN LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 1 WHEN LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 2 ELSE 3 END ASC, COALESCE(p.discountPrice, p.price) ASC")
        List<Product> searchByKeywordAndPriceRange(@Param("keyword") String keyword, @Param("minPrice") java.math.BigDecimal minPrice, @Param("maxPrice") java.math.BigDecimal maxPrice);
+
+       // Cheapest / Most expensive page-based queries
+       @EntityGraph(attributePaths = { "category" })
+       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY COALESCE(p.discountPrice, p.price) ASC")
+       Page<Product> findCheapestProducts(Pageable pageable);
+
+       @EntityGraph(attributePaths = { "category" })
+       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY COALESCE(p.discountPrice, p.price) DESC")
+       Page<Product> findMostExpensiveProducts(Pageable pageable);
+
+       // Fetch all active products with category to avoid N+1
+       @Query("SELECT p FROM Product p JOIN FETCH p.category WHERE p.status = 'ACTIVE'")
+       List<Product> findAllActiveWithCategory();
+
+       // ===== Statistics =====
+       // Count total active products
+       long countByStatus(Product.ProductStatus status);
+
+       // Count active products grouped by category name
+       @Query("SELECT p.category.name, COUNT(p) FROM Product p WHERE p.status = 'ACTIVE' GROUP BY p.category.name")
+       List<Object[]> countActiveProductsPerCategory();
 }

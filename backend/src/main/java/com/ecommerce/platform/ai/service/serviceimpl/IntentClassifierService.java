@@ -20,11 +20,10 @@ public class IntentClassifierService {
 
     private static final String INTENT_PROMPT = """
             Bạn là AI phân loại intent cho hệ thống thương mại điện tử.
-            
             Phân tích câu hỏi của người dùng và trả về JSON với cấu trúc sau:
             
             {
-              "intent": "PRODUCT_SEARCH | STOCK_CHECK | BULK_ORDER | PRICE_COMPARE | REVIEW_QUERY | DISCOUNT_POLICY | GENERAL_CHAT",
+              "intent": "PRODUCT_SEARCH | STOCK_CHECK | BULK_ORDER | PRICE_COMPARE | REVIEW_QUERY | DISCOUNT_POLICY | GENERAL_CHAT | CHEAPEST_PRODUCT | MOST_EXPENSIVE_PRODUCT | PRODUCTS_COUNT",
               "maxPrice": số tiền tối đa (VNĐ),
               "minPrice": số tiền tối thiểu (VNĐ),
               "keyword": từ khóa sản phẩm,
@@ -44,6 +43,9 @@ public class IntentClassifierService {
             - PRICE_COMPARE: so sánh giá giữa các sản phẩm
             - REVIEW_QUERY: hỏi về đánh giá, số sao
             - DISCOUNT_POLICY: hỏi về khuyến mãi, giảm giá
+            - CHEAPEST_PRODUCT: hỏi sản phẩm giá thấp nhất / rẻ nhất
+            - MOST_EXPENSIVE_PRODUCT: hỏi sản phẩm giá cao nhất / đắt nhất
+            - PRODUCTS_COUNT: hỏi thống kê số lượng sản phẩm
             - GENERAL_CHAT: các câu hỏi chung không liên quan trực tiếp đến sản phẩm
             
             Quy tắc trích xuất giá:
@@ -74,6 +76,36 @@ public class IntentClassifierService {
         log.info("Classifying intent: {}", userMessage);
 
         try {
+            // Quick heuristics
+            String lower = userMessage == null ? "" : userMessage.toLowerCase();
+
+            // cheapest / most expensive
+            if (lower.contains("rẻ nhất") || lower.contains("giá thấp nhất") || lower.contains("giá rẻ nhất")) {
+                String kw = extractKeywordForExtremum(lower, "rẻ nhất");
+                return IntentResult.builder()
+                        .intent(IntentResult.IntentType.CHEAPEST_PRODUCT)
+                        .rawQuery(userMessage)
+                        .keyword(kw != null && !kw.isBlank() ? kw : null)
+                        .build();
+            }
+
+            if (lower.contains("đắt nhất") || lower.contains("giá cao nhất") || lower.contains("giá đắt nhất")) {
+                String kw = extractKeywordForExtremum(lower, "đắt nhất");
+                return IntentResult.builder()
+                        .intent(IntentResult.IntentType.MOST_EXPENSIVE_PRODUCT)
+                        .rawQuery(userMessage)
+                        .keyword(kw != null && !kw.isBlank() ? kw : null)
+                        .build();
+            }
+
+            // products count / statistics
+            if (lower.contains("có bao nhiêu sản phẩm") || lower.contains("tổng cộng bao nhiêu sản phẩm") || lower.contains("trong cửa hàng có bao nhiêu") || lower.matches(".*\bbao nhiêu\b.*sản phẩm.*")) {
+                return IntentResult.builder()
+                        .intent(IntentResult.IntentType.PRODUCTS_COUNT)
+                        .rawQuery(userMessage)
+                        .build();
+            }
+
             ChatClient chatClient = chatClientBuilder.build();
 
             String response = chatClient.prompt()
@@ -89,6 +121,16 @@ public class IntentClassifierService {
         }
     }
 
+    private String extractKeywordForExtremum(String lower, String token) {
+        int idx = lower.indexOf(token);
+        if (idx > 0) {
+            String before = lower.substring(0, idx).trim();
+            before = before.replaceAll("\\b(nào|cái|sản phẩm|mấy|giá)\\b", "").trim();
+            return before.isEmpty() ? null : before;
+        }
+        return null;
+    }
+
     private IntentResult parse(String response, String query) {
         try {
             String clean = cleanJson(response);
@@ -97,12 +139,10 @@ public class IntentClassifierService {
             IntentResult.IntentResultBuilder builder = IntentResult.builder()
                     .rawQuery(query);
 
-            // intent
             String intent = node.has("intent") ? node.get("intent").asText() : "GENERAL_CHAT";
             IntentResult.IntentType intentType = IntentResult.IntentType.valueOf(intent);
             builder.intent(intentType);
 
-            // price filters
             BigDecimal max = parsePriceNode(node, "maxPrice");
             if (max != null) {
                 builder.maxPrice(max);
@@ -113,24 +153,20 @@ public class IntentClassifierService {
                 builder.minPrice(min);
             }
 
-            // keyword
             if (node.has("keyword") && !node.get("keyword").isNull()) {
                 builder.keyword(node.get("keyword").asText());
             }
 
-            // quantity
             if (node.has("quantity") && !node.get("quantity").isNull()) {
                 builder.quantity(node.get("quantity").asInt());
             }
 
-            // rating filter
             if (node.has("rating") && !node.get("rating").isNull()) {
                 builder.rating(node.get("rating").asDouble());
             }
 
             IntentResult result = builder.build();
 
-            // If LLM returned GENERAL_CHAT but there are clear product search signals, coerce to PRODUCT_SEARCH
             if (result.getIntent() == IntentResult.IntentType.GENERAL_CHAT) {
                 boolean hasPriceFilter = result.getMaxPrice() != null || result.getMinPrice() != null;
                 boolean hasKeyword = result.getKeyword() != null && !result.getKeyword().isBlank();
@@ -158,12 +194,9 @@ public class IntentClassifierService {
             String s = n.asText().trim().toLowerCase();
             if (s.isEmpty() || s.equals("null")) return null;
 
-            // handle phrases like "10 triệu", "10tr", "10.000.000", "10,000,000"
             if (s.contains("triệu") || s.contains("tr")) {
-                // extract leading number
-                String num = s.replaceAll("[^0-9\\.,]", "").replace(',', '.');
+                String num = s.replaceAll("[^0-9.,]", "").replace(',', '.');
                 if (num.isEmpty()) return null;
-                // take number before dot if multiple
                 if (num.contains(".")) {
                     num = num.substring(0, num.indexOf('.'));
                 }
@@ -171,7 +204,6 @@ public class IntentClassifierService {
                 return v.multiply(new BigDecimal(1_000_000));
             }
 
-            // remove any non-digit characters
             String digits = s.replaceAll("[^0-9]", "");
             if (digits.isEmpty()) return null;
             return new BigDecimal(digits);
@@ -197,3 +229,4 @@ public class IntentClassifierService {
                 .build();
     }
 }
+
