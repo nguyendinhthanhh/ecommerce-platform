@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import userService from "../services/userService";
 import authService from "../services/authService";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
+import EkycTab from "../components/profile/EkycTab";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -205,6 +206,31 @@ const ProfilePage = () => {
       avatar: user?.avatar || "",
     });
     setIsEditing(false);
+  };
+
+  const handleEkycSuccess = async (ekycData) => {
+    // Ekyc returned extracted data
+    // We update the local form data and trigger a save
+    const updatedData = {
+      ...formData,
+      fullName: formData.fullName || ekycData.name || "",
+      address: formData.address || ekycData.address || "",
+      // Add other relevant fields if your API/backend supports them
+    };
+    
+    setFormData(updatedData);
+    
+    try {
+      setSaving(true);
+      await userService.updateProfile(updatedData);
+      await loadProfile();
+      showToast("Identity verified and profile updated successfully!");
+    } catch (err) {
+      console.error("Failed to automatically update profile after EKYC:", err);
+      showToast("Identity verified, but failed to auto-update profile.", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handlePasswordChange = (e) => {
@@ -797,12 +823,28 @@ const ProfilePage = () => {
                   <span className="material-symbols-outlined">payments</span>
                   <span className="text-sm font-semibold">Billing</span>
                 </button>
+                <button
+                  onClick={() => setActiveTab("ekyc")}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeTab === "ekyc"
+                      ? "bg-primary/5 text-primary"
+                      : "text-[#524c9a] dark:text-white/70 hover:bg-background-light dark:hover:bg-white/10"
+                  }`}
+                >
+                  <span className="material-symbols-outlined">verified_user</span>
+                  <span className="text-sm font-semibold">Identity Verification</span>
+                </button>
               </div>
             </div>
           </aside>
 
           {/* Right Column: Main Content */}
           <div className="lg:col-span-8 flex flex-col gap-8">
+            {/* EKYC Verification Section */}
+            {activeTab === "ekyc" && (
+              <EkycTab onVerificationSuccess={handleEkycSuccess} />
+            )}
+
             {/* Personal Information Section */}
             {activeTab === "profile" && (
               <section className="bg-white dark:bg-white/5 rounded-xl shadow-sm border border-[#e8e7f3] dark:border-white/10 overflow-hidden">
