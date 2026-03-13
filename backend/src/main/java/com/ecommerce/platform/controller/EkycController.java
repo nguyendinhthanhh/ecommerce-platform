@@ -5,6 +5,7 @@ import com.ecommerce.platform.dto.response.ApiResponse;
 import com.ecommerce.platform.dto.response.ChatResponse;
 import com.ecommerce.platform.dto.response.EkycVerifyResponse;
 import com.ecommerce.platform.service.EkycService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/ekyc")
 @RequiredArgsConstructor
+@Tag(name = "Category", description = "Category management APIs")
 public class EkycController {
 
     private final EkycService ekycService;

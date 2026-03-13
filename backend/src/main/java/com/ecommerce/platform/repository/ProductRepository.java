@@ -119,4 +119,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
        List<Product> findByAverageRatingGreaterThanEqual(Double rating);
 
        List<Product> findByStockQuantityGreaterThanEqual(Integer qty);
+
+       // New: consider effective price (discountPrice if present, otherwise price)
+       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND COALESCE(p.discountPrice, p.price) <= :maxPrice ORDER BY COALESCE(p.discountPrice, p.price) ASC")
+       List<Product> findByEffectivePriceLessThanEqual(@Param("maxPrice") java.math.BigDecimal maxPrice);
+
+       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND COALESCE(p.discountPrice, p.price) BETWEEN :minPrice AND :maxPrice ORDER BY COALESCE(p.discountPrice, p.price) ASC")
+       List<Product> findByEffectivePriceBetween(@Param("minPrice") java.math.BigDecimal minPrice, @Param("maxPrice") java.math.BigDecimal maxPrice);
+
+       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND COALESCE(p.discountPrice, p.price) <= :maxPrice ORDER BY CASE WHEN LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 1 WHEN LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 2 ELSE 3 END ASC")
+       List<Product> searchByKeywordAndMaxPrice(@Param("keyword") String keyword, @Param("maxPrice") java.math.BigDecimal maxPrice);
+
+       @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND COALESCE(p.discountPrice, p.price) BETWEEN :minPrice AND :maxPrice ORDER BY CASE WHEN LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 1 WHEN LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) THEN 2 ELSE 3 END ASC")
+       List<Product> searchByKeywordAndPriceRange(@Param("keyword") String keyword, @Param("minPrice") java.math.BigDecimal minPrice, @Param("maxPrice") java.math.BigDecimal maxPrice);
 }

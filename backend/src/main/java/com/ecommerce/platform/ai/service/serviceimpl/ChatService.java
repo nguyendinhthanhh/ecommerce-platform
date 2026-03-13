@@ -214,19 +214,38 @@ public class ChatService {
 
     private List<Product> retrieveProducts(IntentResult intent) {
 
-        // keyword search
+        // keyword + price handling
         if (intent.getKeyword() != null) {
-            return productRepository.searchByKeyword(intent.getKeyword());
+            if (intent.getMinPrice() != null && intent.getMaxPrice() != null) {
+                return productRepository.searchByKeywordAndPriceRange(intent.getKeyword(), intent.getMinPrice(), intent.getMaxPrice())
+                        .stream().limit(10).collect(Collectors.toList());
+            }
+
+            if (intent.getMaxPrice() != null) {
+                return productRepository.searchByKeywordAndMaxPrice(intent.getKeyword(), intent.getMaxPrice())
+                        .stream().limit(10).collect(Collectors.toList());
+            }
+
+            // fallback to keyword-only search
+            return productRepository.searchByKeyword(intent.getKeyword())
+                    .stream().limit(10).collect(Collectors.toList());
         }
 
-        // price filter
+        // price filter without keyword
+        if (intent.getMaxPrice() != null && intent.getMinPrice() != null) {
+            return productRepository.findByEffectivePriceBetween(intent.getMinPrice(), intent.getMaxPrice())
+                    .stream().limit(10).collect(Collectors.toList());
+        }
+
         if (intent.getMaxPrice() != null) {
-            return productRepository.findByPriceLessThanEqual(intent.getMaxPrice());
+            return productRepository.findByEffectivePriceLessThanEqual(intent.getMaxPrice())
+                    .stream().limit(10).collect(Collectors.toList());
         }
 
         // rating filter
         if (intent.getRating() != null) {
-            return productRepository.findByAverageRatingGreaterThanEqual(intent.getRating());
+            return productRepository.findByAverageRatingGreaterThanEqual(intent.getRating())
+                    .stream().limit(10).collect(Collectors.toList());
         }
 
         return productRepository.findAll()
@@ -280,3 +299,4 @@ public class ChatService {
 
 
 }
+
