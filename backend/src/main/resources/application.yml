@@ -1,0 +1,14 @@
+
+momo:
+  partner-code: MOMO
+  access-key: F8BBA842ECF85
+  secret-key: K951B6PE1waDMi640xX08PD3vg6EkVlz
+  end-point: https://test-payment.momo.vn/v2/gateway/api
+  return-url: http://localhost:8080/api/payment/momo-callback
+  request-type: payWithMethod
+
+
+
+
+
+

@@ -19,10 +19,12 @@ public class PaymentController {
     @Autowired
     PaymentService paymentService;
 
-    @PostMapping("/vn_pay")
-    public ResponseEntity<?> vnpay(@RequestParam String orderCode) {
+    // SỬA LỖI: Thêm param 'method' để phân biệt VNPAY/MOMO
+    @PostMapping("/create_url")
+    public ResponseEntity<?> createUrl(@RequestParam String orderCode, @RequestParam String method) {
         try {
-            String url = paymentService.createPaymentUrl(orderCode);
+            // Gọi hàm mới có 2 tham số
+            String url = paymentService.createPaymentUrl(orderCode, method);
             Map<String, String> response = new HashMap<>();
             response.put("paymentUrl", url);
             return ResponseEntity.ok(response);
@@ -33,34 +35,44 @@ public class PaymentController {
         }
     }
 
+    // VNPay Callback (Giữ nguyên logic của bạn)
     @GetMapping("/vn-pay-callback")
-    public ResponseEntity<?> Callback(HttpServletRequest request) {
+    public ResponseEntity<?> vnpayCallback(HttpServletRequest request) {
         Map<String, String> params = new HashMap<>();
         Enumeration<String> paramNames = request.getParameterNames();
         while (paramNames.hasMoreElements()) {
             String paramName = paramNames.nextElement();
-            if (paramName.startsWith("vnp_")) {
-                params.put(paramName, request.getParameter(paramName));
-            }
+            params.put(paramName, request.getParameter(paramName));
         }
 
         if (paymentService.checkSignature(params)) {
             String responseCode = request.getParameter("vnp_ResponseCode");
             String txnRef = request.getParameter("vnp_TxnRef");
-
             boolean success = paymentService.processCallback(txnRef, responseCode);
 
-            // Lấy orderCode ban đầu từ txnRef (mẫu: ORD123_1700...) nếu cần thiết
-            String orderCode = txnRef.contains("_") ? txnRef.split("_")[0] : txnRef;
-
-            String statusStr = success ? "success" : "failed";
-            String frontendUrl = "http://localhost:5173/payment-result?orderCode=" + orderCode + "&status=" + statusStr;
-
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .header("Location", frontendUrl)
-                    .build();
+            return redirectResult(txnRef, success);
         }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Chữ ký VNPay không hợp lệ!");
+    }
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Chữ ký VNPay không hợp lệ hoặc dữ liệu bị giả mạo!");
+    // THÊM MỚI: MoMo Callback (Dựa trên return-url trong yaml của bạn)
+    @GetMapping("/momo-callback")
+    public ResponseEntity<?> momoCallback(@RequestParam Map<String, String> allParams) {
+        String resultCode = allParams.get("resultCode");
+        String txnRef = allParams.get("orderId");
+        boolean success = paymentService.processCallback(txnRef, "0".equals(resultCode) ? "00" : "99");
+
+        return redirectResult(txnRef, success);
+    }
+
+    // Hàm phụ để redirect về Frontend
+    private ResponseEntity<?> redirectResult(String txnRef, boolean success) {
+        String orderCode = txnRef.contains("_") ? txnRef.split("_")[0] : txnRef;
+        String statusStr = success ? "success" : "failed";
+        String frontendUrl = "http://localhost:5173/payment-result?orderCode=" + orderCode + "&status=" + statusStr;
+
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .header("Location", frontendUrl)
+                .build();
     }
 }
