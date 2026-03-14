@@ -69,7 +69,7 @@ public class EkycServiceImpl implements EkycService {
             }
 
             if (score < 85) {
-                throw new EkycVerificationException("Face match score too low: " + score);
+                throw new EkycVerificationException("Xác thực khuôn mặt thất bại. Vui lòng chụp lại ảnh selfie rõ hơn." + score);
             }
 
             boolean verified = score >= 85;
@@ -80,6 +80,7 @@ public class EkycServiceImpl implements EkycService {
 
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found"));
+            user.setId(user.getId());
             user.setEmail(user.getEmail());
             user.setFullName(name);
             user.setIdNumber(idNumber);
