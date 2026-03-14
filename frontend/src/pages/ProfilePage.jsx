@@ -213,10 +213,17 @@ const ProfilePage = () => {
     // Prioritize EKYC data over existing form data
     const updatedData = {
       ...formData,
-      fullName: ekycData.name || ekycData.fullName || formData.fullName || "",
-      address: ekycData.address || formData.address || "",
+      fullName: ekycData.name || ekycData.fullName || formData.fullName || user?.fullName || "",
+      address: ekycData.address || formData.address || user?.address || "",
+      phone: formData.phone || user?.phone || "",
+      avatar: formData.avatar || user?.avatar || "",
       // Add other relevant fields if your API/backend supports them
     };
+    
+    // Remove invalid phone to prevent backend validation error
+    if (updatedData.phone && !validateVietnamesePhone(updatedData.phone)) {
+      delete updatedData.phone;
+    }
     
     setFormData(updatedData);
     
@@ -225,6 +232,7 @@ const ProfilePage = () => {
       await userService.updateProfile(updatedData);
       await loadProfile();
       showToast("Xác minh danh tính thành công và đã cập nhật hồ sơ!");
+      setActiveTab("profile");
     } catch (err) {
       console.error("Failed to automatically update profile after EKYC:", err);
       showToast("Xác minh danh tính thành công, nhưng không thể tự động cập nhật hồ sơ.", "error");

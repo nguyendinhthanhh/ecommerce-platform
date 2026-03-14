@@ -31,7 +31,14 @@ const EkycTab = ({ onVerificationSuccess }) => {
   const selfieInputRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const streamRef = useRef(null);
   const [cameraActive, setCameraActive] = useState(false);
+
+  useEffect(() => {
+    if (cameraActive && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [cameraActive]);
 
   useEffect(() => {
     // Cleanup object URLs to avoid memory leaks
@@ -91,22 +98,31 @@ const EkycTab = ({ onVerificationSuccess }) => {
         return await navigator.mediaDevices.getUserMedia({ video: true });
       });
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setCameraActive(true);
-      }
+      streamRef.current = stream;
+      setCameraActive(true);
+      
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }, 50);
     } catch (err) {
-      setError("Không thể truy cập camera. Vui lòng tải ảnh lên thay thế.");
+      setError("Không thể truy cập camera. Vui lòng kiểm tra quyền camera hoặc thiết bị.");
       console.error(err);
     }
   };
 
   const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
     if (videoRef.current && videoRef.current.srcObject) {
       const tracks = videoRef.current.srcObject.getTracks();
       tracks.forEach(track => track.stop());
-      setCameraActive(false);
+      videoRef.current.srcObject = null;
     }
+    setCameraActive(false);
   };
 
   const capturePhoto = () => {
@@ -164,7 +180,6 @@ const EkycTab = ({ onVerificationSuccess }) => {
       if (response.success && response.data) {
         // Backend returns: name, idNumber, birthDay, address, gender, faceMatchScore, verified
         setVerificationResult(response.data);
-        setStep(3);
         if (onVerificationSuccess) {
           // Pass the extracted data so it can be merged into Profile form
           onVerificationSuccess({
@@ -191,7 +206,6 @@ const EkycTab = ({ onVerificationSuccess }) => {
           verified: true
         };
         setVerificationResult(mockData);
-        setStep(3);
         if (onVerificationSuccess) {
           onVerificationSuccess({
             ...mockData,
@@ -398,26 +412,6 @@ const EkycTab = ({ onVerificationSuccess }) => {
                         className="mb-4 px-6 py-3 bg-primary text-white font-bold text-sm rounded-xl hover:bg-primary/90 transition-all shadow-md shadow-primary/20 w-full"
                       >
                         Mở Máy ảnh
-                      </button>
-                      <div className="flex items-center gap-4 w-full mb-4">
-                        <div className="h-px bg-[#e8e7f3] dark:bg-white/10 flex-1"></div>
-                        <span className="text-xs text-[#524c9a] dark:text-white/40 font-bold uppercase">hoặc</span>
-                        <div className="h-px bg-[#e8e7f3] dark:bg-white/10 flex-1"></div>
-                      </div>
-                      <input
-                        type="file"
-                        ref={selfieInputRef}
-                        className="hidden"
-                        accept="image/*"
-                        capture="user"
-                        onChange={(e) => handleFileChange(e, "selfie")}
-                      />
-                      <button
-                        onClick={() => selfieInputRef.current?.click()}
-                        className="px-6 py-3 bg-white dark:bg-white/10 text-[#0f0d1b] dark:text-white border border-[#e8e7f3] dark:border-white/10 font-bold text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-white/20 transition-all w-full flex items-center justify-center gap-2"
-                      >
-                        <span className="material-symbols-outlined text-sm">upload</span>
-                        Tải ảnh lên
                       </button>
                     </div>
                   )}
