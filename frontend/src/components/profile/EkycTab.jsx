@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import ekycService from "../../services/ekycService";
-import { LoadingSpinner } from "../../common/LoadingSpinner";
+import { LoadingSpinner } from "../common/LoadingSpinner";
 
 const EkycTab = ({ onVerificationSuccess }) => {
   const [step, setStep] = useState(1);
@@ -50,9 +50,9 @@ const EkycTab = ({ onVerificationSuccess }) => {
         setError(`Kích thước tệp không được vượt quá 5MB.`);
         return;
       }
-      
+
       const newPreview = URL.createObjectURL(file);
-      
+
       setImages((prev) => ({ ...prev, [type]: file }));
       setPreviews((prev) => {
         // Revoke old URL if exists
@@ -84,13 +84,13 @@ const EkycTab = ({ onVerificationSuccess }) => {
   const startCamera = async () => {
     try {
       // Allow fallback if user facing camera is not found
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: "user" } 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" }
       }).catch(async () => {
         // If facingMode: "user" fails (like on some PC setups), try any camera
         return await navigator.mediaDevices.getUserMedia({ video: true });
       });
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setCameraActive(true);
@@ -117,11 +117,11 @@ const EkycTab = ({ onVerificationSuccess }) => {
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext("2d");
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      
+
       canvas.toBlob((blob) => {
         const file = new File([blob], "selfie.jpg", { type: "image/jpeg" });
         const newPreview = URL.createObjectURL(file);
-        
+
         setImages((prev) => ({ ...prev, selfie: file }));
         setPreviews((prev) => {
           if (prev.selfie) URL.revokeObjectURL(prev.selfie);
@@ -160,7 +160,7 @@ const EkycTab = ({ onVerificationSuccess }) => {
       formData.append("selfie", images.selfie);
 
       const response = await ekycService.verify(formData);
-      
+
       if (response.success && response.data) {
         // Backend returns: name, idNumber, birthDay, address, gender, faceMatchScore, verified
         setVerificationResult(response.data);
@@ -168,8 +168,8 @@ const EkycTab = ({ onVerificationSuccess }) => {
         if (onVerificationSuccess) {
           // Pass the extracted data so it can be merged into Profile form
           onVerificationSuccess({
-             ...response.data,
-             fullName: response.data.name // Map backend 'name' to frontend 'fullName' if needed
+            ...response.data,
+            fullName: response.data.name // Map backend 'name' to frontend 'fullName' if needed
           });
         }
       } else {
@@ -208,32 +208,31 @@ const EkycTab = ({ onVerificationSuccess }) => {
 
   const renderUploadBox = (title, subtitle, type, inputRef, previewUrl) => {
     return (
-      <div 
-        className={`relative flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${
-          previewUrl 
-            ? "border-primary/50 bg-primary/5" 
+      <div
+        className={`relative flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${previewUrl
+            ? "border-primary/50 bg-primary/5"
             : "border-[#e8e7f3] dark:border-white/10 bg-[#f8f8fc] dark:bg-white/5 hover:border-primary/30 hover:bg-primary/5"
-        }`}
+          }`}
         onClick={() => !previewUrl && inputRef.current?.click()}
       >
-        <input 
-          type="file" 
-          ref={inputRef} 
-          className="hidden" 
-          accept="image/*" 
-          onChange={(e) => handleFileChange(e, type)} 
+        <input
+          type="file"
+          ref={inputRef}
+          className="hidden"
+          accept="image/*"
+          onChange={(e) => handleFileChange(e, type)}
         />
-        
+
         {previewUrl ? (
           <div className="relative w-full aspect-[1.58] rounded-xl overflow-hidden group">
-            <img 
-              src={previewUrl} 
-              alt={title} 
-              className="w-full h-full object-contain bg-black/5" 
+            <img
+              src={previewUrl}
+              alt={title}
+              className="w-full h-full object-contain bg-black/5"
               style={{ transform: `rotate(${rotations[type]}deg)`, transition: 'transform 0.3s ease' }}
             />
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm gap-3">
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleRotate(type);
@@ -243,7 +242,7 @@ const EkycTab = ({ onVerificationSuccess }) => {
               >
                 <span className="material-symbols-outlined text-lg">rotate_right</span>
               </button>
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   removeImage(type);
@@ -287,7 +286,7 @@ const EkycTab = ({ onVerificationSuccess }) => {
         {/* Progress Tracker */}
         <div className="mb-10 relative hidden sm:block">
           <div className="absolute top-1/2 left-0 w-full h-1 bg-[#e8e7f3] dark:bg-white/10 -translate-y-1/2 rounded-full"></div>
-          <div 
+          <div
             className="absolute top-1/2 left-0 h-1 bg-primary -translate-y-1/2 rounded-full transition-all duration-500"
             style={{ width: step === 1 ? '15%' : step === 2 ? '50%' : '100%' }}
           ></div>
@@ -364,25 +363,25 @@ const EkycTab = ({ onVerificationSuccess }) => {
                 <div className="bg-[#f8f8fc] dark:bg-white/5 border-2 border-[#e8e7f3] dark:border-white/10 rounded-2xl overflow-hidden shadow-inner">
                   {cameraActive ? (
                     <div className="relative aspect-[3/4] w-full bg-black">
-                      <video 
-                        ref={videoRef} 
-                        autoPlay 
-                        playsInline 
-                        muted 
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
                         className="w-full h-full object-cover mirror-horizontally"
                         style={{ transform: "scaleX(-1)" }}
                       />
                       <div className="absolute inset-0 border-4 border-dashed border-primary/50 m-6 rounded-[100px] opacity-70 border-t-transparent border-b-transparent"></div>
-                      
+
                       <div className="absolute bottom-6 left-0 right-0 flex justify-center items-center gap-4">
-                        <button 
-                          onClick={capturePhoto} 
+                        <button
+                          onClick={capturePhoto}
                           className="w-16 h-16 bg-white/30 backdrop-blur-md border-4 border-white rounded-full flex items-center justify-center hover:bg-white/50 transition-all active:scale-95"
                         >
                           <div className="w-12 h-12 bg-white rounded-full"></div>
                         </button>
-                        <button 
-                          onClick={stopCamera} 
+                        <button
+                          onClick={stopCamera}
                           className="absolute right-6 w-10 h-10 bg-white/20 backdrop-blur-md text-white rounded-full flex items-center justify-center hover:bg-red-500/80 transition-all"
                         >
                           <span className="material-symbols-outlined text-sm">close</span>
@@ -394,8 +393,8 @@ const EkycTab = ({ onVerificationSuccess }) => {
                       <div className="w-24 h-24 bg-white dark:bg-white/10 rounded-full flex items-center justify-center mb-6 shadow-sm border border-primary/10">
                         <span className="material-symbols-outlined text-primary text-5xl">face</span>
                       </div>
-                      <button 
-                        onClick={startCamera} 
+                      <button
+                        onClick={startCamera}
                         className="mb-4 px-6 py-3 bg-primary text-white font-bold text-sm rounded-xl hover:bg-primary/90 transition-all shadow-md shadow-primary/20 w-full"
                       >
                         Mở Máy ảnh
@@ -405,16 +404,16 @@ const EkycTab = ({ onVerificationSuccess }) => {
                         <span className="text-xs text-[#524c9a] dark:text-white/40 font-bold uppercase">hoặc</span>
                         <div className="h-px bg-[#e8e7f3] dark:bg-white/10 flex-1"></div>
                       </div>
-                      <input 
-                        type="file" 
-                        ref={selfieInputRef} 
-                        className="hidden" 
-                        accept="image/*" 
+                      <input
+                        type="file"
+                        ref={selfieInputRef}
+                        className="hidden"
+                        accept="image/*"
                         capture="user"
-                        onChange={(e) => handleFileChange(e, "selfie")} 
+                        onChange={(e) => handleFileChange(e, "selfie")}
                       />
-                      <button 
-                        onClick={() => selfieInputRef.current?.click()} 
+                      <button
+                        onClick={() => selfieInputRef.current?.click()}
                         className="px-6 py-3 bg-white dark:bg-white/10 text-[#0f0d1b] dark:text-white border border-[#e8e7f3] dark:border-white/10 font-bold text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-white/20 transition-all w-full flex items-center justify-center gap-2"
                       >
                         <span className="material-symbols-outlined text-sm">upload</span>
@@ -426,14 +425,14 @@ const EkycTab = ({ onVerificationSuccess }) => {
                 </div>
               ) : (
                 <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden border border-[#e8e7f3] dark:border-white/10 shadow-lg group">
-                  <img 
-                    src={previews.selfie} 
-                    alt="Selfie preview" 
-                    className="w-full h-full object-contain bg-black/5" 
+                  <img
+                    src={previews.selfie}
+                    alt="Selfie preview"
+                    className="w-full h-full object-contain bg-black/5"
                     style={{ transform: `rotate(${rotations.selfie}deg)`, transition: 'transform 0.3s ease' }}
                   />
                   <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent flex justify-center gap-3">
-                    <button 
+                    <button
                       onClick={() => handleRotate("selfie")}
                       title="Xoay ảnh"
                       className="px-4 py-2 bg-white/20 backdrop-blur-md text-white font-semibold text-xs rounded-lg hover:bg-white/40 transition-colors flex items-center gap-2 border border-white/30"
@@ -441,7 +440,7 @@ const EkycTab = ({ onVerificationSuccess }) => {
                       <span className="material-symbols-outlined text-sm">rotate_right</span>
                       Xoay ảnh
                     </button>
-                    <button 
+                    <button
                       onClick={() => removeImage('selfie')}
                       className="px-4 py-2 bg-white/20 backdrop-blur-md text-white font-semibold text-xs rounded-lg hover:bg-red-500 transition-colors flex items-center gap-2 border border-white/30"
                     >
