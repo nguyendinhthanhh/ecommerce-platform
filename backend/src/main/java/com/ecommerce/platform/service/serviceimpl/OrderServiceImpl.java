@@ -329,6 +329,7 @@ public class OrderServiceImpl implements OrderService {
     private void validateStatusTransition(Order.OrderStatus current, Order.OrderStatus next) {
         Map<Order.OrderStatus, Set<Order.OrderStatus>> validTransitions = Map.of(
                 Order.OrderStatus.PENDING, Set.of(Order.OrderStatus.CONFIRMED, Order.OrderStatus.CANCELLED),
+                Order.OrderStatus.PLACED, Set.of(Order.OrderStatus.CONFIRMED, Order.OrderStatus.CANCELLED),
                 Order.OrderStatus.CONFIRMED, Set.of(Order.OrderStatus.PROCESSING, Order.OrderStatus.CANCELLED),
                 Order.OrderStatus.PROCESSING, Set.of(Order.OrderStatus.SHIPPING, Order.OrderStatus.CANCELLED),
                 Order.OrderStatus.SHIPPING, Set.of(Order.OrderStatus.DELIVERED, Order.OrderStatus.CANCELLED),

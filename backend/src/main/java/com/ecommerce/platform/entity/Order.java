@@ -74,6 +74,7 @@ public class Order {
 
     public enum OrderStatus {
         PENDING,
+        PLACED,
         CONFIRMED,
         PROCESSING,
         SHIPPING,
