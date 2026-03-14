@@ -46,17 +46,17 @@ public class ChatService {
 
     private static final String SYSTEM_PROMPT = """
             Bạn là AI tư vấn bán hàng cho nền tảng ecommerce.
-            
+
             Nhiệm vụ:
             - Gợi ý sản phẩm phù hợp
             - Trả lời về giá, tồn kho, đánh giá
             - So sánh sản phẩm nếu cần
-            
+
             QUY TẮC:
             - Không bịa thông tin
             - Chỉ dùng dữ liệu trong context
             - Nếu không có thông tin → nói rõ
-            
+
             Trả lời lịch sự, tự nhiên, tiếng Việt.
             """;
 
@@ -529,13 +529,13 @@ public class ChatService {
 
         String prompt = String.format("""
                 %s
-                
+
                 ===== CONTEXT =====
                 %s
-                
+
                 ===== CÂU HỎI =====
                 %s
-                
+
                 Trả lời dựa trên context.
                 """, SYSTEM_PROMPT, context, question);
 

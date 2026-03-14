@@ -100,7 +100,7 @@ public class DataSeeder implements CommandLineRunner {
                 if (userRepository.findByEmail("staff@techshop.vn").isEmpty()) {
                         User staff = User.builder()
                                         .email("staff@techshop.vn")
-                                        .password(passwordEncoder.encode("Staff@123"))
+                                                .password(passwordEncoder.encode("Staff@123"))
                                         .fullName("Nhân viên bán hàng")
                                         .phone("0902345678")
                                         .address("456 Lê Lợi, Quận 1, TP.HCM")
