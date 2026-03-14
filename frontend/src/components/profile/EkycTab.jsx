@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import ekycService from "../../../services/ekycService";
+import ekycService from "../../services/ekycService";
 import { LoadingSpinner } from "../../common/LoadingSpinner";
 
 const EkycTab = ({ onVerificationSuccess }) => {
@@ -12,6 +12,12 @@ const EkycTab = ({ onVerificationSuccess }) => {
     cccdFront: null,
     cccdBack: null,
     selfie: null,
+  });
+
+  const [rotations, setRotations] = useState({
+    cccdFront: 0,
+    cccdBack: 0,
+    selfie: 0,
   });
 
   const [previews, setPreviews] = useState({
@@ -37,11 +43,11 @@ const EkycTab = ({ onVerificationSuccess }) => {
     };
   }, []);
 
-  const handleFileChange = (e, type) => {
+  const handleFileChange = async (e, type) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        setError(`File size should not exceed 5MB.`);
+        setError(`Kích thước tệp không được vượt quá 5MB.`);
         return;
       }
       
@@ -54,6 +60,8 @@ const EkycTab = ({ onVerificationSuccess }) => {
         return { ...prev, [type]: newPreview };
       });
       setError(null);
+      // Reset rotation when new image is uploaded
+      setRotations((prev) => ({ ...prev, [type]: 0 }));
     }
   };
 
@@ -63,19 +71,32 @@ const EkycTab = ({ onVerificationSuccess }) => {
       if (prev[type]) URL.revokeObjectURL(prev[type]);
       return { ...prev, [type]: null };
     });
+    setRotations((prev) => ({ ...prev, [type]: 0 }));
+  };
+
+  const handleRotate = (type) => {
+    setRotations((prev) => ({
+      ...prev,
+      [type]: (prev[type] + 90) % 360,
+    }));
   };
 
   const startCamera = async () => {
     try {
+      // Allow fallback if user facing camera is not found
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: "user" } 
+      }).catch(async () => {
+        // If facingMode: "user" fails (like on some PC setups), try any camera
+        return await navigator.mediaDevices.getUserMedia({ video: true });
       });
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setCameraActive(true);
       }
     } catch (err) {
-      setError("Could not access camera. Please upload a photo instead.");
+      setError("Không thể truy cập camera. Vui lòng tải ảnh lên thay thế.");
       console.error(err);
     }
   };
@@ -106,6 +127,7 @@ const EkycTab = ({ onVerificationSuccess }) => {
           if (prev.selfie) URL.revokeObjectURL(prev.selfie);
           return { ...prev, selfie: newPreview };
         });
+        setRotations((prev) => ({ ...prev, selfie: 0 }));
         stopCamera();
       }, "image/jpeg", 0.9);
     }
@@ -114,7 +136,7 @@ const EkycTab = ({ onVerificationSuccess }) => {
   const handleNextStep = () => {
     if (step === 1) {
       if (!images.cccdFront || !images.cccdBack) {
-        setError("Please upload both front and back of your ID card.");
+        setError("Vui lòng tải lên cả mặt trước và mặt sau của CMND/CCCD.");
         return;
       }
       setError(null);
@@ -124,7 +146,7 @@ const EkycTab = ({ onVerificationSuccess }) => {
 
   const handleVerify = async () => {
     if (!images.selfie) {
-      setError("Please take a selfie or upload a photo.");
+      setError("Vui lòng chụp ảnh hoặc tải ảnh xác thực khuôn mặt.");
       return;
     }
 
@@ -140,14 +162,18 @@ const EkycTab = ({ onVerificationSuccess }) => {
       const response = await ekycService.verify(formData);
       
       if (response.success && response.data) {
+        // Backend returns: name, idNumber, birthDay, address, gender, faceMatchScore, verified
         setVerificationResult(response.data);
         setStep(3);
         if (onVerificationSuccess) {
           // Pass the extracted data so it can be merged into Profile form
-          onVerificationSuccess(response.data);
+          onVerificationSuccess({
+             ...response.data,
+             fullName: response.data.name // Map backend 'name' to frontend 'fullName' if needed
+          });
         }
       } else {
-        setError("Verification failed. Please ensure the images are clear and try again.");
+        setError("Xác thực thất bại. Vui lòng đảm bảo hình ảnh rõ nét và thử lại.");
       }
     } catch (err) {
       console.error("EKYC Error:", err);
@@ -160,17 +186,20 @@ const EkycTab = ({ onVerificationSuccess }) => {
           idNumber: "001099123456",
           birthDay: "01/01/1990",
           address: "HA NOI, VIET NAM",
-          gender: "Male",
+          gender: "Nam",
           faceMatchScore: 98.5,
           verified: true
         };
         setVerificationResult(mockData);
         setStep(3);
         if (onVerificationSuccess) {
-          onVerificationSuccess(mockData);
+          onVerificationSuccess({
+            ...mockData,
+            fullName: mockData.name
+          });
         }
       } else {
-        setError(err.response?.data?.message || "An error occurred during verification. Please try again.");
+        setError(err.response?.data?.message || "Đã xảy ra lỗi trong quá trình xác thực. Vui lòng thử lại.");
       }
     } finally {
       setLoading(false);
@@ -197,17 +226,32 @@ const EkycTab = ({ onVerificationSuccess }) => {
         
         {previewUrl ? (
           <div className="relative w-full aspect-[1.58] rounded-xl overflow-hidden group">
-            <img src={previewUrl} alt={title} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+            <img 
+              src={previewUrl} 
+              alt={title} 
+              className="w-full h-full object-contain bg-black/5" 
+              style={{ transform: `rotate(${rotations[type]}deg)`, transition: 'transform 0.3s ease' }}
+            />
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm gap-3">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRotate(type);
+                }}
+                title="Xoay ảnh"
+                className="bg-white/20 text-white p-2.5 rounded-full hover:bg-white/40 transition-colors flex items-center justify-center"
+              >
+                <span className="material-symbols-outlined text-lg">rotate_right</span>
+              </button>
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
                   removeImage(type);
                 }}
-                className="bg-red-500 text-white p-2 text-sm rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
+                title="Xóa ảnh"
+                className="bg-red-500 text-white p-2.5 rounded-full hover:bg-red-600 transition-colors flex items-center justify-center"
               >
-                <span className="material-symbols-outlined text-sm">delete</span>
-                Remove
+                <span className="material-symbols-outlined text-lg">delete</span>
               </button>
             </div>
           </div>
@@ -233,8 +277,8 @@ const EkycTab = ({ onVerificationSuccess }) => {
             <span className="material-symbols-outlined text-primary">verified_user</span>
           </div>
           <div>
-            <h2 className="text-xl font-bold text-[#0f0d1b] dark:text-white">Identity Verification (eKYC)</h2>
-            <p className="text-sm text-[#524c9a] dark:text-white/60">Complete verification to unlock all features</p>
+            <h2 className="text-xl font-bold text-[#0f0d1b] dark:text-white">Xác minh danh tính (eKYC)</h2>
+            <p className="text-sm text-[#524c9a] dark:text-white/60">Hoàn thành xác minh để mở khóa tất cả các tính năng</p>
           </div>
         </div>
       </div>
@@ -252,19 +296,19 @@ const EkycTab = ({ onVerificationSuccess }) => {
               <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 font-bold text-sm transition-all shadow-md ${step >= 1 ? 'bg-primary text-white scale-110' : 'bg-[#e8e7f3] text-[#524c9a] dark:bg-white/10 dark:text-white/40'}`}>
                 1
               </div>
-              <span className={`text-xs font-bold ${step >= 1 ? 'text-primary' : 'text-[#524c9a] dark:text-white/60'}`}>ID Card</span>
+              <span className={`text-xs font-bold ${step >= 1 ? 'text-primary' : 'text-[#524c9a] dark:text-white/60'}`}>CMND/CCCD</span>
             </div>
             <div className={`flex flex-col items-center justify-center p-2 rounded-full transition-all ${step >= 2 ? 'bg-white dark:bg-slate-800' : ''}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 font-bold text-sm transition-all shadow-md ${step >= 2 ? 'bg-primary text-white scale-110' : 'bg-[#e8e7f3] text-[#524c9a] dark:bg-white/10 dark:text-white/40'}`}>
                 2
               </div>
-              <span className={`text-xs font-bold ${step >= 2 ? 'text-primary' : 'text-[#524c9a] dark:text-white/60'}`}>Face Match</span>
+              <span className={`text-xs font-bold ${step >= 2 ? 'text-primary' : 'text-[#524c9a] dark:text-white/60'}`}>Khuôn mặt</span>
             </div>
             <div className={`flex flex-col items-center justify-center p-2 rounded-full transition-all ${step >= 3 ? 'bg-white dark:bg-slate-800' : ''}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 font-bold text-sm transition-all shadow-md ${step >= 3 ? 'bg-green-500 text-white scale-110' : 'bg-[#e8e7f3] text-[#524c9a] dark:bg-white/10 dark:text-white/40'}`}>
                 3
               </div>
-              <span className={`text-xs font-bold ${step >= 3 ? 'text-green-500' : 'text-[#524c9a] dark:text-white/60'}`}>Result</span>
+              <span className={`text-xs font-bold ${step >= 3 ? 'text-green-500' : 'text-[#524c9a] dark:text-white/60'}`}>Kết quả</span>
             </div>
           </div>
         </div>
@@ -281,15 +325,15 @@ const EkycTab = ({ onVerificationSuccess }) => {
         {step === 1 && (
           <div className="animate-fade-in">
             <div className="text-center mb-8">
-              <h3 className="text-xl font-bold text-[#0f0d1b] dark:text-white mb-2">Upload ID Card</h3>
+              <h3 className="text-xl font-bold text-[#0f0d1b] dark:text-white mb-2">Tải ảnh CMND/CCCD</h3>
               <p className="text-sm text-[#524c9a] dark:text-white/60 max-w-md mx-auto">
-                Please upload clear photos of the front and back of your Citizen Identity Card (CCCD).
+                Vui lòng tải lên hình ảnh rõ nét của mặt trước và mặt sau thẻ Căn cước công dân (CCCD).
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {renderUploadBox("Front Side", "Upload the front side of your CCCD", "cccdFront", frontInputRef, previews.cccdFront)}
-              {renderUploadBox("Back Side", "Upload the back side of your CCCD", "cccdBack", backInputRef, previews.cccdBack)}
+              {renderUploadBox("Mặt trước", "Tải ảnh mặt trước CCCD", "cccdFront", frontInputRef, previews.cccdFront)}
+              {renderUploadBox("Mặt sau", "Tải ảnh mặt sau CCCD", "cccdBack", backInputRef, previews.cccdBack)}
             </div>
 
             <div className="flex justify-end pt-6 border-t border-[#e8e7f3] dark:border-white/10">
@@ -298,7 +342,7 @@ const EkycTab = ({ onVerificationSuccess }) => {
                 disabled={!images.cccdFront || !images.cccdBack}
                 className="px-8 py-3 bg-primary text-white font-bold text-sm rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                Continue
+                Tiếp tục
                 <span className="material-symbols-outlined text-sm">arrow_forward</span>
               </button>
             </div>
@@ -309,9 +353,9 @@ const EkycTab = ({ onVerificationSuccess }) => {
         {step === 2 && (
           <div className="animate-fade-in">
             <div className="text-center mb-8">
-              <h3 className="text-xl font-bold text-[#0f0d1b] dark:text-white mb-2">Face Verification</h3>
+              <h3 className="text-xl font-bold text-[#0f0d1b] dark:text-white mb-2">Xác thực khuôn mặt</h3>
               <p className="text-sm text-[#524c9a] dark:text-white/60 max-w-md mx-auto">
-                Take a selfie to verify that your face matches the photo on your ID card. Ensure good lighting.
+                Chụp ảnh selfie để xác minh khuôn mặt của bạn khớp với ảnh trên CCCD. Vui lòng chụp ở nơi đủ sáng.
               </p>
             </div>
 
@@ -354,11 +398,11 @@ const EkycTab = ({ onVerificationSuccess }) => {
                         onClick={startCamera} 
                         className="mb-4 px-6 py-3 bg-primary text-white font-bold text-sm rounded-xl hover:bg-primary/90 transition-all shadow-md shadow-primary/20 w-full"
                       >
-                        Open Camera
+                        Mở Máy ảnh
                       </button>
                       <div className="flex items-center gap-4 w-full mb-4">
                         <div className="h-px bg-[#e8e7f3] dark:bg-white/10 flex-1"></div>
-                        <span className="text-xs text-[#524c9a] dark:text-white/40 font-bold uppercase">or</span>
+                        <span className="text-xs text-[#524c9a] dark:text-white/40 font-bold uppercase">hoặc</span>
                         <div className="h-px bg-[#e8e7f3] dark:bg-white/10 flex-1"></div>
                       </div>
                       <input 
@@ -374,7 +418,7 @@ const EkycTab = ({ onVerificationSuccess }) => {
                         className="px-6 py-3 bg-white dark:bg-white/10 text-[#0f0d1b] dark:text-white border border-[#e8e7f3] dark:border-white/10 font-bold text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-white/20 transition-all w-full flex items-center justify-center gap-2"
                       >
                         <span className="material-symbols-outlined text-sm">upload</span>
-                        Upload Photo
+                        Tải ảnh lên
                       </button>
                     </div>
                   )}
@@ -382,14 +426,27 @@ const EkycTab = ({ onVerificationSuccess }) => {
                 </div>
               ) : (
                 <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden border border-[#e8e7f3] dark:border-white/10 shadow-lg group">
-                  <img src={previews.selfie} alt="Selfie preview" className="w-full h-full object-cover" />
-                  <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent flex justify-center">
+                  <img 
+                    src={previews.selfie} 
+                    alt="Selfie preview" 
+                    className="w-full h-full object-contain bg-black/5" 
+                    style={{ transform: `rotate(${rotations.selfie}deg)`, transition: 'transform 0.3s ease' }}
+                  />
+                  <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent flex justify-center gap-3">
+                    <button 
+                      onClick={() => handleRotate("selfie")}
+                      title="Xoay ảnh"
+                      className="px-4 py-2 bg-white/20 backdrop-blur-md text-white font-semibold text-xs rounded-lg hover:bg-white/40 transition-colors flex items-center gap-2 border border-white/30"
+                    >
+                      <span className="material-symbols-outlined text-sm">rotate_right</span>
+                      Xoay ảnh
+                    </button>
                     <button 
                       onClick={() => removeImage('selfie')}
                       className="px-4 py-2 bg-white/20 backdrop-blur-md text-white font-semibold text-xs rounded-lg hover:bg-red-500 transition-colors flex items-center gap-2 border border-white/30"
                     >
                       <span className="material-symbols-outlined text-sm">refresh</span>
-                      Retake Photo
+                      Ảnh khác
                     </button>
                   </div>
                 </div>
@@ -402,7 +459,7 @@ const EkycTab = ({ onVerificationSuccess }) => {
                 className="px-6 py-3 text-[#524c9a] dark:text-white/70 font-bold text-sm bg-[#f8f8fc] dark:bg-white/10 hover:bg-[#e8e7f3] dark:hover:bg-white/20 rounded-xl transition-all"
                 disabled={loading}
               >
-                Back
+                Quay lại
               </button>
               <button
                 onClick={handleVerify}
@@ -412,11 +469,11 @@ const EkycTab = ({ onVerificationSuccess }) => {
                 {loading ? (
                   <>
                     <LoadingSpinner size="sm" />
-                    Verifying...
+                    Đang xác thực...
                   </>
                 ) : (
                   <>
-                    Verify Identity
+                    Xác minh
                     <span className="material-symbols-outlined text-sm">verified</span>
                   </>
                 )}
@@ -436,9 +493,9 @@ const EkycTab = ({ onVerificationSuccess }) => {
               <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-8 ring-green-50 dark:ring-green-900/10 scale-in-center">
                 <span className="material-symbols-outlined text-4xl">task_alt</span>
               </div>
-              <h3 className="text-2xl font-black text-[#0f0d1b] dark:text-white mb-2">Verification Successful!</h3>
+              <h3 className="text-2xl font-black text-[#0f0d1b] dark:text-white mb-2">Xác thực thành công!</h3>
               <p className="text-sm text-[#524c9a] dark:text-white/60">
-                Your identity has been verified successfully. Your profile information has been securely extracted.
+                Danh tính của bạn đã được xác minh thành công. Thông tin trên thẻ của bạn đã được trích xuất an toàn.
               </p>
             </div>
 
@@ -446,33 +503,33 @@ const EkycTab = ({ onVerificationSuccess }) => {
               <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#e8e7f3] dark:border-white/10">
                 <h4 className="font-bold text-[#0f0d1b] dark:text-white flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary text-sm">badge</span>
-                  Extracted Information
+                  Thông tin được trích xuất
                 </h4>
                 <div className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full border border-green-200 dark:border-green-800">
                   <span className="material-symbols-outlined text-[14px]">face</span>
-                  {verificationResult.faceMatchScore ? `${verificationResult.faceMatchScore.toFixed(1)}% Match` : "High Match"}
+                  {verificationResult.faceMatchScore ? `Khớp ${verificationResult.faceMatchScore.toFixed(1)}%` : "Độ khớp cao"}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
                 <div>
-                  <p className="text-xs text-[#524c9a] dark:text-white/40 uppercase font-bold tracking-wider mb-1">Full Name</p>
+                  <p className="text-xs text-[#524c9a] dark:text-white/40 uppercase font-bold tracking-wider mb-1">Họ và tên</p>
                   <p className="text-[#0f0d1b] dark:text-white font-semibold">{verificationResult.name || "N/A"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-[#524c9a] dark:text-white/40 uppercase font-bold tracking-wider mb-1">ID Number</p>
+                  <p className="text-xs text-[#524c9a] dark:text-white/40 uppercase font-bold tracking-wider mb-1">Số CCCD</p>
                   <p className="text-[#0f0d1b] dark:text-white font-semibold font-mono">{verificationResult.idNumber || "N/A"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-[#524c9a] dark:text-white/40 uppercase font-bold tracking-wider mb-1">Date of Birth</p>
+                  <p className="text-xs text-[#524c9a] dark:text-white/40 uppercase font-bold tracking-wider mb-1">Ngày sinh</p>
                   <p className="text-[#0f0d1b] dark:text-white font-semibold">{verificationResult.birthDay || "N/A"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-[#524c9a] dark:text-white/40 uppercase font-bold tracking-wider mb-1">Gender</p>
+                  <p className="text-xs text-[#524c9a] dark:text-white/40 uppercase font-bold tracking-wider mb-1">Giới tính</p>
                   <p className="text-[#0f0d1b] dark:text-white font-semibold">{verificationResult.gender || "N/A"}</p>
                 </div>
                 <div className="sm:col-span-2">
-                  <p className="text-xs text-[#524c9a] dark:text-white/40 uppercase font-bold tracking-wider mb-1">Address</p>
+                  <p className="text-xs text-[#524c9a] dark:text-white/40 uppercase font-bold tracking-wider mb-1">Địa chỉ</p>
                   <p className="text-[#0f0d1b] dark:text-white font-semibold">{verificationResult.address || "N/A"}</p>
                 </div>
               </div>
@@ -483,7 +540,7 @@ const EkycTab = ({ onVerificationSuccess }) => {
                 onClick={() => window.location.reload()}
                 className="px-8 py-3 bg-primary text-white font-bold text-sm rounded-xl hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
               >
-                Return to Profile
+                Về trang hồ sơ
                 <span className="material-symbols-outlined text-sm">person</span>
               </button>
             </div>

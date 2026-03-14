@@ -210,11 +210,11 @@ const ProfilePage = () => {
 
   const handleEkycSuccess = async (ekycData) => {
     // Ekyc returned extracted data
-    // We update the local form data and trigger a save
+    // Prioritize EKYC data over existing form data
     const updatedData = {
       ...formData,
-      fullName: formData.fullName || ekycData.name || "",
-      address: formData.address || ekycData.address || "",
+      fullName: ekycData.name || ekycData.fullName || formData.fullName || "",
+      address: ekycData.address || formData.address || "",
       // Add other relevant fields if your API/backend supports them
     };
     
@@ -224,10 +224,10 @@ const ProfilePage = () => {
       setSaving(true);
       await userService.updateProfile(updatedData);
       await loadProfile();
-      showToast("Identity verified and profile updated successfully!");
+      showToast("Xác minh danh tính thành công và đã cập nhật hồ sơ!");
     } catch (err) {
       console.error("Failed to automatically update profile after EKYC:", err);
-      showToast("Identity verified, but failed to auto-update profile.", "error");
+      showToast("Xác minh danh tính thành công, nhưng không thể tự động cập nhật hồ sơ.", "error");
     } finally {
       setSaving(false);
     }
@@ -786,7 +786,7 @@ const ProfilePage = () => {
                   }`}
                 >
                   <span className="material-symbols-outlined">person</span>
-                  <span className="text-sm font-semibold">Personal Info</span>
+                  <span className="text-sm font-semibold">Thông tin cá nhân</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("security")}
@@ -797,7 +797,7 @@ const ProfilePage = () => {
                   }`}
                 >
                   <span className="material-symbols-outlined">shield</span>
-                  <span className="text-sm font-semibold">Security</span>
+                  <span className="text-sm font-semibold">Bảo mật</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("notifications")}
@@ -810,7 +810,7 @@ const ProfilePage = () => {
                   <span className="material-symbols-outlined">
                     notifications
                   </span>
-                  <span className="text-sm font-semibold">Notifications</span>
+                  <span className="text-sm font-semibold">Thông báo</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("billing")}
@@ -821,7 +821,7 @@ const ProfilePage = () => {
                   }`}
                 >
                   <span className="material-symbols-outlined">payments</span>
-                  <span className="text-sm font-semibold">Billing</span>
+                  <span className="text-sm font-semibold">Thanh toán</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("ekyc")}
@@ -832,7 +832,7 @@ const ProfilePage = () => {
                   }`}
                 >
                   <span className="material-symbols-outlined">verified_user</span>
-                  <span className="text-sm font-semibold">Identity Verification</span>
+                  <span className="text-sm font-semibold">Xác minh danh tính</span>
                 </button>
               </div>
             </div>
