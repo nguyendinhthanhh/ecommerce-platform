@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import userService from "../services/userService";
 import authService from "../services/authService";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
+import EkycTab from "../components/profile/EkycTab";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -205,6 +206,31 @@ const ProfilePage = () => {
       avatar: user?.avatar || "",
     });
     setIsEditing(false);
+  };
+
+  const handleEkycSuccess = async (ekycData) => {
+    // Ekyc returned extracted data
+    // Prioritize EKYC data over existing form data
+    const updatedData = {
+      ...formData,
+      fullName: ekycData.name || ekycData.fullName || formData.fullName || "",
+      address: ekycData.address || formData.address || "",
+      // Add other relevant fields if your API/backend supports them
+    };
+    
+    setFormData(updatedData);
+    
+    try {
+      setSaving(true);
+      await userService.updateProfile(updatedData);
+      await loadProfile();
+      showToast("Xác minh danh tính thành công và đã cập nhật hồ sơ!");
+    } catch (err) {
+      console.error("Failed to automatically update profile after EKYC:", err);
+      showToast("Xác minh danh tính thành công, nhưng không thể tự động cập nhật hồ sơ.", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handlePasswordChange = (e) => {
@@ -760,7 +786,7 @@ const ProfilePage = () => {
                   }`}
                 >
                   <span className="material-symbols-outlined">person</span>
-                  <span className="text-sm font-semibold">Personal Info</span>
+                  <span className="text-sm font-semibold">Thông tin cá nhân</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("security")}
@@ -771,7 +797,7 @@ const ProfilePage = () => {
                   }`}
                 >
                   <span className="material-symbols-outlined">shield</span>
-                  <span className="text-sm font-semibold">Security</span>
+                  <span className="text-sm font-semibold">Bảo mật</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("notifications")}
@@ -784,7 +810,7 @@ const ProfilePage = () => {
                   <span className="material-symbols-outlined">
                     notifications
                   </span>
-                  <span className="text-sm font-semibold">Notifications</span>
+                  <span className="text-sm font-semibold">Thông báo</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("billing")}
@@ -795,7 +821,18 @@ const ProfilePage = () => {
                   }`}
                 >
                   <span className="material-symbols-outlined">payments</span>
-                  <span className="text-sm font-semibold">Billing</span>
+                  <span className="text-sm font-semibold">Thanh toán</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("ekyc")}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeTab === "ekyc"
+                      ? "bg-primary/5 text-primary"
+                      : "text-[#524c9a] dark:text-white/70 hover:bg-background-light dark:hover:bg-white/10"
+                  }`}
+                >
+                  <span className="material-symbols-outlined">verified_user</span>
+                  <span className="text-sm font-semibold">Xác minh danh tính</span>
                 </button>
               </div>
             </div>
@@ -803,6 +840,11 @@ const ProfilePage = () => {
 
           {/* Right Column: Main Content */}
           <div className="lg:col-span-8 flex flex-col gap-8">
+            {/* EKYC Verification Section */}
+            {activeTab === "ekyc" && (
+              <EkycTab onVerificationSuccess={handleEkycSuccess} />
+            )}
+
             {/* Personal Information Section */}
             {activeTab === "profile" && (
               <section className="bg-white dark:bg-white/5 rounded-xl shadow-sm border border-[#e8e7f3] dark:border-white/10 overflow-hidden">
