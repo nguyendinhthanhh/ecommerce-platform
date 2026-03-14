@@ -55,6 +55,11 @@ public class GlobalExceptionHandler {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                                 .body(ApiResponse.error("Authentication failed: " + ex.getMessage()));
         }
+        @ExceptionHandler(EkycVerificationException.class)
+        public ResponseEntity<ApiResponse<Void>> handleEkycException(EkycVerificationException ex) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.error("eKyc verification failed: " + ex.getMessage()));
+        }
 
         @ExceptionHandler(AccessDeniedException.class)
         public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
