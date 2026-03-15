@@ -185,7 +185,9 @@ export const CartProvider = ({ children }) => {
     } catch (err) {
       console.error("Error removing item:", err);
       // Revert on error
-      alert("Không thể xóa sản phẩm. Vui lòng thử lại.");
+      setCartItems(previousItems);
+      setSelectedItems(previousSelected);
+      alert("Failed to remove item. Please try again.");
     }
   };
 
@@ -218,7 +220,7 @@ export const CartProvider = ({ children }) => {
       return result;
     } catch (error) {
       console.error("Error adding to cart:", error);
-      const message = error.response?.data?.message || "Không thể thêm sản phẩm vào giỏ. Vui lòng thử lại.";
+      const message = error.response?.data?.message || "Failed to add item to cart. Please try again.";
       alert(message);
       throw error;
     }
@@ -279,7 +281,7 @@ export const CartProvider = ({ children }) => {
     (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
     0,
   );
-  const tax = subtotal * 0.1;
+  const tax = subtotal * 0.08;
   const shipping = subtotal > 0 ? 0 : 0;
   const total = subtotal + tax + shipping;
   const selectedItemsCount = selectedItems.size;

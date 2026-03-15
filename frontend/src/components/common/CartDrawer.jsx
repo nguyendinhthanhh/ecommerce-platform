@@ -41,7 +41,7 @@ const CartDrawer = () => {
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center space-x-3">
               <h2 className="text-lg font-semibold text-gray-900">
-                Giỏ Hàng
+                Shopping Cart
               </h2>
               <span className="bg-gray-100 text-gray-600 text-sm px-2 py-1 rounded-full">
                 {totalItemsCount}
@@ -81,11 +81,11 @@ const CartDrawer = () => {
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <span className="text-sm font-medium text-gray-700">
-                  Chọn tất cả ({totalItemsCount} sản phẩm)
+                  Select All ({totalItemsCount} items)
                 </span>
                 {selectedItemsCount > 0 && (
                   <span className="text-sm text-gray-500">
-                    • Đã chọn {selectedItemsCount}
+                    • {selectedItemsCount} selected
                   </span>
                 )}
               </label>
@@ -110,16 +110,16 @@ const CartDrawer = () => {
                   />
                 </svg>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Giỏ hàng của bạn đang trống!
+                  Your cart is empty
                 </h3>
                 <p className="text-gray-500 mb-4">
-                  Thêm một số sản phẩm để bắt đầu
+                  Add some products to get started
                 </p>
                 <button
                   onClick={closeCart}
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  Mua sắm ngay
+                  Continue Shopping
                 </button>
               </div>
             ) : (
@@ -128,8 +128,8 @@ const CartDrawer = () => {
                   <div
                     key={item.id}
                     className={`border rounded-lg p-4 transition-all duration-200 ${selectedItems.has(item.id)
-                      ? "ring-2 ring-blue-500 ring-opacity-50 bg-blue-50"
-                      : "bg-white"
+                        ? "ring-2 ring-blue-500 ring-opacity-50 bg-blue-50"
+                        : "bg-white"
                       }`}
                   >
                     <div className="flex items-start space-x-3">
@@ -154,8 +154,8 @@ const CartDrawer = () => {
                           src={item.image || 'https://via.placeholder.com/150x150?text=Product'}
                           alt={item.name}
                           className={`w-16 h-16 object-cover rounded-lg transition-opacity duration-300 ${imageLoadingStates[item.id]
-                            ? "opacity-0 absolute"
-                            : "opacity-100"
+                              ? "opacity-0 absolute"
+                              : "opacity-100"
                             }`}
                           onLoad={() => handleImageLoad(item.id)}
                           onError={(e) => {
@@ -176,7 +176,7 @@ const CartDrawer = () => {
                         </p>
                         <div className="flex items-center justify-between mt-2">
                           <span className="text-sm font-medium text-gray-900">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price || 0)}
+                            ${(item.price || 0).toFixed(2)}
                           </span>
 
                           {/* Quantity Controls */}
@@ -246,7 +246,7 @@ const CartDrawer = () => {
                               d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                             />
                           </svg>
-                          Xóa
+                          Remove
                         </button>
                       </div>
                     </div>
@@ -263,22 +263,22 @@ const CartDrawer = () => {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">
-                    Tạm tính ({selectedItemsCount} sản phẩm)
+                    Subtotal ({selectedItemsCount} items)
                   </span>
                   <span className="text-gray-900">
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(subtotal || 0)}
+                    ${(subtotal || 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Thuế</span>
+                  <span className="text-gray-600">Tax</span>
                   <span className="text-gray-900">
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tax || 0)}
+                    ${(tax || 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between font-medium">
-                  <span className="text-gray-900">Tổng</span>
+                  <span className="text-gray-900">Total</span>
                   <span className="text-lg text-blue-600">
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(total || 0)}
+                    ${(total || 0).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -292,13 +292,13 @@ const CartDrawer = () => {
                   }}
                   disabled={selectedItemsCount === 0}
                   className={`w-full py-2 px-4 rounded-lg font-medium transition-all duration-200 ${selectedItemsCount > 0
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      ? "bg-blue-600 text-white hover:bg-blue-700"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
                     }`}
                 >
                   {selectedItemsCount > 0
-                    ? `Thanh toán (${selectedItemsCount})`
-                    : "Chọn sản phẩm để thanh toán"}
+                    ? `Checkout (${selectedItemsCount})`
+                    : "Select items to checkout"}
                 </button>
 
                 <Link
@@ -306,7 +306,7 @@ const CartDrawer = () => {
                   onClick={closeCart}
                   className="w-full py-2 px-4 text-center text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors block"
                 >
-                  Xem giỏ hàng
+                  View Full Cart
                 </Link>
               </div>
             </div>

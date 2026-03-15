@@ -9,17 +9,18 @@ import ProductReviews from "../../components/reviews/ProductReviews";
 const ProductDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addToCart, closeCart } = useCart();
+  const { addToCart } = useCart();
   const [product, setProduct] = useState(null);
-  const [category, setCategory] = useState(null); // additional state for category info
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [addingToCart, setAddingToCart] = useState(false);
-  const [activeTab, setActiveTab] = useState("description"); // default to description
+  const [activeTab, setActiveTab] = useState("ai-analysis");
 
   // Image interaction states
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
   const [showLightbox, setShowLightbox] = useState(false);
 
   useEffect(() => {
@@ -27,24 +28,6 @@ const ProductDetailPage = () => {
     // Scroll to top when page loads
     window.scrollTo(0, 0);
   }, [id]);
-
-  // once we have a product, also pull category details in case API didn't include the name
-  useEffect(() => {
-    const fetchCategory = async () => {
-      if (product?.categoryId) {
-        try {
-          const data = await import("../../services/categoryService").then(m => m.default.getCategoryById(product.categoryId));
-          setCategory(data);
-        } catch (err) {
-          // we'll just ignore errors – breadcrumb will fall back to whatever the product provided
-          console.error("Failed to load category info", err);
-          setCategory(null);
-        }
-      }
-    };
-
-    fetchCategory();
-  }, [product]);
 
   // Keyboard navigation for lightbox
   useEffect(() => {
@@ -85,17 +68,31 @@ const ProductDetailPage = () => {
     try {
       setAddingToCart(true);
       const result = await addToCart(product, quantity);
+      // If login required, don't continue (modal will show)
       if (result?.requiresLogin) return;
+      // Success feedback - cart drawer will auto open
     } catch (err) {
       console.error("Failed to add to cart:", err);
+      // Error already handled in CartContext
     } finally {
       setAddingToCart(false);
     }
   };
 
-  const handleBuyNow = () => {
-    closeCart();
-    navigate("/place-order", { state: { directBuy: true, product, quantity } });
+  const handleBuyNow = async () => {
+    try {
+      setAddingToCart(true);
+      const result = await addToCart(product, quantity);
+      // If login required, don't continue (modal will show)
+      if (result?.requiresLogin) return;
+      // Navigate to cart page after adding
+      navigate("/cart");
+    } catch (err) {
+      console.error("Failed to buy now:", err);
+      // Error already handled in CartContext
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
   const formatPrice = (price) => {
@@ -105,17 +102,52 @@ const ProductDetailPage = () => {
     }).format(price);
   };
 
+  const calculateDiscount = () => {
+    if (product?.discountPrice && product?.price) {
+      return Math.round(
+        ((product.price - product.discountPrice) / product.price) * 100,
+      );
+    }
+    return 0;
+  };
+
   if (loading) return <ProductDetailSkeleton />;
-  if (error || !product)
+  if (error)
     return (
-      <div className="min-h-screen bg-[#f4f6f8]">
+      <div className="min-h-screen bg-gray-50">
         <Header />
         <div className="flex flex-col items-center justify-center py-20">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
-            Không tìm thấy sản phẩm
+          <div className="text-red-500 text-6xl mb-4">😕</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Oops! Something went wrong
           </h2>
-          <Link to="/products" className="bg-primary text-white px-6 py-2 rounded font-bold mt-4">
-            Về trang chủ
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Link
+            to="/products"
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Browse Products
+          </Link>
+        </div>
+      </div>
+    );
+  if (!product)
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="text-gray-400 text-6xl mb-4">🔍</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Product not found
+          </h2>
+          <p className="text-gray-600 mb-4">
+            The product you're looking for doesn't exist.
+          </p>
+          <Link
+            to="/products"
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Browse Products
           </Link>
         </div>
       </div>
@@ -124,275 +156,682 @@ const ProductDetailPage = () => {
   const images =
     product.images && product.images.length > 0
       ? product.images
-      : [product.thumbnail || "https://via.placeholder.com/600x600?text=No+Image"];
-
-  const oldPrice = product.oldPrice || (product.price * 1.15); // mock old price
+      : [product.thumbnail];
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8] text-[#111418] font-display pb-20">
+    <div className="min-h-screen bg-gray-50">
       <Header />
 
-      {/* Breadcrumbs */}
-      <div className="bg-[#f4f6f8] py-3">
-        <div className="max-w-[1200px] mx-auto px-4">
-          <nav className="flex items-center gap-2 text-[13px] text-gray-500">
-            <Link to="/" className="hover:text-primary">Trang chủ</Link>
-            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-            <Link to={`/products?category=${product.categoryId}`} className="hover:text-primary">
-              {category?.name || product.categoryName || 'Sản phẩm'}
+      {/* Breadcrumbs - Redesigned */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <nav className="flex items-center gap-2 text-sm">
+            <Link 
+              to="/" 
+              className="flex items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors group"
+            >
+              <span className="material-symbols-outlined text-lg group-hover:scale-110 transition-transform">home</span>
+              <span className="font-medium">Home</span>
             </Link>
-            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-            <span className="text-gray-900 truncate font-medium">{product.name}</span>
+            
+            <span className="material-symbols-outlined text-gray-300 text-sm">chevron_right</span>
+            
+            <Link 
+              to={`/products?category=${product.categoryId}`}
+              className="text-gray-500 hover:text-blue-600 transition-colors font-medium hover:underline"
+            >
+              {product.categoryName || 'Products'}
+            </Link>
+            
+            <span className="material-symbols-outlined text-gray-300 text-sm">chevron_right</span>
+            
+            <span className="text-gray-900 font-semibold truncate max-w-[300px] sm:max-w-none">
+              {product.name}
+            </span>
           </nav>
         </div>
       </div>
 
-      <main className="max-w-[1200px] mx-auto px-4">
-        {/* Main Product Area */}
-        <div className="bg-white rounded-lg shadow-sm p-4 lg:p-6 mb-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-            {/* Left: Gallery (5 cols) */}
-            <div className="lg:col-span-5 flex flex-col gap-4">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          {/* Left Column: Gallery */}
+          <div className="flex flex-col gap-6">
+            {/* Main Image with Zoom Effect */}
+            <div className="relative group">
               <div
-                className="w-full aspect-square border border-gray-100 rounded-lg overflow-hidden cursor-zoom-in relative bg-white flex items-center justify-center p-4 group"
+                className="w-full aspect-square bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 rounded-2xl overflow-hidden shadow-lg cursor-zoom-in relative"
+                onMouseEnter={() => setIsZoomed(true)}
+                onMouseLeave={() => setIsZoomed(false)}
+                onMouseMove={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = ((e.clientX - rect.left) / rect.width) * 100;
+                  const y = ((e.clientY - rect.top) / rect.height) * 100;
+                  setZoomPosition({ x, y });
+                }}
                 onClick={() => setShowLightbox(true)}
               >
                 <img
                   src={images[selectedImage]}
                   alt={product.name}
-                  className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                  className={`w-full h-full object-contain p-8 transition-transform duration-300 ${isZoomed ? "scale-150" : "scale-100"
+                    }`}
+                  style={
+                    isZoomed
+                      ? {
+                        transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                      }
+                      : {}
+                  }
+                  onError={(e) => {
+                    e.target.src =
+                      "https://via.placeholder.com/600x600?text=No+Image";
+                  }}
                 />
-                <div className="absolute bottom-2 right-2 bg-black/50 text-white p-1.5 rounded-full flex items-center justify-center hidden group-hover:flex">
-                  <span className="material-symbols-outlined text-[18px]">zoom_in</span>
+
+                {/* Zoom hint overlay */}
+                <div
+                  className={`absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity duration-300 ${isZoomed ? "opacity-0" : "opacity-0 group-hover:opacity-100"
+                    }`}
+                >
+                  <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
+                    <span className="material-symbols-outlined text-gray-700">
+                      zoom_in
+                    </span>
+                    <span className="text-sm font-medium text-gray-700">
+                      Hover to zoom • Click to expand
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Thumbnails */}
+              {product.status === "ACTIVE" && (
+                <div className="absolute top-4 left-4 bg-blue-600 text-white px-4 py-2 rounded-full flex items-center gap-2 text-xs font-bold shadow-lg z-10">
+                  <span>✓</span> AI VISION VERIFIED
+                </div>
+              )}
+
+              {/* Navigation arrows */}
               {images.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
-                  {images.map((img, index) => (
-                    <div
-                      key={index}
-                      onClick={() => setSelectedImage(index)}
-                      className={`w-16 h-16 rounded border flex-shrink-0 cursor-pointer p-1 bg-white ${selectedImage === index ? "border-primary" : "border-gray-200 hover:border-gray-400"
-                        }`}
-                    >
-                      <img src={img} alt={`Thumb ${index + 1}`} className="w-full h-full object-contain" />
-                    </div>
-                  ))}
+                <>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedImage((prev) =>
+                        prev === 0 ? images.length - 1 : prev - 1,
+                      );
+                    }}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 z-10"
+                  >
+                    <span className="material-symbols-outlined">
+                      chevron_left
+                    </span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedImage((prev) =>
+                        prev === images.length - 1 ? 0 : prev + 1,
+                      );
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 z-10"
+                  >
+                    <span className="material-symbols-outlined">
+                      chevron_right
+                    </span>
+                  </button>
+                </>
+              )}
+
+              {/* Image counter */}
+              {images.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium">
+                  {selectedImage + 1} / {images.length}
                 </div>
               )}
             </div>
 
-            {/* Right: Info (7 cols) */}
-            <div className="lg:col-span-7 flex flex-col gap-4">
-              {/* Title & Brand */}
-              <div className="border-b border-gray-100 pb-4">
-                <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-2">
-                  {product.name}
-                </h1>
-                <div className="flex items-center gap-4 text-sm">
-                  <div className="flex items-center text-yellow-400 text-[14px]">
-                    {[...Array(5)].map((_, i) => (
-                      <span key={i} className="material-symbols-outlined text-[16px] fill-current">
-                        {i < Math.floor(product.averageRating || 5) ? 'star' : 'star_border'}
-                      </span>
-                    ))}
-                    <span className="text-gray-500 ml-1 text-[13px]">({product.totalReviews || 0} đánh giá)</span>
-                  </div>
-                  <span className="text-gray-400">|</span>
-                  <span className="text-gray-500">Mã SP: <strong className="text-gray-700">{String(product.id).substring(0, 8).toUpperCase()}</strong></span>
-                  <span className="text-gray-400">|</span>
-                  <span className="text-gray-500">Tình trạng: <strong className="text-primary">{product.stockQuantity > 0 ? 'Còn hàng' : 'Hết hàng'}</strong></span>
+            {/* Thumbnails with animation */}
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {images.map((img, index) => (
+                <div
+                  key={index}
+                  onClick={() => setSelectedImage(index)}
+                  className={`w-20 h-20 rounded-xl bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 cursor-pointer shrink-0 overflow-hidden border-2 transition-all duration-300 hover:shadow-md ${selectedImage === index
+                    ? "border-blue-600 scale-110 shadow-lg ring-2 ring-blue-300"
+                    : "border-transparent opacity-60 hover:opacity-100 hover:scale-105"
+                    }`}
+                >
+                  <img
+                    src={img}
+                    alt={`${product.name} ${index + 1}`}
+                    className="w-full h-full object-contain p-2"
+                  />
                 </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right Column: Info & Actions */}
+          <div className="flex flex-col gap-6">
+            {/* AI Match Badge & Rating */}
+            <div className="flex items-center gap-3">
+              <div className="flex bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full items-center gap-1.5">
+                <span className="text-lg">⚡</span>
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  98% AI Match
+                </span>
               </div>
-
-              {/* Price Box */}
-              <div className="bg-gray-50 rounded-lg p-5 border border-gray-100 flex flex-col gap-2">
-                <div className="flex items-end gap-3">
-                  <span className="text-4xl font-bold text-primary leading-none">
-                    {formatPrice(product.price)}
-                  </span>
-                  <span className="text-lg text-gray-500 line-through mb-1">
-                    {formatPrice(oldPrice)}
-                  </span>
-                  <span className="bg-primary/10 text-primary border border-primary/20 text-xs font-bold px-2 py-0.5 rounded ml-2 mb-1">
-                    -{Math.round(((oldPrice - product.price) / oldPrice) * 100)}%
-                  </span>
-                </div>
-                <div className="mt-2 text-[13px] text-gray-600">
-                  <span className="text-green-600 font-bold mr-1">✓</span> Miễn phí vận chuyển toàn quốc
-                </div>
-              </div>
-
-              {/* Promotion Box */}
-              <div className="border border-[#e5e7eb] rounded-lg mt-2 overflow-hidden">
-                <div className="bg-[#f3f4f6] px-4 py-2 border-b border-[#e5e7eb] flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-[20px]">featured_seasonal_and_gifts</span>
-                  <h3 className="font-bold text-[#111418] uppercase text-[15px]">Quà tặng & Ưu đãi đặc biệt</h3>
-                </div>
-                <div className="p-4 bg-white text-[13px] space-y-3">
-                  <div className="flex gap-2">
-                    <span className="bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm h-fit mt-0.5">KM 1</span>
-                    <span>Tặng Balo Gaming cao cấp trị giá 890.000₫</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm h-fit mt-0.5">KM 2</span>
-                    <span>Tặng Chuột Gaming trị giá 550.000₫</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm h-fit mt-0.5">KM 3</span>
-                    <span>Giảm 20% khi mua kèm lót chuột hoặc túi chống sốc</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="mt-4 flex flex-col gap-3">
-                <div className="flex items-center gap-4 mb-2">
-                  <span className="font-bold text-[14px]">Số lượng:</span>
-                  <div className="flex items-center border border-gray-300 rounded h-9 w-28 overflow-hidden bg-white">
-                    <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-8 h-full flex items-center justify-center hover:bg-gray-100 text-gray-600 transition-colors"
-                    >
-                      -
-                    </button>
-                    <input
-                      type="text"
-                      value={quantity}
-                      readOnly
-                      className="w-12 h-full text-center text-[14px] font-bold focus:outline-none border-x border-gray-300"
-                    />
-                    <button
-                      onClick={() => setQuantity(Math.min(product.stockQuantity, quantity + 1))}
-                      className="w-8 h-full flex items-center justify-center hover:bg-gray-100 text-gray-600 transition-colors"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleBuyNow}
-                    disabled={product.stockQuantity === 0}
-                    className="flex-1 bg-primary hover:bg-red-700 text-white rounded h-14 flex flex-col items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase"
+              <div className="flex items-center gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <span
+                    key={i}
+                    className={`text-xl ${
+                      i < Math.floor(product.averageRating)
+                        ? "text-yellow-400"
+                        : "text-gray-300"
+                    }`}
                   >
-                    <span className="font-bold text-[18px]">Mua Ngay</span>
-                    <span className="text-[11px] font-medium">Giao nhanh 2h hoặc nhận tại cửa hàng</span>
-                  </button>
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={addingToCart || product.stockQuantity === 0}
-                    className="w-[180px] border-2 border-primary text-primary hover:bg-[#fff0f1] rounded h-14 flex flex-col items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase"
-                  >
-                    <span className="font-bold text-[15px]">Thêm Vào Giỏ</span>
-                    <span className="text-[10px] font-medium">Tiếp tục mua sắm</span>
-                  </button>
+                    {i < Math.floor(product.averageRating) ? "★" : "☆"}
+                  </span>
+                ))}
+                <span className="text-gray-600 text-sm ml-1 font-medium">
+                  {product.averageRating.toFixed(1)} ({product.totalReviews} reviews)
+                </span>
+              </div>
+            </div>
+
+            {/* Product Name */}
+            <div>
+              <h1 className="text-3xl font-black text-gray-900 mb-2 leading-tight">
+                {product.name}
+              </h1>
+              <p className="text-gray-600 text-sm">
+                Model: ShopAI-Elite X1 | {product.categoryName}
+              </p>
+            </div>
+
+            {/* Pricing Section */}
+            <div className="flex items-end justify-between p-6 rounded-xl bg-white border border-gray-200 shadow-sm">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                  Current Price
+                </span>
+                <div className="flex items-baseline gap-3">
+                  <span className="text-4xl font-black text-gray-900">
+                    {formatPrice(product.discountPrice || product.price)}
+                  </span>
+                  {product.discountPrice && (
+                    <span className="text-gray-400 line-through text-xl">
+                      {formatPrice(product.price)}
+                    </span>
+                  )}
                 </div>
               </div>
+              {calculateDiscount() > 0 && (
+                <div className="flex flex-col items-end gap-2">
+                  <span className="text-xs font-bold text-green-600 uppercase tracking-widest flex items-center gap-1">
+                    <span>📉</span> {calculateDiscount()}% OFF
+                  </span>
+                  <div className="flex items-end gap-0.5 h-8">
+                    <div className="w-1 bg-blue-200 rounded-full h-4"></div>
+                    <div className="w-1 bg-blue-200 rounded-full h-6"></div>
+                    <div className="w-1 bg-blue-300 rounded-full h-5"></div>
+                    <div className="w-1 bg-blue-400 rounded-full h-7"></div>
+                    <div className="w-1 bg-blue-500 rounded-full h-8"></div>
+                    <div className="w-1 bg-blue-600 rounded-full h-4"></div>
+                  </div>
+                  <span className="text-[10px] text-gray-500 font-medium uppercase">
+                    Price Stability: High
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* AI Insights Card */}
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-3 opacity-10 text-6xl">
+                ✨
+              </div>
+              <h3 className="flex items-center gap-2 text-gray-900 font-bold text-lg mb-4">
+                <span className="text-blue-600">✨</span>
+                Why you might like this
+              </h3>
+              <ul className="space-y-3">
+                <li className="flex gap-3">
+                  <span className="text-green-500 text-xl">✓</span>
+                  <div>
+                    <p className="text-sm font-bold text-gray-900 leading-none mb-1">
+                      Superior Quality
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      AI analysis confirms high-quality materials and
+                      construction.
+                    </p>
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <span className="text-green-500 text-xl">✓</span>
+                  <div>
+                    <p className="text-sm font-bold text-gray-900 leading-none mb-1">
+                      Great Value
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      Price matches the advertised quality and features.
+                    </p>
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <span className="text-green-500 text-xl">✓</span>
+                  <div>
+                    <p className="text-sm font-bold text-gray-900 leading-none mb-1">
+                      Highly Rated
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      Consistently positive reviews from verified buyers.
+                    </p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            {/* Quantity Selector */}
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold text-gray-900">Quantity</p>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50 flex items-center justify-center font-bold text-lg transition-all"
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  value={quantity}
+                  onChange={(e) =>
+                    setQuantity(
+                      Math.max(
+                        1,
+                        Math.min(
+                          product.stockQuantity,
+                          parseInt(e.target.value) || 1,
+                        ),
+                      ),
+                    )
+                  }
+                  className="w-16 h-10 text-center border-2 border-gray-300 rounded-lg font-bold focus:border-blue-600 focus:outline-none"
+                  min="1"
+                  max={product.stockQuantity}
+                />
+                <button
+                  onClick={() =>
+                    setQuantity(Math.min(product.stockQuantity, quantity + 1))
+                  }
+                  className="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50 flex items-center justify-center font-bold text-lg transition-all"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {/* CTA Actions */}
+            <div className="flex gap-4 pt-2">
+              <button
+                onClick={handleAddToCart}
+                disabled={addingToCart || product.stockQuantity === 0}
+                className="flex-1 bg-blue-600 text-white h-14 rounded-xl font-bold text-base hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/30 disabled:bg-gray-400 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="text-xl">🛒</span>
+                {addingToCart ? "Adding..." : "Add to Cart"}
+              </button>
+              <button
+                onClick={handleBuyNow}
+                disabled={product.stockQuantity === 0}
+                className="flex-1 border-2 border-blue-600 text-blue-600 h-14 rounded-xl font-bold text-base hover:bg-blue-50 disabled:border-gray-400 disabled:text-gray-400 transition-all"
+              >
+                Buy Now
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Details & Specs Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left: Description & Reviews */}
-          <div className="lg:col-span-8 space-y-6">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-bold uppercase mb-4 text-gray-900">Mô tả sản phẩm</h2>
-              <div className="prose max-w-none text-[15px] text-gray-700 leading-relaxed">
-                <p className="whitespace-pre-line">{product.description}</p>
-                {/* Placeholder image for description */}
-                <div className="my-6">
-                  <img src="https://via.placeholder.com/800x400/101922/ffffff?text=Premium+Gaming+Experience" alt="Marketing" className="w-full rounded-lg" />
-                </div>
-              </div>
-            </div>
-
-            <div id="reviews" className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-bold uppercase mb-4 text-gray-900 border-b border-gray-100 pb-3">Khách hàng đánh giá</h2>
-              <ProductReviews productId={id} />
-            </div>
+        {/* Bottom Section: Tabs & Reviews */}
+        <div className="mt-16">
+          <div className="flex border-b border-gray-200 gap-8">
+            <button
+              onClick={() => setActiveTab("ai-analysis")}
+              className={`pb-4 border-b-2 font-bold text-base transition-colors ${activeTab === "ai-analysis"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-blue-600"
+                }`}
+            >
+              AI-Analyzed Reviews
+            </button>
+            <button
+              onClick={() => setActiveTab("reviews")}
+              className={`pb-4 border-b-2 font-bold text-base transition-colors ${activeTab === "reviews"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-blue-600"
+                }`}
+            >
+              Reviews ({product.totalReviews})
+            </button>
+            <button
+              onClick={() => setActiveTab("specs")}
+              className={`pb-4 border-b-2 font-bold text-base transition-colors ${activeTab === "specs"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-blue-600"
+                }`}
+            >
+              Specifications
+            </button>
+            <button
+              onClick={() => setActiveTab("description")}
+              className={`pb-4 border-b-2 font-bold text-base transition-colors ${activeTab === "description"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-blue-600"
+                }`}
+            >
+              Description
+            </button>
           </div>
 
-          {/* Right: Technical Specs */}
-          <div className="lg:col-span-4 space-y-6 flex flex-col">
-            <div className="bg-white rounded-lg shadow-sm p-5 sticky top-20 border border-gray-100">
-              <div className="flex items-center gap-2 mb-4 bg-primary text-white px-3 py-2 rounded">
-                <span className="material-symbols-outlined text-[18px]">verified_user</span>
-                <h2 className="font-bold uppercase text-[15px]">Thông số kỹ thuật</h2>
+          {/* Tab Content */}
+          <div className="py-10">
+            {activeTab === "ai-analysis" && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Sentiment Analysis */}
+                <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                  <h4 className="text-xl font-black mb-6">
+                    Sentiment Analysis
+                  </h4>
+                  <div className="space-y-6">
+                    <div>
+                      <div className="flex justify-between text-sm font-bold mb-2">
+                        <span>Positive Sentiment</span>
+                        <span className="text-green-500">92%</span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-green-500 w-[92%]"></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-sm font-bold mb-2">
+                        <span>Neutral</span>
+                        <span className="text-gray-400">5%</span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-gray-400 w-[5%]"></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-sm font-bold mb-2">
+                        <span>Negative Sentiment</span>
+                        <span className="text-red-500">3%</span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-red-500 w-[3%]"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pros and Cons */}
+                <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* Pros */}
+                  <div className="bg-green-50 rounded-xl p-6 border border-green-100">
+                    <div className="flex items-center gap-2 text-green-600 font-bold mb-4">
+                      <span className="text-xl">👍</span>
+                      AI-Distilled Pros
+                    </div>
+                    <ul className="space-y-3 text-sm text-green-800">
+                      <li className="flex gap-2">
+                        • Exceptional clarity and quality
+                      </li>
+                      <li className="flex gap-2">
+                        • Very comfortable for extended use
+                      </li>
+                      <li className="flex gap-2">
+                        • Fast delivery and secure packaging
+                      </li>
+                      <li className="flex gap-2">
+                        • Reliable performance and durability
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* Cons */}
+                  <div className="bg-red-50 rounded-xl p-6 border border-red-100">
+                    <div className="flex items-center gap-2 text-red-600 font-bold mb-4">
+                      <span className="text-xl">👎</span>
+                      AI-Distilled Cons
+                    </div>
+                    <ul className="space-y-3 text-sm text-red-800">
+                      <li className="flex gap-2">
+                        • Price might be high for some budgets
+                      </li>
+                      <li className="flex gap-2">
+                        • Limited color options available
+                      </li>
+                      <li className="flex gap-2">
+                        • Setup instructions could be clearer
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
+            )}
 
-              <div className="space-y-0 text-[13px]">
-                <div className="flex py-2.5 border-b border-gray-100 bg-gray-50 px-2 rounded-t">
-                  <span className="w-1/3 text-gray-500 font-medium">Thương hiệu</span>
-                  <span className="w-2/3 text-gray-900 font-bold text-right">GearVN Brand</span>
-                </div>
-                <div className="flex py-2.5 border-b border-gray-100 px-2">
-                  <span className="w-1/3 text-gray-500 font-medium">Bảo hành</span>
-                  <span className="w-2/3 text-gray-900 font-bold text-right">24 Tháng</span>
-                </div>
-                <div className="flex py-2.5 border-b border-gray-100 bg-gray-50 px-2">
-                  <span className="w-1/3 text-gray-500 font-medium">Tình trạng</span>
-                  <span className="w-2/3 text-gray-900 font-bold text-right">Mới 100%</span>
-                </div>
-                <div className="flex py-2.5 border-b border-gray-100 px-2">
-                  <span className="w-1/3 text-gray-500 font-medium">SKU</span>
-                  <span className="w-2/3 text-gray-900 font-bold text-right">{String(product.id).substring(0, 8).toUpperCase()}</span>
+            {activeTab === "reviews" && (
+              <div>
+                <ProductReviews productId={id} />
+              </div>
+            )}
+
+            {activeTab === "specs" && (
+              <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-sm">
+                <h3 className="text-2xl font-bold mb-6">
+                  Technical Specifications
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex justify-between py-3 border-b border-gray-100">
+                      <span className="font-semibold text-gray-700">
+                        Category:
+                      </span>
+                      <span className="text-gray-900">
+                        {product.categoryName}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-3 border-b border-gray-100">
+                      <span className="font-semibold text-gray-700">
+                        Stock:
+                      </span>
+                      <span className="text-gray-900">
+                        {product.stockQuantity} units
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-3 border-b border-gray-100">
+                      <span className="font-semibold text-gray-700">
+                        Status:
+                      </span>
+                      <span
+                        className={`font-bold ${product.status === "ACTIVE" ? "text-green-600" : "text-red-600"}`}
+                      >
+                        {product.status}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex justify-between py-3 border-b border-gray-100">
+                      <span className="font-semibold text-gray-700">
+                        Rating:
+                      </span>
+                      <span className="text-gray-900">
+                        {product.averageRating.toFixed(1)} / 5.0
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-3 border-b border-gray-100">
+                      <span className="font-semibold text-gray-700">
+                        Reviews:
+                      </span>
+                      <span className="text-gray-900">
+                        {product.totalReviews} reviews
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-3 border-b border-gray-100">
+                      <span className="font-semibold text-gray-700">Sold:</span>
+                      <span className="text-gray-900">
+                        {product.soldCount} units
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
+            )}
 
-              <button className="w-full mt-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-[13px] py-2.5 rounded transition-colors uppercase">
-                Xem chi tiết cấu hình
-              </button>
-            </div>
+            {activeTab === "description" && (
+              <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-sm">
+                <h3 className="text-2xl font-bold mb-6">Product Description</h3>
+                <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                  {product.description}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
 
-            <div className="bg-primary rounded-lg shadow-sm p-5 text-white flex flex-col items-center justify-center text-center gap-2">
-              <span className="material-symbols-outlined text-4xl mb-1">support_agent</span>
-              <h3 className="font-bold text-[16px]">Cần tư vấn thêm?</h3>
-              <p className="text-[12px] opacity-90 mb-2">Chuyên viên tư vấn luôn sẵn sàng hỗ trợ bạn chọn được sản phẩm ưng ý nhất.</p>
-              <a href="tel:18006975" className="bg-white text-primary font-bold px-6 py-2 rounded-full mt-1 hover:bg-gray-100 transition-colors text-[18px]">
-                1800 6975
-              </a>
-            </div>
+        {/* Similar Products Section */}
+        <div className="mt-16">
+          <div className="flex items-center gap-2 mb-8">
+            <span className="text-blue-600 text-2xl">✨</span>
+            <h2 className="text-2xl font-black text-gray-900">
+              Similar Products Picked by AI
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            {/* Placeholder for similar products - you can fetch from API later */}
+            {[1, 2, 3, 4, 5].map((item) => (
+              <div
+                key={item}
+                className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow"
+              >
+                <div className="relative">
+                  <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200"></div>
+                  <div className="absolute top-2 left-2 bg-purple-600 text-white px-2 py-1 rounded text-xs font-bold">
+                    HOT MATCH
+                  </div>
+                </div>
+                <div className="p-4">
+                  <h4 className="font-bold text-sm text-gray-900 mb-2 line-clamp-2">
+                    Similar Product {item}
+                  </h4>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-lg font-black text-blue-600">
+                      $199.00
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </main>
 
       {/* Lightbox Modal */}
       {showLightbox && (
-        <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center" onClick={() => setShowLightbox(false)}>
-          <button onClick={() => setShowLightbox(false)} className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors z-10">
-            <span className="material-symbols-outlined text-white text-xl">close</span>
+        <div
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+          onClick={() => setShowLightbox(false)}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => setShowLightbox(false)}
+            className="absolute top-4 right-4 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors z-10"
+          >
+            <span className="material-symbols-outlined text-white text-2xl">
+              close
+            </span>
           </button>
 
-          <div className="absolute top-4 left-4 text-white/80 text-sm font-medium">
+          {/* Image counter */}
+          <div className="absolute top-4 left-4 text-white/80 text-lg font-medium">
             {selectedImage + 1} / {images.length}
           </div>
 
-          <div className="relative max-w-5xl max-h-[85vh] mx-4" onClick={(e) => e.stopPropagation()}>
-            <img src={images[selectedImage]} alt={product.name} className="max-w-full max-h-[85vh] object-contain" />
+          {/* Main image */}
+          <div
+            className="relative max-w-5xl max-h-[85vh] mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={images[selectedImage]}
+              alt={product.name}
+              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl animate-fade-in"
+            />
           </div>
 
+          {/* Navigation */}
           {images.length > 1 && (
             <>
               <button
-                onClick={(e) => { e.stopPropagation(); setSelectedImage((prev) => prev === 0 ? images.length - 1 : prev - 1); }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all hover:scale-110"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedImage((prev) =>
+                    prev === 0 ? images.length - 1 : prev - 1,
+                  );
+                }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-14 h-14 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all hover:scale-110"
               >
-                <span className="material-symbols-outlined text-white text-3xl">chevron_left</span>
+                <span className="material-symbols-outlined text-white text-3xl">
+                  chevron_left
+                </span>
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); setSelectedImage((prev) => prev === images.length - 1 ? 0 : prev + 1); }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all hover:scale-110"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedImage((prev) =>
+                    prev === images.length - 1 ? 0 : prev + 1,
+                  );
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-14 h-14 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all hover:scale-110"
               >
-                <span className="material-symbols-outlined text-white text-3xl">chevron_right</span>
+                <span className="material-symbols-outlined text-white text-3xl">
+                  chevron_right
+                </span>
               </button>
             </>
           )}
+
+          {/* Thumbnail strip */}
+          {images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-black/50 rounded-xl backdrop-blur-sm">
+              {images.map((img, index) => (
+                <button
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedImage(index);
+                  }}
+                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === index
+                    ? "border-white scale-110"
+                    : "border-transparent opacity-50 hover:opacity-100"
+                    }`}
+                >
+                  <img
+                    src={img}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Keyboard hint */}
+          <div className="absolute bottom-4 right-4 text-white/50 text-sm hidden md:block">
+            Use ← → to navigate • ESC to close
+          </div>
         </div>
       )}
     </div>
