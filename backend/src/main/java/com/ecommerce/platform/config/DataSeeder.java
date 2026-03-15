@@ -523,22 +523,23 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         private Product createProduct(String name, String description, BigDecimal price,
-                        BigDecimal discountPrice, int stock, Category category,
-                        String thumbnail, List<String> images) {
+                                      BigDecimal discountPrice, int stock, Category category,
+                                      String thumbnail, List<String> images) {
+
                 return Product.builder()
-                                .name(name)
-                                .description(description)
-                                .price(price)
-                                .discountPrice(discountPrice)
-                                .stockQuantity(stock)
-                                .category(category)
-                                .thumbnail(thumbnail)
-                                .images(images)
-                                .status(Product.ProductStatus.ACTIVE)
-                                .averageRating(0.0)
-                                .totalReviews(0)
-                                .soldCount(random.nextInt(500) + 10)
-                                .build();
+                        .name(name)
+                        .description(description)
+                        .price(price)
+                        .discountPrice(discountPrice)
+                        .stockQuantity(stock)
+                        .category(category)
+                        .thumbnail(thumbnail)
+                        .images(new ArrayList<>(images)) // FIX: tránh immutable list
+                        .status(Product.ProductStatus.ACTIVE)
+                        .averageRating(0.0)
+                        .totalReviews(0)
+                        .soldCount(random.nextInt(500) + 10)
+                        .build();
         }
 
         private List<Order> seedOrders(List<User> users, List<Product> products) {
@@ -547,8 +548,8 @@ public class DataSeeder implements CommandLineRunner {
 
                 // Lọc customers
                 List<User> customers = users.stream()
-                                .filter(u -> u.getRoles().stream().anyMatch(r -> r.getName().equals("CUSTOMER")))
-                                .toList();
+                        .filter(u -> u.getRoles().stream().anyMatch(r -> r.getName().equals("CUSTOMER")))
+                        .collect(java.util.stream.Collectors.toList());
 
                 Order.OrderStatus[] statuses = {
                                 Order.OrderStatus.PENDING,
@@ -665,8 +666,8 @@ public class DataSeeder implements CommandLineRunner {
                 log.info("Seeding reviews...");
 
                 List<Order> deliveredOrders = orders.stream()
-                                .filter(o -> o.getStatus() == Order.OrderStatus.DELIVERED)
-                                .toList();
+                        .filter(o -> o.getStatus() == Order.OrderStatus.DELIVERED)
+                        .collect(java.util.stream.Collectors.toList());
 
                 String[] positiveComments = {
                                 "Sản phẩm rất tốt, đúng mô tả. Giao hàng nhanh!",
