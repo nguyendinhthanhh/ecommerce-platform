@@ -60,19 +60,29 @@ public class EkycServiceImpl implements EkycService {
             Map compareData = (Map) compareResponse.get("object");
 
             double score = 0;
+            boolean multipleFaces = false;
 
             if (compareData != null) {
                 Object prob = compareData.get("prob");
                 if (prob != null) {
                     score = Double.parseDouble(prob.toString());
                 }
+
+                Object multiFacesObj = compareData.get("multiple_faces");
+                if (multiFacesObj != null) {
+                    multipleFaces = Boolean.parseBoolean(multiFacesObj.toString());
+                }
             }
 
-            if (score < 85) {
-                throw new EkycVerificationException("Face match score too low: " + score);
+            if (multipleFaces) {
+                throw new EkycVerificationException("Có quá nhiều người trong khung hình. Vui lòng chỉ để 1 người trong khung hình.");
             }
 
-            boolean verified = score >= 85;
+            if (score < 90) {
+                throw new EkycVerificationException("Xác thực khuôn mặt thất bại. Vui lòng chụp lại ảnh selfie rõ hơn.");
+            }
+
+            boolean verified = score >= 90;
 
             System.out.println("Face score = " + score);
             System.out.println("Verified = " + verified);
@@ -80,6 +90,7 @@ public class EkycServiceImpl implements EkycService {
 
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found"));
+            user.setId(user.getId());
             user.setEmail(user.getEmail());
             user.setFullName(name);
             user.setIdNumber(idNumber);

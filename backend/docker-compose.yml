@@ -1,0 +1,16 @@
+services:
+  postgres-pgvector:
+    image: pgvector/pgvector:pg16
+    container_name: postgres-pgvector
+    ports:
+      - "55432:5432"
+    environment:
+      POSTGRES_DB: ecommerce-backend
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: SWD392for10points
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

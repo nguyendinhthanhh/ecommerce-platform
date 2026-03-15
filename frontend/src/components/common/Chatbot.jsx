@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 import aiService from '../../services/aiService';
 
@@ -54,7 +55,8 @@ const Chatbot = () => {
                 id: Date.now() + 1,
                 sender: 'bot',
                 // Thử cấu trúc này nếu response là object chứa data từ API
-                text: response.data?.message || response.message || "Không có dữ liệu",
+                text: response.message || response.data?.message || "Không có dữ liệu",
+                suggestedProducts: response.suggestedProducts || response.data?.suggestedProducts || [],
                 timestamp: new Date()
             };
 
@@ -155,7 +157,7 @@ const Chatbot = () => {
                                 )}
 
                                 {/* Message Bubble */}
-                                <div className="flex flex-col gap-1">
+                                <div className="flex flex-col gap-1 w-full min-w-0">
                                     <div
                                         className={`px-4 py-2.5 rounded-2xl text-[13px] leading-relaxed shadow-sm ${msg.sender === 'user'
                                             ? 'bg-primary text-white rounded-tr-sm'
@@ -164,6 +166,48 @@ const Chatbot = () => {
                                     >
                                         {msg.sender === 'user' ? msg.text : formatText(msg.text)}
                                     </div>
+
+                                    {/* Render suggested products if any */}
+                                    {msg.suggestedProducts && msg.suggestedProducts.length > 0 && (
+                                        <div className="flex flex-col gap-2 mt-1 mb-2 w-full">
+                                            <div className="text-[11px] font-medium text-gray-500 uppercase tracking-wider ml-1">Sản phẩm gợi ý</div>
+                                            {msg.suggestedProducts.map(product => (
+                                                <Link
+                                                    key={product.id}
+                                                    to={`/products/${product.id}`}
+                                                    className="flex items-center gap-3 p-2 bg-white border border-gray-100 rounded-lg hover:border-primary hover:shadow-sm transition-all group"
+                                                >
+                                                    <div className="w-12 h-12 shrink-0 bg-gray-50 rounded-md overflow-hidden flex items-center justify-center">
+                                                        {product.imageUrl ? (
+                                                            <img
+                                                                src={product.imageUrl}
+                                                                alt={product.name}
+                                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                                                                onError={(e) => { e.target.src = 'https://via.placeholder.com/150?text=No+Image' }}
+                                                            />
+                                                        ) : (
+                                                            <span className="material-symbols-outlined text-gray-300">image</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="text-[13px] font-medium text-gray-900 truncate group-hover:text-primary transition-colors">
+                                                            {product.name}
+                                                        </h4>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            <span className="text-[12px] font-bold text-primary">
+                                                                {product.discountPrice ? product.discountPrice.toLocaleString('vi-VN') : product.price?.toLocaleString('vi-VN')}đ
+                                                            </span>
+                                                            {product.discountPrice && product.discountPrice < product.price && (
+                                                                <span className="text-[10px] text-gray-400 line-through">
+                                                                    {product.price.toLocaleString('vi-VN')}đ
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    )}
 
                                     {/* Suggestion actions if it's the first bot message */}
                                     {msg.id === 1 && (
