@@ -9,6 +9,9 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Arrays;
+import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -21,21 +24,28 @@ public class IntentClassifierService {
     private static final String INTENT_PROMPT = """
             Bạn là AI phân loại intent cho hệ thống thương mại điện tử.
             Phân tích câu hỏi của người dùng và trả về JSON với cấu trúc sau:
-            
+
             {
               "intent": "PRODUCT_SEARCH | STOCK_CHECK | BULK_ORDER | PRICE_COMPARE | REVIEW_QUERY | DISCOUNT_POLICY | GENERAL_CHAT | CHEAPEST_PRODUCT | MOST_EXPENSIVE_PRODUCT | PRODUCTS_COUNT",
               "maxPrice": số tiền tối đa (VNĐ),
               "minPrice": số tiền tối thiểu (VNĐ),
-              "keyword": từ khóa sản phẩm,
+              "category": tên thương hiệu hoặc danh mục sản phẩm (ví dụ: "Samsung", "Apple", "iPhone", "laptop"),
+              "keyword": từ khóa chi tiết sản phẩm (tên cụ thể, màu sắc, model, v.v.),
               "quantity": số lượng,
               "rating": số sao
             }
-            
+
+            Phân biệt "category" và "keyword":
+            - "category": là thương hiệu (Samsung, Apple, LG...) hoặc danh mục rộng (điện thoại, laptop, tai nghe).
+            - "keyword": là chi tiết cụ thể hơn như tên model, màu sắc (Galaxy S24, 512GB), KHÔNG bao gồm tên thương hiệu hay danh mục.
+            - Nếu người dùng chỉ hỏi "điện thoại Samsung" thì category = "Samsung", keyword = "điện thoại".
+            - Nếu người dùng hỏi "Samsung Galaxy S24" thì category = "Samsung", keyword = "Galaxy S24".
+
             Hướng dẫn trích xuất "keyword":
             - Nếu người dùng mô tả sản phẩm (ví dụ: "điện thoại chụp ảnh đẹp"), hãy rút gọn thành từ khóa chính xác như "điện thoại chụp ảnh".
             - Nhận diện danh mục sản phẩm (ví dụ: "laptop", "tai nghe", "chuột", "bàn phím", "điện thoại", "đồng hồ").
             - Loại bỏ các từ thừa như "tôi muốn tìm", "cho tôi hỏi", "bạn có".
-            
+
             Quy tắc xác định intent:
             - PRODUCT_SEARCH: tìm kiếm hoặc gợi ý sản phẩm, lọc theo giá, danh mục hoặc thương hiệu
             - STOCK_CHECK: hỏi sản phẩm còn hàng hay không
@@ -43,32 +53,33 @@ public class IntentClassifierService {
             - PRICE_COMPARE: so sánh giá giữa các sản phẩm
             - REVIEW_QUERY: hỏi về đánh giá, số sao
             - DISCOUNT_POLICY: hỏi về khuyến mãi, giảm giá
-            - CHEAPEST_PRODUCT: hỏi sản phẩm giá thấp nhất / rẻ nhất
-            - MOST_EXPENSIVE_PRODUCT: hỏi sản phẩm giá cao nhất / đắt nhất
-            - PRODUCTS_COUNT: hỏi thống kê số lượng sản phẩm
-            - GENERAL_CHAT: các câu hỏi chung không liên quan trực tiếp đến sản phẩm
-            
+            - PRODUCT_SEARCH: tìm kiếm sản phẩm, liệt kê danh sách sản phẩm, hoặc khi người dùng hỏi chung chung (ví dụ: "có iphone nào không", "liệt kê tất cả samsung")
+            - STOCK_CHECK: chỉ dùng khi người dùng hỏi cụ thể về tình trạng còn hàng hoặc số lượng trong kho (ví dụ: "còn hàng không", "số lượng bao nhiêu")
+            - GENERAL_CHAT: các câu hỏi chào hỏi hoặc không liên quan trực tiếp đến tra cứu sản phẩm
+
             Quy tắc trích xuất giá:
             - Nếu người dùng nói "dưới 10 triệu" → maxPrice = 10000000
             - Nếu người dùng nói "trên 5 triệu" → minPrice = 5000000
             - Nếu người dùng nói "từ 5 đến 10 triệu" → minPrice = 5000000 và maxPrice = 10000000
-            
+
             Quy tắc quan trọng:
             - maxPrice và minPrice phải là số nguyên VNĐ (không có dấu phẩy, dấu chấm, hoặc chữ như "triệu").
             - Nếu không có giá thì đặt giá trị là null.
-            
+            - Nếu không xác định được category thì đặt là null.
+
             Ví dụ đúng:
             {
-              "intent": "PRODUCT_SEARCH",
-              "maxPrice": 10000000,
+              "intent": "MOST_EXPENSIVE_PRODUCT",
+              "maxPrice": null,
               "minPrice": null,
+              "category": "Samsung",
               "keyword": "điện thoại",
               "quantity": null,
               "rating": null
             }
-            
+
             Chỉ trả về JSON hợp lệ. Không viết thêm giải thích hoặc văn bản khác.
-            
+
             Câu hỏi của người dùng: %s
             """;
 
@@ -81,25 +92,28 @@ public class IntentClassifierService {
 
             // cheapest / most expensive
             if (lower.contains("rẻ nhất") || lower.contains("giá thấp nhất") || lower.contains("giá rẻ nhất")) {
-                String kw = extractKeywordForExtremum(lower, "rẻ nhất");
+                String[] extracted = extractKeywordAndCategoryForExtremum(lower, "rẻ nhất");
                 return IntentResult.builder()
                         .intent(IntentResult.IntentType.CHEAPEST_PRODUCT)
                         .rawQuery(userMessage)
-                        .keyword(kw != null && !kw.isBlank() ? kw : null)
+                        .keyword(extracted[0])
+                        .category(extracted[1])
                         .build();
             }
 
             if (lower.contains("đắt nhất") || lower.contains("giá cao nhất") || lower.contains("giá đắt nhất")) {
-                String kw = extractKeywordForExtremum(lower, "đắt nhất");
+                String[] extracted = extractKeywordAndCategoryForExtremum(lower, "đắt nhất");
                 return IntentResult.builder()
                         .intent(IntentResult.IntentType.MOST_EXPENSIVE_PRODUCT)
                         .rawQuery(userMessage)
-                        .keyword(kw != null && !kw.isBlank() ? kw : null)
+                        .keyword(extracted[0])
+                        .category(extracted[1])
                         .build();
             }
 
             // products count / statistics
-            if (lower.contains("có bao nhiêu sản phẩm") || lower.contains("tổng cộng bao nhiêu sản phẩm") || lower.contains("trong cửa hàng có bao nhiêu") || lower.matches(".*\bbao nhiêu\b.*sản phẩm.*")) {
+            if (lower.contains("có bao nhiêu sản phẩm") || lower.contains("tổng cộng bao nhiêu sản phẩm")
+                    || lower.contains("trong cửa hàng có bao nhiêu") || lower.matches(".*\bbao nhiêu\b.*sản phẩm.*")) {
                 return IntentResult.builder()
                         .intent(IntentResult.IntentType.PRODUCTS_COUNT)
                         .rawQuery(userMessage)
@@ -121,14 +135,63 @@ public class IntentClassifierService {
         }
     }
 
-    private String extractKeywordForExtremum(String lower, String token) {
+    // Known brands (exact match). When detected, category = brand, keyword = null.
+    private static final java.util.List<String> KNOWN_BRANDS = java.util.Arrays.asList(
+            "samsung", "apple", "iphone", "xiaomi", "oppo", "vivo", "realme", "nokia", "lg",
+            "sony", "dell", "hp", "lenovo", "asus", "acer", "msi", "macbook", "huawei",
+            "beats", "bose", "jbl", "logitech", "razer", "corsair");
+
+    // Generic parent-category words - not meaningful as keyword when brand is
+    // present
+    private static final java.util.List<String> GENERIC_CATEGORY_WORDS = java.util.Arrays.asList(
+            "điện thoại", "laptop", "máy tính", "tai nghe", "đồng hồ",
+            "bàn phím", "chuột", "màn hình", "sạc", "ốp lưng", "loa", "thiết bị");
+
+    // Capitalise first letter to match DB category names (e.g. samsung -> Samsung)
+    private static String capitalise(String s) {
+        if (s == null || s.isEmpty())
+            return s;
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    }
+
+    /**
+     * Extracts [keyword, category] from a query before the extremum token.
+     * When a brand is detected, category = brand (capitalised), keyword = null.
+     * Remaining non-brand text is only returned as keyword if it is NOT a generic
+     * category word.
+     * Returns String[2]: index 0 = keyword (nullable), index 1 = category
+     * (nullable)
+     */
+    private String[] extractKeywordAndCategoryForExtremum(String lower, String token) {
         int idx = lower.indexOf(token);
-        if (idx > 0) {
-            String before = lower.substring(0, idx).trim();
-            before = before.replaceAll("\\b(nào|cái|sản phẩm|mấy|giá)\\b", "").trim();
-            return before.isEmpty() ? null : before;
+        String before = idx > 0 ? lower.substring(0, idx).trim() : lower.trim();
+        before = before.replaceAll("\\b(nào|cái|có|giá|bạn|cho tôi|ơi|hỏi|muốn)\\b", " ").trim();
+        before = before.replaceAll("\\s{2,}", " ").trim();
+
+        String detectedBrand = null;
+        for (String brand : KNOWN_BRANDS) {
+            if (before.contains(brand)) {
+                detectedBrand = capitalise(brand); // Samsung, Apple...
+                before = before.replace(brand, "").trim();
+                break;
+            }
         }
-        return null;
+
+        // If a brand was found, we set keyword = null to avoid over-filtering.
+        // For example, "Samsung điện thoại" -> category="Samsung", keyword=null.
+        // This ensures the query doesn't fail if the product name doesn't contain the word "điện thoại".
+        String keyword = null;
+        if (detectedBrand != null) {
+            keyword = null;
+        } else if (!before.isEmpty()) {
+            keyword = before.trim();
+        }
+
+        return new String[] { keyword, detectedBrand };
+    }
+
+    private String extractKeywordForExtremum(String lower, String token) {
+        return extractKeywordAndCategoryForExtremum(lower, token)[0];
     }
 
     private IntentResult parse(String response, String query) {
@@ -155,6 +218,16 @@ public class IntentClassifierService {
 
             if (node.has("keyword") && !node.get("keyword").isNull()) {
                 builder.keyword(node.get("keyword").asText());
+            }
+
+            if (node.has("category") && !node.get("category").isNull()) {
+                String cat = node.get("category").asText().trim();
+                if (!cat.isEmpty() && !cat.equalsIgnoreCase("null")) {
+                    builder.category(cat);
+                    // If we have a category, we should avoid redundant keywords like "điện thoại"
+                    // set keyword to null to allow broader name matching
+                    builder.keyword(null);
+                }
             }
 
             if (node.has("quantity") && !node.get("quantity").isNull()) {
@@ -186,17 +259,20 @@ public class IntentClassifierService {
 
     private BigDecimal parsePriceNode(JsonNode node, String field) {
         try {
-            if (!node.has(field) || node.get(field).isNull()) return null;
+            if (!node.has(field) || node.get(field).isNull())
+                return null;
             JsonNode n = node.get(field);
             if (n.isNumber()) {
                 return new BigDecimal(n.asText());
             }
             String s = n.asText().trim().toLowerCase();
-            if (s.isEmpty() || s.equals("null")) return null;
+            if (s.isEmpty() || s.equals("null"))
+                return null;
 
             if (s.contains("triệu") || s.contains("tr")) {
                 String num = s.replaceAll("[^0-9.,]", "").replace(',', '.');
-                if (num.isEmpty()) return null;
+                if (num.isEmpty())
+                    return null;
                 if (num.contains(".")) {
                     num = num.substring(0, num.indexOf('.'));
                 }
@@ -205,7 +281,8 @@ public class IntentClassifierService {
             }
 
             String digits = s.replaceAll("[^0-9]", "");
-            if (digits.isEmpty()) return null;
+            if (digits.isEmpty())
+                return null;
             return new BigDecimal(digits);
 
         } catch (Exception e) {
@@ -229,4 +306,3 @@ public class IntentClassifierService {
                 .build();
     }
 }
-

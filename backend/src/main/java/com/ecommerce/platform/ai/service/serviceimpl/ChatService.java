@@ -1,6 +1,5 @@
 package com.ecommerce.platform.ai.service.serviceimpl;
 
-
 import com.ecommerce.platform.ai.service.EmbeddingService;
 import com.ecommerce.platform.dto.request.ChatRequest;
 import com.ecommerce.platform.dto.request.ProductSuggestionRequest;
@@ -22,8 +21,19 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Core RAG Chat Service for Ecommerce Platform
@@ -42,7 +52,8 @@ public class ChatService {
     @Value("${app.frontend.base-url}")
     private String frontendBaseUrl;
 
-    private static final List<String> PHONE_TOKENS = Arrays.asList("điện thoại", "dien thoai", "phone", "smartphone", "mobile");
+    private static final java.util.List<String> PHONE_TOKENS = java.util.Arrays.asList("điện thoại", "dien thoai", "phone", "smartphone",
+            "mobile", "iphone", "samsung", "apple", "oppo", "xiaomi", "vivo", "realme");
 
     private static final String SYSTEM_PROMPT = """
             Bạn là AI tư vấn bán hàng cho nền tảng ecommerce.
@@ -79,7 +90,8 @@ public class ChatService {
             // Context cho LLM (kept for non-factual intents)
             String context = retrieveContext(intent, products);
 
-            // Generate response: use templated backend responses for factual product intents
+            // Generate response: use templated backend responses for factual product
+            // intents
             String response;
             if (shouldUseTemplate(intent)) {
                 response = buildTemplateResponse(intent, request.getMessage(), products);
@@ -98,7 +110,8 @@ public class ChatService {
     }
 
     private boolean shouldUseTemplate(IntentResult intent) {
-        if (intent == null || intent.getIntent() == null) return false;
+        if (intent == null || intent.getIntent() == null)
+            return false;
         switch (intent.getIntent()) {
             case PRODUCT_SEARCH:
             case CHEAPEST_PRODUCT:
@@ -107,7 +120,7 @@ public class ChatService {
             case PRICE_COMPARE:
             case BULK_ORDER:
             case REVIEW_QUERY:
-                case PRODUCTS_COUNT:
+            case PRODUCTS_COUNT:
                 return true;
             default:
                 return false;
@@ -115,7 +128,8 @@ public class ChatService {
     }
 
     private String buildTemplateResponse(IntentResult intent, String userMessage, List<Product> products) {
-        if (intent == null || intent.getIntent() == null) return "";
+        if (intent == null || intent.getIntent() == null)
+            return "";
 
         NumberFormat nf = NumberFormat.getInstance(new Locale("vi", "VN"));
         nf.setMaximumFractionDigits(0);
@@ -152,7 +166,7 @@ public class ChatService {
                 }
                 StringBuilder sb = new StringBuilder();
                 sb.append("Dưới đây là một số sản phẩm phù hợp tôi tìm được:\n");
-                int limit = Math.min(3, products.size());
+                int limit = Math.min(10, products.size());
                 for (int i = 0; i < limit; i++) {
                     Product p = products.get(i);
                     BigDecimal effective = effectivePrice(p);
@@ -174,7 +188,9 @@ public class ChatService {
                 }
                 StringBuilder sb = new StringBuilder();
                 for (Product p : products) {
-                    String stockText = p.getStockQuantity() != null && p.getStockQuantity() > 0 ? ("Còn " + p.getStockQuantity()) : "HẾT HÀNG";
+                    String stockText = p.getStockQuantity() != null && p.getStockQuantity() > 0
+                            ? ("Còn " + p.getStockQuantity())
+                            : "HẾT HÀNG";
                     BigDecimal effective = effectivePrice(p);
                     sb.append(String.format("- %s: %s | Giá: %s VNĐ\n", p.getName(), stockText, nf.format(effective)));
                 }
@@ -198,10 +214,12 @@ public class ChatService {
                 if (intent.getQuantity() != null) {
                     int qty = intent.getQuantity();
                     List<Product> available = productRepository.findByStockQuantityGreaterThanEqual(qty);
-                    if (available.isEmpty()) return "Không có sản phẩm đủ số lượng yêu cầu.";
+                    if (available.isEmpty())
+                        return "Không có sản phẩm đủ số lượng yêu cầu.";
                     StringBuilder sb = new StringBuilder();
                     sb.append(String.format("Các sản phẩm đủ số lượng %d mà bạn yêu cầu:\n", qty));
-                    available.stream().limit(5).forEach(p -> sb.append(String.format("- %s | Tồn: %d\n", p.getName(), p.getStockQuantity())));
+                    available.stream().limit(5).forEach(
+                            p -> sb.append(String.format("- %s | Tồn: %d\n", p.getName(), p.getStockQuantity())));
                     sb.append("Vui lòng liên hệ bộ phận bán hàng để nhận báo giá tốt hơn.");
                     return sb.toString();
                 }
@@ -209,10 +227,12 @@ public class ChatService {
             }
 
             case REVIEW_QUERY -> {
-                if (products == null || products.isEmpty()) return "Không tìm thấy sản phẩm để xem đánh giá.";
+                if (products == null || products.isEmpty())
+                    return "Không tìm thấy sản phẩm để xem đánh giá.";
                 StringBuilder sb = new StringBuilder();
                 for (Product p : products) {
-                    sb.append(String.format("- %s: %.1f⭐ (%d đánh giá)\n", p.getName(), p.getAverageRating(), p.getTotalReviews()));
+                    sb.append(String.format("- %s: %.1f⭐ (%d đánh giá)\n", p.getName(), p.getAverageRating(),
+                            p.getTotalReviews()));
                 }
                 return sb.toString();
             }
@@ -225,7 +245,7 @@ public class ChatService {
                 List<Object[]> counts = productRepository.countActiveProductsPerCategory();
 
                 // Sort categories by count desc
-                counts.sort((a, b) -> Long.compare(((Number)b[1]).longValue(), ((Number)a[1]).longValue()));
+                counts.sort((a, b) -> Long.compare(((Number) b[1]).longValue(), ((Number) a[1]).longValue()));
 
                 StringBuilder sb = new StringBuilder();
                 sb.append(String.format("Hiện tại cửa hàng có %d sản phẩm đang được bán:\n\n", total));
@@ -284,8 +304,7 @@ public class ChatService {
 
                 if (!semantic.isEmpty()) {
                     context.append("\nGợi ý liên quan:\n");
-                    semantic.forEach(doc ->
-                            context.append(doc.getText()).append("\n---\n"));
+                    semantic.forEach(doc -> context.append(doc.getText()).append("\n---\n"));
                 }
             }
 
@@ -308,8 +327,7 @@ public class ChatService {
                             p.getName(),
                             stockText,
                             priceText,
-                            p.getSoldCount()
-                    ));
+                            p.getSoldCount()));
                 });
             }
 
@@ -320,13 +338,12 @@ public class ChatService {
 
                 if (intent.getQuantity() != null) {
 
-                    List<Product> available =
-                            productRepository.findByStockQuantityGreaterThanEqual(intent.getQuantity());
+                    List<Product> available = productRepository
+                            .findByStockQuantityGreaterThanEqual(intent.getQuantity());
 
                     context.append("\nSản phẩm đủ số lượng:\n");
 
-                    available.forEach(p ->
-                            context.append(formatProduct(p)).append("\n"));
+                    available.forEach(p -> context.append(formatProduct(p)).append("\n"));
                 }
             }
 
@@ -334,21 +351,18 @@ public class ChatService {
 
                 context.append("=== ĐÁNH GIÁ ===\n");
 
-                products.forEach(p ->
-                        context.append(String.format(
-                                "- %s: %.1f⭐ (%d reviews)\n",
-                                p.getName(),
-                                p.getAverageRating(),
-                                p.getTotalReviews()
-                        )));
+                products.forEach(p -> context.append(String.format(
+                        "- %s: %.1f⭐ (%d reviews)\n",
+                        p.getName(),
+                        p.getAverageRating(),
+                        p.getTotalReviews())));
             }
 
             case PRICE_COMPARE -> {
 
                 context.append("=== SO SÁNH GIÁ ===\n");
 
-                products.forEach(p ->
-                        context.append(formatProduct(p)).append("\n"));
+                products.forEach(p -> context.append(formatProduct(p)).append("\n"));
             }
 
             case DISCOUNT_POLICY -> {
@@ -360,11 +374,9 @@ public class ChatService {
 
             case GENERAL_CHAT -> {
 
-                List<Document> docs =
-                        embeddingService.searchSimilar(intent.getRawQuery());
+                List<Document> docs = embeddingService.searchSimilar(intent.getRawQuery());
 
-                docs.forEach(d ->
-                        context.append(d.getText()).append("\n---\n"));
+                docs.forEach(d -> context.append(d.getText()).append("\n---\n"));
             }
         }
 
@@ -373,15 +385,36 @@ public class ChatService {
 
     // ================= PRODUCT RETRIEVAL =================
 
-    private List<Product> retrieveProducts(IntentResult intent) {
+    private java.util.List<Product> retrieveProducts(IntentResult intent) {
+        String raw = intent.getRawQuery() == null ? "" : intent.getRawQuery().toLowerCase();
 
-        // Handle explicit cheapest/most-expensive intents first
+        // ─── Direct Brand Catch (Priority) ──────────────────────────────
+        // If query mentions "có không" or is a general brand question, show all models
+        boolean isGeneralListing = raw.contains("có") || raw.contains("liệt kê") || raw.contains("danh sách") || raw.contains("tất cả");
+        
+        String brandToSearch = null;
+        if (raw.contains("iphone")) brandToSearch = "iphone";
+        else if (raw.contains("samsung")) brandToSearch = "samsung";
+        else if (raw.contains("xiaomi")) brandToSearch = "xiaomi";
+        else if (raw.contains("macbook")) brandToSearch = "macbook";
+        else if (raw.contains("apple")) brandToSearch = "apple";
+
+        if (brandToSearch != null && (isGeneralListing || (!raw.contains("đắt nhất") && !raw.contains("rẻ nhất")))) {
+            // Priority: Search by Category ID (Recursive) for the detected brand
+            java.util.List<Product> brandProducts = searchStrictlyOrderedByPrice(null, brandToSearch, 
+                    intent.getMinPrice(), intent.getMaxPrice(), 10, true);
+            if (!brandProducts.isEmpty()) return brandProducts;
+        }
+
+        // Handle explicit cheapest/most-expensive intents
         if (intent.getIntent() == IntentResult.IntentType.CHEAPEST_PRODUCT) {
-            // If keyword present, attempt category-limited search ordered by price
             String kw = intent.getKeyword();
-            if (kw != null && !kw.isBlank()) {
-                List<Product> products = searchByKeywordOrCategoryOrderedByPrice(kw, intent.getMinPrice(), intent.getMaxPrice(), 1);
-                if (!products.isEmpty()) return products;
+            String cat = intent.getCategory();
+            if ((kw != null && !kw.isBlank()) || (cat != null && !cat.isBlank())) {
+                java.util.List<Product> products = searchStrictlyOrderedByPrice(kw, cat, intent.getMinPrice(),
+                        intent.getMaxPrice(), 1, true);
+                if (!products.isEmpty())
+                    return products;
             }
             // fallback: global cheapest
             Page<Product> page = productRepository.findCheapestProducts(PageRequest.of(0, 1));
@@ -390,52 +423,85 @@ public class ChatService {
 
         if (intent.getIntent() == IntentResult.IntentType.MOST_EXPENSIVE_PRODUCT) {
             String kw = intent.getKeyword();
-            if (kw != null && !kw.isBlank()) {
-                List<Product> products = searchByKeywordOrCategoryOrderedByPrice(kw, intent.getMinPrice(), intent.getMaxPrice(), 1);
-                if (!products.isEmpty()) return products;
+            String cat = intent.getCategory();
+            if ((kw != null && !kw.isBlank()) || (cat != null && !cat.isBlank())) {
+                List<Product> products = searchStrictlyOrderedByPrice(kw, cat, intent.getMinPrice(),
+                        intent.getMaxPrice(), 1, false);
+                if (!products.isEmpty())
+                    return products;
             }
             Page<Product> page = productRepository.findMostExpensiveProducts(PageRequest.of(0, 1));
             return page.getContent();
         }
 
-        // prefer explicit keyword from intent; fall back to raw query
         String keyword = intent.getKeyword();
-        String raw = intent.getRawQuery() == null ? "" : intent.getRawQuery().toLowerCase();
+        String categoryName = intent.getCategory();
 
-        if (keyword == null || keyword.isBlank()) {
-            // look for phone tokens in raw query to map to category
-            for (String token : PHONE_TOKENS) {
-                if (raw.contains(token)) {
-                    keyword = token;
-                    break;
-                }
+        // Direct Brand Catch: If AI misses extraction, check raw query for major brands
+        if (categoryName == null || categoryName.isBlank()) {
+            if (raw.contains("iphone") || raw.contains("i phone")) {
+                categoryName = "iphone";
+                keyword = null; // Clear keyword to show all models
+            } else if (raw.contains("samsung") || raw.contains("sam sung")) {
+                categoryName = "samsung";
+                keyword = null;
+            } else if (raw.contains("xiaomi")) {
+                categoryName = "xiaomi";
+                keyword = null;
+            } else if (raw.contains("apple")) {
+                categoryName = "apple";
+                keyword = null;
+            } else if (raw.contains("macbook") || raw.contains("mac book")) {
+                categoryName = "macbook";
+                keyword = null;
+            } else if (raw.contains("oppo")) {
+                categoryName = "oppo";
+                keyword = null;
+            } else if (raw.contains("vivo")) {
+                categoryName = "vivo";
+                keyword = null;
+            } else if (raw.contains("realme")) {
+                categoryName = "realme";
+                keyword = null;
             }
         }
 
-        // If we have a keyword, try category-aware search
-        if (keyword != null && !keyword.isBlank()) {
-            List<Product> byCat = searchByKeywordOrCategoryOrderedByPrice(keyword, intent.getMinPrice(), intent.getMaxPrice(), 10);
-            if (!byCat.isEmpty()) return byCat;
+        // Special fallback: if still no category but raw mentions "điện thoại", treat it as a broad group
+        if (categoryName == null || categoryName.isBlank()) {
+             if (raw.contains("điện thoại")) {
+                categoryName = "điện thoại";
+                keyword = null;
+             }
+        }
 
-            // fallback to keyword-only searches
-            String k = keyword.trim();
-            if (intent.getMinPrice() != null && intent.getMaxPrice() != null) {
-                return productRepository.searchByKeywordAndPriceRange(k, intent.getMinPrice(), intent.getMaxPrice())
-                        .stream().limit(10).collect(Collectors.toList());
+        // Apply strict search using category AND keyword AND price filters
+        if ((categoryName != null && !categoryName.isBlank()) || (keyword != null && !keyword.isBlank())) {
+            List<Product> products = searchStrictlyOrderedByPrice(keyword, categoryName, intent.getMinPrice(),
+                    intent.getMaxPrice(), 20, true);
+            if (!products.isEmpty())
+                return products;
+
+            // If strict search failed but we have a query, try semantic recovery for
+            // suggestions
+            List<Document> sim = embeddingService.searchSimilar(intent.getRawQuery());
+            if (!sim.isEmpty()) {
+                List<Long> ids = sim.stream()
+                        .map(d -> ((Number) d.getMetadata().get("productId")).longValue())
+                        .collect(Collectors.toList());
+                return productRepository.findAllById(ids); // findAllById is fine but we should use a graph variant if possible. 
+                // However, retrieveProducts returning suggestions is the goal.
             }
+            return Collections.emptyList(); // Better to return nothing than wrong brand
+        }
 
-            if (intent.getMaxPrice() != null) {
-                return productRepository.searchByKeywordAndMaxPrice(k, intent.getMaxPrice())
-                        .stream().limit(10).collect(Collectors.toList());
-            }
-
-            return productRepository.searchByKeyword(k)
+        // fallback price-only handling when no keyword or category
+        if (intent.getMaxPrice() != null && intent.getMinPrice() != null) {
+            return productRepository.findByEffectivePriceBetween(intent.getMinPrice(), intent.getMaxPrice())
                     .stream().limit(10).collect(Collectors.toList());
         }
 
-        // price-only handling when no keyword/category
-        if (intent.getMaxPrice() != null && intent.getMinPrice() != null) {
-            return productRepository.findByEffectivePriceBetween(intent.getMinPrice(), intent.getMaxPrice())
+        if (intent.getMinPrice() != null) {
+            return productRepository.findByEffectivePriceGreaterThanEqual(intent.getMinPrice())
                     .stream().limit(10).collect(Collectors.toList());
         }
 
@@ -450,57 +516,97 @@ public class ChatService {
                     .stream().limit(10).collect(Collectors.toList());
         }
 
-        return productRepository.findAll()
-                .stream()
-                .limit(10)
-                .collect(Collectors.toList());
+        return Collections.emptyList(); // Removed random products fallback
     }
 
-    // Helper: search by keyword OR matching categories (including children) and order by relevance then price; apply min/max and limit
-    private List<Product> searchByKeywordOrCategoryOrderedByPrice(String keyword, BigDecimal minPrice, BigDecimal maxPrice, int limit) {
-        String k = keyword.trim();
+    private List<Product> searchStrictlyOrderedByPrice(String keyword, String categoryName, BigDecimal minPrice,
+            BigDecimal maxPrice, int limit, boolean asc) {
+        String k = (keyword != null && !keyword.isBlank()) ? keyword.trim() : null;
+        boolean hasMin = minPrice != null;
+        boolean hasMax = maxPrice != null;
+        boolean hasBoth = hasMin && hasMax;
 
-        // 1) Find category matches (single DB call) using equals-or-containing
-        List<Category> matched = categoryRepository.findByNameEqualsOrContainingIgnoreCase(k);
+        org.springframework.data.domain.Sort sortDir = asc
+                ? org.springframework.data.jpa.domain.JpaSort.unsafe(org.springframework.data.domain.Sort.Direction.ASC,
+                        "COALESCE(p.discountPrice, p.price)")
+                : org.springframework.data.jpa.domain.JpaSort.unsafe(
+                        org.springframework.data.domain.Sort.Direction.DESC, "COALESCE(p.discountPrice, p.price)");
+        PageRequest pageRequest = PageRequest.of(0, limit, sortDir);
 
-        // If none, try tokenizing the keyword and searching fragments
-        if (matched.isEmpty()) {
-            String[] parts = k.split("\\s+");
-            for (String part : parts) {
-                if (part == null || part.isBlank()) continue;
-                matched = categoryRepository.findByNameEqualsOrContainingIgnoreCase(part);
-                if (!matched.isEmpty()) break;
+        // ─── Resolve category name → list of category IDs ───────────────
+        Set<Long> categoryIdsSet = new HashSet<>();
+        if (categoryName != null && !categoryName.isBlank()) {
+            String cat = categoryName.trim().toLowerCase();
+
+            // Brand alias/variation mapping
+            if (cat.contains("sam sung") || cat.equals("ss")) cat = "samsung";
+            if (cat.contains("i phone")) cat = "iphone";
+            if (cat.contains("mac book")) cat = "macbook";
+
+            List<Category> matched = categoryRepository.findByNameEqualsOrContainingIgnoreCase(cat);
+
+            // Double check by slug/normalized name if direct lookup fails
+            if (matched.isEmpty()) {
+                String normalized = cat.replaceAll("\\s+", "");
+                matched = categoryRepository.findByNameEqualsOrContainingIgnoreCase(normalized);
+            }
+
+            for (Category c : matched) {
+                collectAllCategoryIdsRecursive(c, categoryIdsSet);
             }
         }
+        
+        List<Long> categoryIds = new ArrayList<>(categoryIdsSet);
 
-        Set<Long> categoryIds = new HashSet<>();
-        List<Long> parentIds = matched.stream().map(Category::getId).collect(Collectors.toList());
-        categoryIds.addAll(parentIds);
 
-        if (!parentIds.isEmpty()) {
-            // fetch children in a single call
-            List<Category> children = categoryRepository.findByParentIdIn(parentIds);
-            for (Category c : children) categoryIds.add(c.getId());
-        }
-
-        // If we found categories, query by those category ids + keyword relevance, ordering already includes price
+        // ─── Pick the right concrete query for every price combination ─────
         if (!categoryIds.isEmpty()) {
-            Page<Product> page = productRepository.searchProductsByKeywordOrCategoryIds(k, new ArrayList<>(categoryIds), PageRequest.of(0, limit));
-            List<Product> products = page.getContent();
-
-            // apply explicit price filters if present
-            if (minPrice != null || maxPrice != null) {
-                products = products.stream().filter(p -> {
-                    BigDecimal effective = p.getDiscountPrice() != null ? p.getDiscountPrice() : p.getPrice();
-                    if (minPrice != null && effective.compareTo(minPrice) < 0) return false;
-                    if (maxPrice != null && effective.compareTo(maxPrice) > 0) return false;
-                    return true;
-                }).limit(limit).collect(Collectors.toList());
+            if (k != null) {
+                if (hasBoth) {
+                    return productRepository
+                            .findByCategoryIdsAndKeywordAndPriceRange(categoryIds, k, minPrice, maxPrice, pageRequest)
+                            .getContent();
+                } else if (hasMin) {
+                    return productRepository
+                            .findByCategoryIdsAndKeywordAndMinPrice(categoryIds, k, minPrice, pageRequest)
+                            .getContent();
+                } else if (hasMax) {
+                    return productRepository
+                            .findByCategoryIdsAndKeywordAndMaxPrice(categoryIds, k, maxPrice, pageRequest)
+                            .getContent();
+                } else {
+                    return productRepository.findByCategoryIdsAndKeyword(categoryIds, k, pageRequest).getContent();
+                }
+            } else {
+                if (hasBoth) {
+                    return productRepository
+                            .findByCategoryIdsAndPriceRange(categoryIds, minPrice, maxPrice, pageRequest)
+                            .getContent();
+                } else if (hasMin) {
+                    return productRepository
+                            .findByCategoryIdsAndMinPrice(categoryIds, minPrice, pageRequest)
+                            .getContent();
+                } else if (hasMax) {
+                    return productRepository
+                            .findByCategoryIdsAndMaxPrice(categoryIds, maxPrice, pageRequest)
+                            .getContent();
+                } else {
+                    return productRepository.findByCategoryIds(categoryIds, pageRequest).getContent();
+                }
             }
-
-            return products.stream().limit(limit).collect(Collectors.toList());
+        } else if (k != null) {
+            if (hasBoth) {
+                return productRepository.findByKeywordAndPriceRange(k, minPrice, maxPrice, pageRequest).getContent();
+            } else if (hasMin) {
+                return productRepository.findByKeywordAndMinPrice(k, minPrice, pageRequest).getContent();
+            } else if (hasMax) {
+                return productRepository.findByKeywordAndMaxPrice(k, maxPrice, pageRequest).getContent();
+            } else {
+                return productRepository.findByKeyword(k, pageRequest).getContent();
+            }
         }
 
+        // Nothing to filter on – return empty (caller will do global fallback)
         return Collections.emptyList();
     }
 
@@ -520,8 +626,7 @@ public class ChatService {
                 p.getAverageRating(),
                 p.getTotalReviews(),
                 stock,
-                p.getSoldCount()
-        );
+                p.getSoldCount());
     }
 
     private String generateResponse(String question, String context) {
@@ -545,5 +650,14 @@ public class ChatService {
                 .content();
     }
 
-
+    private void collectAllCategoryIdsRecursive(Category root, Set<Long> result) {
+        if (root == null || result == null)
+            return;
+        result.add(root.getId());
+        if (root.getChildren() != null) {
+            for (Category child : root.getChildren()) {
+                collectAllCategoryIdsRecursive(child, result);
+            }
+        }
+    }
 }
