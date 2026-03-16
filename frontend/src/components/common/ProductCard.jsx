@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { getSmartFallbackImage } from "../../utils/smartImageFallback";
 import { useCart } from "../../contexts/CartContext";
 
 const ProductCard = ({ product }) => {
@@ -11,9 +12,17 @@ const ProductCard = ({ product }) => {
         // Modal handles login requirement if needed
     };
 
-    // Calculate discount percentage
-    const oldPrice = product.oldPrice || (product.price * 1.15); // mock old price if not exist
-    const discount = Math.round(((oldPrice - product.price) / oldPrice) * 100);
+    // Price Logic from backend DTO (ProductResponse)
+    // price: original price, discountPrice: selling price (if exists)
+    const hasDiscount = product.discountPrice && product.discountPrice < product.price;
+    const sellingPrice = hasDiscount ? product.discountPrice : product.price;
+    const originalPrice = hasDiscount ? product.price : null;
+    const discount = hasDiscount ? Math.round(((product.price - product.discountPrice) / product.price) * 100) : 0;
+
+    const handleImageError = (e) => {
+        e.target.src = getSmartFallbackImage(product);
+        e.target.onerror = null; // Prevent infinite loop
+    };
 
     return (
         <Link
@@ -39,11 +48,8 @@ const ProductCard = ({ product }) => {
                 <img
                     alt={product.name}
                     className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
-                    src={
-                        product.thumbnail ||
-                        product.imageUrl ||
-                        "https://via.placeholder.com/400?text=Product"
-                    }
+                    src={product.thumbnail || product.imageUrl || "https://via.placeholder.com/400?text=Product"}
+                    onError={handleImageError}
                 />
             </div>
 
@@ -55,13 +61,15 @@ const ProductCard = ({ product }) => {
 
                 <div className="mt-auto space-y-1">
                     {/* Prices */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-[13px] text-gray-400 line-through">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(oldPrice)}
-                        </span>
+                    <div className="flex items-center gap-2 h-5">
+                        {originalPrice && (
+                            <span className="text-[13px] text-gray-400 line-through">
+                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(originalPrice)}
+                            </span>
+                        )}
                     </div>
                     <div className="text-[17px] font-bold text-primary">
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(sellingPrice)}
                     </div>
 
                     {/* Rating */}

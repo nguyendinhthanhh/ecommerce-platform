@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { getSmartFallbackImage } from '../../utils/smartImageFallback';
 
 import aiService from '../../services/aiService';
 
@@ -61,7 +62,8 @@ const Chatbot = () => {
             };
 
             setMessages(prev => [...prev, botMsg]);
-        } catch (error) {
+        } catch (err) {
+            console.error('Failed to get AI response:', err);
             const errorMsg = {
                 id: Date.now() + 1,
                 sender: 'bot',
@@ -180,11 +182,14 @@ const Chatbot = () => {
                                                     <div className="w-12 h-12 shrink-0 bg-gray-50 rounded-md overflow-hidden flex items-center justify-center">
                                                         {product.imageUrl ? (
                                                             <img
-                                                                src={product.imageUrl}
-                                                                alt={product.name}
-                                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                                                                onError={(e) => { e.target.src = 'https://via.placeholder.com/150?text=No+Image' }}
-                                                            />
+                                                                    src={product.imageUrl}
+                                                                    alt={product.name}
+                                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                                                                    onError={(e) => {
+                                                                        e.target.src = getSmartFallbackImage(product);
+                                                                        e.target.onerror = null;
+                                                                    }}
+                                                                />
                                                         ) : (
                                                             <span className="material-symbols-outlined text-gray-300">image</span>
                                                         )}
@@ -195,7 +200,7 @@ const Chatbot = () => {
                                                         </h4>
                                                         <div className="flex items-center gap-2 mt-0.5">
                                                             <span className="text-[12px] font-bold text-primary">
-                                                                {product.discountPrice ? product.discountPrice.toLocaleString('vi-VN') : product.price?.toLocaleString('vi-VN')}đ
+                                                                {(product.discountPrice || product.price)?.toLocaleString('vi-VN')}đ
                                                             </span>
                                                             {product.discountPrice && product.discountPrice < product.price && (
                                                                 <span className="text-[10px] text-gray-400 line-through">

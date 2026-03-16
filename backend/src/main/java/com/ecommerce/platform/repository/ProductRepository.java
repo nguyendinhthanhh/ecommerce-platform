@@ -14,6 +14,8 @@ import java.util.Optional;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
+        Optional<Product> findByName(String name);
+
         @EntityGraph(attributePaths = { "category" })
         @Query("SELECT p FROM Product p WHERE p.status = :status")
         Page<Product> findByStatusWithGraph(@Param("status") Product.ProductStatus status, Pageable pageable);

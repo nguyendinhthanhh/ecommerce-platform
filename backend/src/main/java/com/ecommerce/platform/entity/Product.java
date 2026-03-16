@@ -35,11 +35,12 @@ public class Product {
     @Column(nullable = false)
     private Integer stockQuantity;
 
+    @Column(length = 1000)
     private String thumbnail;
 
     @ElementCollection
     @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "image_url")
+    @Column(name = "image_url", length = 1000)
     private List<String> images;
 
     @ManyToOne

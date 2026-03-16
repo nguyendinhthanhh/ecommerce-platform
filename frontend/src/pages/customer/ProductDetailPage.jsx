@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { getSmartFallbackImage } from "../../utils/smartImageFallback";
 import productService from "../../services/productService";
 import { ProductDetailSkeleton } from "../../components/common/LoadingSpinner";
 import { useCart } from "../../contexts/CartContext";
@@ -17,12 +18,23 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [addingToCart, setAddingToCart] = useState(false);
-  const [activeTab, setActiveTab] = useState("description"); // default to description
-
   // Image interaction states
   const [showLightbox, setShowLightbox] = useState(false);
 
   useEffect(() => {
+    const fetchProductDetail = async () => {
+      try {
+        setLoading(true);
+        const data = await productService.getProductById(id);
+        setProduct(data);
+        setError(null);
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to load product");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchProductDetail();
     // Scroll to top when page loads
     window.scrollTo(0, 0);
@@ -35,9 +47,9 @@ const ProductDetailPage = () => {
         try {
           const data = await import("../../services/categoryService").then(m => m.default.getCategoryById(product.categoryId));
           setCategory(data);
-        } catch (err) {
+        } catch (error) {
           // we'll just ignore errors – breadcrumb will fall back to whatever the product provided
-          console.error("Failed to load category info", err);
+          console.error("Failed to load category info", error);
           setCategory(null);
         }
       }
@@ -68,18 +80,6 @@ const ProductDetailPage = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [showLightbox, product]);
 
-  const fetchProductDetail = async () => {
-    try {
-      setLoading(true);
-      const data = await productService.getProductById(id);
-      setProduct(data);
-      setError(null);
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to load product");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleAddToCart = async () => {
     try {
@@ -126,7 +126,16 @@ const ProductDetailPage = () => {
       ? product.images
       : [product.thumbnail || "https://via.placeholder.com/600x600?text=No+Image"];
 
-  const oldPrice = product.oldPrice || (product.price * 1.15); // mock old price
+  // Price Logic from backend DTO (ProductResponse)
+  const hasDiscount = product.discountPrice && product.discountPrice < product.price;
+  const sellingPrice = hasDiscount ? product.discountPrice : product.price;
+  const originalPrice = hasDiscount ? product.price : null;
+  const discount = hasDiscount ? Math.round(((product.price - product.discountPrice) / product.price) * 100) : 0;
+
+  const handleImageError = (e) => {
+    e.target.src = getSmartFallbackImage(product);
+    e.target.onerror = null;
+  };
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] text-[#111418] font-display pb-20">
@@ -162,6 +171,7 @@ const ProductDetailPage = () => {
                   src={images[selectedImage]}
                   alt={product.name}
                   className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                  onError={handleImageError}
                 />
                 <div className="absolute bottom-2 right-2 bg-black/50 text-white p-1.5 rounded-full flex items-center justify-center hidden group-hover:flex">
                   <span className="material-symbols-outlined text-[18px]">zoom_in</span>
@@ -212,14 +222,18 @@ const ProductDetailPage = () => {
               <div className="bg-gray-50 rounded-lg p-5 border border-gray-100 flex flex-col gap-2">
                 <div className="flex items-end gap-3">
                   <span className="text-4xl font-bold text-primary leading-none">
-                    {formatPrice(product.price)}
+                    {formatPrice(sellingPrice)}
                   </span>
-                  <span className="text-lg text-gray-500 line-through mb-1">
-                    {formatPrice(oldPrice)}
-                  </span>
-                  <span className="bg-primary/10 text-primary border border-primary/20 text-xs font-bold px-2 py-0.5 rounded ml-2 mb-1">
-                    -{Math.round(((oldPrice - product.price) / oldPrice) * 100)}%
-                  </span>
+                  {originalPrice && (
+                    <>
+                      <span className="text-lg text-gray-500 line-through mb-1">
+                        {formatPrice(originalPrice)}
+                      </span>
+                      <span className="bg-primary/10 text-primary border border-primary/20 text-xs font-bold px-2 py-0.5 rounded ml-2 mb-1">
+                        -{discount}%
+                      </span>
+                    </>
+                  )}
                 </div>
                 <div className="mt-2 text-[13px] text-gray-600">
                   <span className="text-green-600 font-bold mr-1">✓</span> Miễn phí vận chuyển toàn quốc
