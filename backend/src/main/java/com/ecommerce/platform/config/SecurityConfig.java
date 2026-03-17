@@ -38,6 +38,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // ============================================
                         // PUBLIC ENDPOINTS (Guest có thể truy cập)
                         // ============================================
@@ -124,7 +126,7 @@ public class SecurityConfig {
                         .hasAnyRole("CUSTOMER", "STAFF", "ADMIN", "SELLER")
 
                         // User profile management (all roles)
-                        .requestMatchers("/api/users/me/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN", "SELLER")
+                        .requestMatchers("/api/users/me", "/api/users/me/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN", "SELLER")
 
                         // ============================================
                         // STAFF/ADMIN ENDPOINTS
@@ -137,7 +139,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/products/*").hasAnyRole("STAFF", "ADMIN")
 
                         // Order Management (Staff/Admin)
-                        .requestMatchers("/api/orders/management").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers("/api/orders/management/**").hasAnyRole("STAFF", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/orders/*/status").hasAnyRole("STAFF", "ADMIN")
 
                         // Review Management (Staff/Admin)
