@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import userService from "../services/userService";
 import authService from "../services/authService";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
+import EkycTab from "../components/profile/EkycTab";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -77,16 +78,16 @@ const ProfilePage = () => {
       console.error("Error loading profile:", err);
 
       if (err.response?.status === 401 || err.response?.status === 403) {
-        setError("Your session has expired. Please log in again.");
+        setError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
         setErrorType("auth");
       } else if (err.code === "ERR_NETWORK") {
         setError(
-          "Unable to connect to server. Please check your network connection.",
+          "Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối mạng.",
         );
         setErrorType("network");
       } else {
         setError(
-          `Error: ${err.response?.data?.message || err.message || "Unable to load user information"}`,
+          `Lỗi: ${err.response?.data?.message || err.message || "Không thể tải thông tin người dùng"}`,
         );
         setErrorType("network");
       }
@@ -179,16 +180,16 @@ const ProfilePage = () => {
       await userService.updateProfile(formData);
       await loadProfile();
       setIsEditing(false);
-      showToast("Profile updated successfully!");
+      showToast("Cập nhật hồ sơ thành công!");
     } catch (err) {
       console.error("Error saving profile:", err);
       const errors = parseValidationErrors(err);
       if (Object.keys(errors).length > 0) {
         setFieldErrors(errors);
-        showToast("Please fix the validation errors", "error");
+        showToast("Vui lòng kiểm tra lại các lỗi", "error");
       } else {
         showToast(
-          err.response?.data?.message || "Unable to save information",
+          err.response?.data?.message || "Không thể lưu thông tin",
           "error",
         );
       }
@@ -207,6 +208,39 @@ const ProfilePage = () => {
     setIsEditing(false);
   };
 
+  const handleEkycSuccess = async (ekycData) => {
+    // Ekyc returned extracted data
+    // Prioritize EKYC data over existing form data
+    const updatedData = {
+      ...formData,
+      fullName: ekycData.name || ekycData.fullName || formData.fullName || user?.fullName || "",
+      address: ekycData.address || formData.address || user?.address || "",
+      phone: formData.phone || user?.phone || "",
+      avatar: formData.avatar || user?.avatar || "",
+      // Add other relevant fields if your API/backend supports them
+    };
+    
+    // Remove invalid phone to prevent backend validation error
+    if (updatedData.phone && !validateVietnamesePhone(updatedData.phone)) {
+      delete updatedData.phone;
+    }
+    
+    setFormData(updatedData);
+    
+    try {
+      setSaving(true);
+      await userService.updateProfile(updatedData);
+      await loadProfile();
+      showToast("Xác minh danh tính thành công và đã cập nhật hồ sơ!");
+      setActiveTab("profile");
+    } catch (err) {
+      console.error("Failed to automatically update profile after EKYC:", err);
+      showToast("Xác minh danh tính thành công, nhưng không thể tự động cập nhật hồ sơ.", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
     setPasswordData((prev) => ({ ...prev, [name]: value }));
@@ -219,19 +253,19 @@ const ProfilePage = () => {
     setPasswordSuccess("");
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordError("Passwords do not match");
+      setPasswordError("Mật khẩu xác nhận không khớp");
       return;
     }
 
     if (passwordData.newPassword.length < 8) {
-      setPasswordError("New password must be at least 8 characters");
+      setPasswordError("Mật khẩu mới phải có ít nhất 8 ký tự");
       return;
     }
 
     setChangingPassword(true);
     try {
       await userService.changePassword(passwordData);
-      setPasswordSuccess("Password changed successfully!");
+      setPasswordSuccess("Đổi mật khẩu thành công!");
       setPasswordData({
         currentPassword: "",
         newPassword: "",
@@ -240,11 +274,11 @@ const ProfilePage = () => {
       setTimeout(() => {
         setShowPasswordModal(false);
         setPasswordSuccess("");
-        showToast("Password changed successfully!");
+        showToast("Đổi mật khẩu thành công!");
       }, 1500);
     } catch (err) {
       setPasswordError(
-        err.response?.data?.message || "Unable to change password",
+        err.response?.data?.message || "Không thể đổi mật khẩu",
       );
     } finally {
       setChangingPassword(false);
@@ -259,12 +293,12 @@ const ProfilePage = () => {
     setDeactivating(true);
     try {
       await userService.deactivateAccount(user?.id);
-      showToast("Account has been deactivated");
+      showToast("Tài khoản đã được vô hiệu hóa");
       await authService.logout();
       navigate("/login");
     } catch (err) {
       showToast(
-        err.response?.data?.message || "Unable to deactivate account",
+        err.response?.data?.message || "Không thể vô hiệu hóa tài khoản",
         "error",
       );
     } finally {
@@ -289,11 +323,11 @@ const ProfilePage = () => {
   const getRoleLabel = (role) => {
     switch (role) {
       case "ADMIN":
-        return "Administrator";
+        return "Quản trị viên";
       case "SELLER":
-        return "Seller";
+        return "Người bán";
       case "CUSTOMER":
-        return "Customer";
+        return "Khách hàng";
       default:
         return role;
     }
@@ -402,7 +436,7 @@ const ProfilePage = () => {
           </div>
 
           <h2 className="text-xl font-bold text-[#0f0d1b] dark:text-white mb-2">
-            {errorType === "auth" ? "Login Required" : "An Error Occurred"}
+            {errorType === "auth" ? "Yêu cầu đăng nhập" : "Đã xảy ra lỗi"}
           </h2>
 
           <p className="text-[#524c9a] dark:text-white/60 mb-6">{error}</p>
@@ -463,7 +497,7 @@ const ProfilePage = () => {
               </span>
             </div>
             <h2 className="text-[#0f0d1b] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">
-              AI Shop
+              Cửa hàng AI
             </h2>
           </Link>
           <nav className="hidden md:flex items-center gap-9">
@@ -471,14 +505,14 @@ const ProfilePage = () => {
               to="/"
               className="text-[#0f0d1b] dark:text-white/80 text-sm font-medium hover:text-primary transition-colors"
             >
-              Home
+              Trang chủ
             </Link>
             {user?.role === "ADMIN" && (
               <Link
                 to="/admin/dashboard"
                 className="text-[#0f0d1b] dark:text-white/80 text-sm font-medium hover:text-primary transition-colors"
               >
-                Dashboard
+                Bảng điều khiển
               </Link>
             )}
             {user?.role === "SELLER" && (
@@ -486,11 +520,11 @@ const ProfilePage = () => {
                 to="/seller/dashboard"
                 className="text-[#0f0d1b] dark:text-white/80 text-sm font-medium hover:text-primary transition-colors"
               >
-                Dashboard
+                Bảng điều khiển
               </Link>
             )}
             <span className="text-primary text-sm font-bold border-b-2 border-primary cursor-default">
-              Settings
+              Cài đặt
             </span>
           </nav>
         </div>
@@ -613,11 +647,11 @@ const ProfilePage = () => {
                   </span>
                 </div>
                 <h1 className="text-[#0f0d1b] dark:text-white text-3xl md:text-4xl font-black leading-tight tracking-[-0.033em]">
-                  Account Settings
+                  Cài đặt tài khoản
                 </h1>
               </div>
               <p className="text-[#524c9a] dark:text-white/60 text-base md:text-lg">
-                Manage your personal information and account security.
+                Quản lý thông tin cá nhân và bảo mật tài khoản của bạn.
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -633,7 +667,7 @@ const ProfilePage = () => {
                     user?.status === "ACTIVE" ? "bg-green-500" : "bg-red-500"
                   }`}
                 ></span>
-                {user?.status === "ACTIVE" ? "Active" : user?.status}
+                {user?.status === "ACTIVE" ? "Đang hoạt động" : user?.status}
               </span>
             </div>
           </div>
@@ -693,10 +727,10 @@ const ProfilePage = () => {
                     </div>
                     <div>
                       <p className="text-xs text-[#524c9a] dark:text-white/40 uppercase font-bold tracking-tight">
-                        Member Since
+                        Thành viên từ
                       </p>
                       <p className="text-sm font-medium">
-                        {user?.accountAgeDays || 0} days
+                        {user?.accountAgeDays || 0} ngày
                       </p>
                     </div>
                   </div>
@@ -708,7 +742,7 @@ const ProfilePage = () => {
                     </div>
                     <div>
                       <p className="text-xs text-[#524c9a] dark:text-white/40 uppercase font-bold tracking-tight">
-                        Status
+                        Trạng thái
                       </p>
                       <p
                         className={`text-sm font-medium ${
@@ -717,7 +751,7 @@ const ProfilePage = () => {
                             : "text-red-600 dark:text-red-400"
                         }`}
                       >
-                        {user?.status === "ACTIVE" ? "Active" : user?.status}
+                        {user?.status === "ACTIVE" ? "Đang hoạt động" : user?.status}
                       </p>
                     </div>
                   </div>
@@ -735,12 +769,12 @@ const ProfilePage = () => {
                     </div>
                     <div>
                       <p className="text-xs text-[#524c9a] dark:text-white/40 uppercase font-bold tracking-tight">
-                        Online
+                        Trực tuyến
                       </p>
                       <p className="text-sm font-medium">
                         {user?.isOnline
-                          ? "Online"
-                          : user?.lastActivityStatus || "Offline"}
+                          ? "Trực tuyến"
+                          : user?.lastActivityStatus || "Ngoại tuyến"}
                       </p>
                     </div>
                   </div>
@@ -760,7 +794,7 @@ const ProfilePage = () => {
                   }`}
                 >
                   <span className="material-symbols-outlined">person</span>
-                  <span className="text-sm font-semibold">Personal Info</span>
+                  <span className="text-sm font-semibold">Thông tin cá nhân</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("security")}
@@ -771,7 +805,7 @@ const ProfilePage = () => {
                   }`}
                 >
                   <span className="material-symbols-outlined">shield</span>
-                  <span className="text-sm font-semibold">Security</span>
+                  <span className="text-sm font-semibold">Bảo mật</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("notifications")}
@@ -784,7 +818,7 @@ const ProfilePage = () => {
                   <span className="material-symbols-outlined">
                     notifications
                   </span>
-                  <span className="text-sm font-semibold">Notifications</span>
+                  <span className="text-sm font-semibold">Thông báo</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("billing")}
@@ -795,7 +829,18 @@ const ProfilePage = () => {
                   }`}
                 >
                   <span className="material-symbols-outlined">payments</span>
-                  <span className="text-sm font-semibold">Billing</span>
+                  <span className="text-sm font-semibold">Thanh toán</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("ekyc")}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeTab === "ekyc"
+                      ? "bg-primary/5 text-primary"
+                      : "text-[#524c9a] dark:text-white/70 hover:bg-background-light dark:hover:bg-white/10"
+                  }`}
+                >
+                  <span className="material-symbols-outlined">verified_user</span>
+                  <span className="text-sm font-semibold">Xác minh danh tính</span>
                 </button>
               </div>
             </div>
@@ -803,6 +848,11 @@ const ProfilePage = () => {
 
           {/* Right Column: Main Content */}
           <div className="lg:col-span-8 flex flex-col gap-8">
+            {/* EKYC Verification Section */}
+            {activeTab === "ekyc" && (
+              <EkycTab onVerificationSuccess={handleEkycSuccess} />
+            )}
+
             {/* Personal Information Section */}
             {activeTab === "profile" && (
               <section className="bg-white dark:bg-white/5 rounded-xl shadow-sm border border-[#e8e7f3] dark:border-white/10 overflow-hidden">
@@ -817,10 +867,10 @@ const ProfilePage = () => {
                       </div>
                       <div>
                         <h2 className="text-xl font-bold text-[#0f0d1b] dark:text-white">
-                          Personal Information
+                          Thông tin cá nhân
                         </h2>
                         <p className="text-sm text-[#524c9a] dark:text-white/60">
-                          Update your personal information
+                          Cập nhật thông tin cá nhân của bạn
                         </p>
                       </div>
                     </div>
@@ -832,7 +882,7 @@ const ProfilePage = () => {
                         <span className="material-symbols-outlined text-lg">
                           edit
                         </span>
-                        Edit
+                        Chỉnh sửa
                       </button>
                     )}
                   </div>
@@ -853,10 +903,10 @@ const ProfilePage = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-bold text-[#524c9a] dark:text-white/40 uppercase tracking-wider mb-1">
-                                Full Name
+                                Họ và tên
                               </p>
                               <p className="text-[#0f0d1b] dark:text-white font-semibold truncate">
-                                {user?.fullName || "Not updated"}
+                                {user?.fullName || "Chưa cập nhật"}
                               </p>
                             </div>
                           </div>
@@ -915,10 +965,10 @@ const ProfilePage = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-bold text-[#524c9a] dark:text-white/40 uppercase tracking-wider mb-1">
-                                Address
+                                Địa chỉ
                               </p>
                               <p className="text-[#0f0d1b] dark:text-white font-semibold truncate">
-                                {user?.address || "Not updated"}
+                                {user?.address || "Chưa cập nhật"}
                               </p>
                             </div>
                           </div>
@@ -957,7 +1007,7 @@ const ProfilePage = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="flex flex-col gap-2">
                           <label className="text-sm font-bold text-[#524c9a] dark:text-white/60">
-                            Full Name
+                            Họ và tên
                           </label>
                           <div
                             className={`flex items-center bg-white dark:bg-background-dark/50 border-2 rounded-xl px-4 py-3 transition-all ${
@@ -1009,13 +1059,13 @@ const ProfilePage = () => {
                             </span>
                           </div>
                           <p className="text-xs text-primary/80 font-medium px-1">
-                            Contact support to change email
+                            Liên hệ hỗ trợ để đổi email
                           </p>
                         </div>
 
                         <div className="flex flex-col gap-2">
                           <label className="text-sm font-bold text-[#524c9a] dark:text-white/60">
-                            Phone Number
+                            Số điện thoại
                             <span className="text-xs font-normal text-[#524c9a]/60 dark:text-white/40 ml-1">
                               (Không bắt buộc)
                             </span>
@@ -1056,7 +1106,7 @@ const ProfilePage = () => {
 
                         <div className="flex flex-col gap-2">
                           <label className="text-sm font-bold text-[#524c9a] dark:text-white/60">
-                            Address
+                            Địa chỉ
                           </label>
                           <div
                             className={`flex items-center bg-white dark:bg-background-dark/50 border-2 rounded-xl px-4 py-3 transition-all ${
@@ -1115,7 +1165,7 @@ const ProfilePage = () => {
                           onClick={handleCancel}
                           className="px-6 py-2.5 text-[#524c9a] dark:text-white/70 font-bold text-sm bg-[#f8f8fc] dark:bg-white/10 hover:bg-[#e8e7f3] dark:hover:bg-white/20 rounded-xl transition-all"
                         >
-                          Cancel
+                          Hủy
                         </button>
                         <button
                           type="submit"
@@ -1123,7 +1173,7 @@ const ProfilePage = () => {
                           className="px-8 py-2.5 bg-primary text-white font-bold text-sm rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2"
                         >
                           {saving && <LoadingSpinner size="sm" />}
-                          {saving ? "Saving..." : "Save Changes"}
+                          {saving ? "Đang lưu..." : "Lưu thay đổi"}
                         </button>
                       </div>
                     </form>
@@ -1145,10 +1195,10 @@ const ProfilePage = () => {
                     </div>
                     <div>
                       <h2 className="text-xl font-bold text-[#0f0d1b] dark:text-white">
-                        Security & Privacy
+                        Bảo mật & Quyền riêng tư
                       </h2>
                       <p className="text-sm text-[#524c9a] dark:text-white/60">
-                        Manage security and privacy for your account
+                        Quản lý bảo mật và quyền riêng tư cho tài khoản của bạn
                       </p>
                     </div>
                   </div>
@@ -1165,10 +1215,10 @@ const ProfilePage = () => {
                       </div>
                       <div>
                         <h4 className="font-bold text-[#0f0d1b] dark:text-white">
-                          Change Password
+                          Đổi mật khẩu
                         </h4>
                         <p className="text-sm text-[#524c9a] dark:text-white/60">
-                          Change your password regularly to protect your account
+                          Thay đổi mật khẩu thường xuyên để bảo vệ tài khoản của bạn
                         </p>
                       </div>
                     </div>
@@ -1176,7 +1226,7 @@ const ProfilePage = () => {
                       onClick={() => setShowPasswordModal(true)}
                       className="px-5 py-2.5 bg-primary text-white font-bold text-sm rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
                     >
-                      Update Password
+                      Cập nhật mật khẩu
                     </button>
                   </div>
 
@@ -1190,10 +1240,10 @@ const ProfilePage = () => {
                       </div>
                       <div>
                         <h4 className="font-bold text-[#0f0d1b] dark:text-white">
-                          Two-Factor Authentication
+                          Xác thực 2 yếu tố
                         </h4>
                         <p className="text-sm text-[#524c9a] dark:text-white/60">
-                          Add an extra layer of security to your account
+                          Thêm một lớp bảo mật bổ sung cho tài khoản của bạn
                         </p>
                       </div>
                     </div>
@@ -1209,7 +1259,7 @@ const ProfilePage = () => {
                         />
                         <div className="w-12 h-6 bg-gray-200 dark:bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                         <span className="ms-3 text-sm font-bold text-[#0f0d1b] dark:text-white">
-                          {twoFactorEnabled ? "On" : "Off"}
+                          {twoFactorEnabled ? "Bật" : "Tắt"}
                         </span>
                       </label>
                     </div>
@@ -1225,15 +1275,15 @@ const ProfilePage = () => {
                       </div>
                       <div>
                         <h4 className="font-bold text-[#0f0d1b] dark:text-white">
-                          Login Sessions
+                          Phiên đăng nhập
                         </h4>
                         <p className="text-sm text-[#524c9a] dark:text-white/60">
-                          Manage devices that are logged in
+                          Quản lý các thiết bị đang đăng nhập
                         </p>
                       </div>
                     </div>
                     <button className="px-5 py-2.5 text-primary border-2 border-primary/30 font-bold text-sm rounded-xl hover:bg-primary/5 transition-all">
-                      View All
+                      Xem tất cả
                     </button>
                   </div>
 
@@ -1248,11 +1298,10 @@ const ProfilePage = () => {
                         </div>
                         <div>
                           <h4 className="font-bold text-red-600 dark:text-red-400">
-                            Deactivate Account
+                            Vô hiệu hóa tài khoản
                           </h4>
                           <p className="text-sm text-[#524c9a] dark:text-white/60">
-                            Deactivate your account. This action can be reversed
-                            by Admin.
+                            Vô hiệu hóa tài khoản của bạn. Hành động này có thể được hoàn tác bởi Quản trị viên.
                           </p>
                         </div>
                       </div>
@@ -1260,7 +1309,7 @@ const ProfilePage = () => {
                         onClick={() => setShowDeactivateModal(true)}
                         className="px-5 py-2.5 text-red-600 dark:text-red-400 border-2 border-red-300 dark:border-red-900/50 font-bold text-sm rounded-xl hover:bg-red-600 hover:text-white hover:border-red-600 transition-all"
                       >
-                        Deactivate
+                        Vô hiệu hóa
                       </button>
                     </div>
                   </div>
@@ -1276,30 +1325,30 @@ const ProfilePage = () => {
                     notifications
                   </span>
                   <h2 className="text-xl font-bold text-[#0f0d1b] dark:text-white">
-                    Notification Settings
+                    Cài đặt thông báo
                   </h2>
                 </div>
                 <div className="space-y-6">
                   {[
                     {
                       icon: "mail",
-                      title: "Email Notifications",
-                      desc: "Receive order notifications via email",
+                      title: "Thông báo Email",
+                      desc: "Nhận thông báo đơn hàng qua email",
                     },
                     {
                       icon: "campaign",
-                      title: "Promotions",
-                      desc: "Receive information about offers and promotions",
+                      title: "Khuyến mãi",
+                      desc: "Nhận thông tin về các ưu đãi và khuyến mãi",
                     },
                     {
                       icon: "inventory_2",
-                      title: "Order Updates",
-                      desc: "Get notified when your order has updates",
+                      title: "Cập nhật đơn hàng",
+                      desc: "Nhận thông báo khi đơn hàng của bạn có cập nhật",
                     },
                     {
                       icon: "reviews",
-                      title: "Product Reviews",
-                      desc: "Reminder to review after receiving products",
+                      title: "Đánh giá sản phẩm",
+                      desc: "Nhắc nhở đánh giá sau khi nhận sản phẩm",
                     },
                   ].map((item, idx) => (
                     <div
@@ -1341,7 +1390,7 @@ const ProfilePage = () => {
                 <div className="flex items-center gap-2 mb-8 text-primary">
                   <span className="material-symbols-outlined">payments</span>
                   <h2 className="text-xl font-bold text-[#0f0d1b] dark:text-white">
-                    Payment Methods
+                    Phương thức thanh toán
                   </h2>
                 </div>
                 <div className="space-y-6">
@@ -1354,10 +1403,10 @@ const ProfilePage = () => {
                       </div>
                       <div>
                         <h4 className="font-bold text-sm text-[#0f0d1b] dark:text-white">
-                          Credit/Debit Card
+                          Thẻ Tín dụng/Ghi nợ
                         </h4>
                         <p className="text-xs text-[#524c9a] dark:text-white/60">
-                          No cards linked yet
+                          Chưa có thẻ nào được liên kết
                         </p>
                       </div>
                     </div>
@@ -1507,7 +1556,7 @@ const ProfilePage = () => {
 
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-bold text-[#524c9a] dark:text-white/60">
-                  Current Password
+                  Mật khẩu hiện tại
                 </label>
                 <div className="flex items-center bg-[#f8f8fc] dark:bg-background-dark/50 border-2 border-[#e8e7f3] dark:border-white/10 rounded-xl px-4 py-3 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                   <span className="material-symbols-outlined text-[#524c9a] dark:text-white/40 mr-3">
@@ -1519,7 +1568,7 @@ const ProfilePage = () => {
                     value={passwordData.currentPassword}
                     onChange={handlePasswordChange}
                     className="w-full bg-transparent border-none p-0 focus:ring-0 text-[#0f0d1b] dark:text-white"
-                    placeholder="Enter current password"
+                    placeholder="Nhập mật khẩu hiện tại"
                     required
                   />
                   <button
@@ -1536,7 +1585,7 @@ const ProfilePage = () => {
 
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-bold text-[#524c9a] dark:text-white/60">
-                  New Password
+                  Mật khẩu mới
                 </label>
                 <div className="flex items-center bg-[#f8f8fc] dark:bg-background-dark/50 border-2 border-[#e8e7f3] dark:border-white/10 rounded-xl px-4 py-3 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                   <span className="material-symbols-outlined text-primary mr-3">
@@ -1548,7 +1597,7 @@ const ProfilePage = () => {
                     value={passwordData.newPassword}
                     onChange={handlePasswordChange}
                     className="w-full bg-transparent border-none p-0 focus:ring-0 text-[#0f0d1b] dark:text-white"
-                    placeholder="Enter new password (at least 8 characters)"
+                    placeholder="Nhập mật khẩu mới (ít nhất 8 ký tự)"
                     required
                   />
                   <button
@@ -1565,7 +1614,7 @@ const ProfilePage = () => {
 
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-bold text-[#524c9a] dark:text-white/60">
-                  Confirm New Password
+                  Xác nhận mật khẩu mới
                 </label>
                 <div className="flex items-center bg-[#f8f8fc] dark:bg-background-dark/50 border-2 border-[#e8e7f3] dark:border-white/10 rounded-xl px-4 py-3 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                   <span className="material-symbols-outlined text-primary mr-3">
@@ -1577,7 +1626,7 @@ const ProfilePage = () => {
                     value={passwordData.confirmPassword}
                     onChange={handlePasswordChange}
                     className="w-full bg-transparent border-none p-0 focus:ring-0 text-[#0f0d1b] dark:text-white"
-                    placeholder="Re-enter new password"
+                    placeholder="Nhập lại mật khẩu mới"
                     required
                   />
                   <button
@@ -1618,7 +1667,7 @@ const ProfilePage = () => {
                   className="flex-1 px-5 py-3 bg-primary text-white font-bold text-sm rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {changingPassword && <LoadingSpinner size="sm" />}
-                  {changingPassword ? "Processing..." : "Change Password"}
+                  {changingPassword ? "Đang xử lý..." : "Đổi mật khẩu"}
                 </button>
               </div>
             </form>
@@ -1644,7 +1693,7 @@ const ProfilePage = () => {
                     </span>
                   </div>
                   <h3 className="text-lg font-bold text-red-600 dark:text-red-400">
-                    Deactivate Account
+                    Vô hiệu hóa tài khoản
                   </h3>
                 </div>
                 <button
@@ -1665,15 +1714,15 @@ const ProfilePage = () => {
             <div className="p-6 space-y-5">
               <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 rounded-xl">
                 <p className="text-sm text-red-600 dark:text-red-400">
-                  <strong>Warning:</strong> After deactivating your account, you
-                  will not be able to log in until Admin reactivates it.
+                  <strong>Cảnh báo:</strong> Sau khi vô hiệu hóa tài khoản, bạn sẽ
+                  không thể đăng nhập cho đến khi Quản trị viên kích hoạt lại.
                 </p>
               </div>
 
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-bold text-[#524c9a] dark:text-white/60">
-                  Enter email{" "}
-                  <span className="text-red-500">{user?.email}</span> to confirm
+                  Nhập email{" "}
+                  <span className="text-red-500">{user?.email}</span> để xác nhận
                 </label>
                 <div className="flex items-center bg-[#f8f8fc] dark:bg-background-dark/50 border-2 border-[#e8e7f3] dark:border-white/10 rounded-xl px-4 py-3 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-500/20 transition-all">
                   <span className="material-symbols-outlined text-red-500 mr-3">
@@ -1684,7 +1733,7 @@ const ProfilePage = () => {
                     value={deactivateConfirm}
                     onChange={(e) => setDeactivateConfirm(e.target.value)}
                     className="w-full bg-transparent border-none p-0 focus:ring-0 text-[#0f0d1b] dark:text-white"
-                    placeholder="Enter your email"
+                    placeholder="Nhập email của bạn"
                   />
                 </div>
               </div>
@@ -1706,7 +1755,7 @@ const ProfilePage = () => {
                   className="flex-1 px-5 py-3 bg-red-600 text-white font-bold text-sm rounded-xl shadow-lg shadow-red-600/20 hover:bg-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {deactivating && <LoadingSpinner size="sm" />}
-                  {deactivating ? "Processing..." : "Deactivate"}
+                  {deactivating ? "Đang xử lý..." : "Vô hiệu hóa"}
                 </button>
               </div>
             </div>

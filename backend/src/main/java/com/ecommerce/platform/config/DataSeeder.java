@@ -43,13 +43,12 @@ public class DataSeeder implements CommandLineRunner {
                 seedRoles();
                 List<User> users = seedUsers();
 
-                if (categoryRepository.count() == 0) {
-                        List<Category> categories = seedCategories();
-                        List<Product> products = seedProducts(categories);
+                List<Category> categories = seedCategories();
+                List<Product> products = seedProducts(categories);
+
+                if (orderRepository.count() == 0) {
                         List<Order> orders = seedOrders(users, products);
                         seedReviews(users, products, orders);
-                } else {
-                        log.info("Categories already exist, skipping product and order seeding.");
                 }
 
                 log.info("Data seeding completed!");
@@ -100,7 +99,7 @@ public class DataSeeder implements CommandLineRunner {
                 if (userRepository.findByEmail("staff@techshop.vn").isEmpty()) {
                         User staff = User.builder()
                                         .email("staff@techshop.vn")
-                                        .password(passwordEncoder.encode("Staff@123"))
+                                                .password(passwordEncoder.encode("Staff@123"))
                                         .fullName("Nhân viên bán hàng")
                                         .phone("0902345678")
                                         .address("456 Lê Lợi, Quận 1, TP.HCM")
@@ -157,59 +156,24 @@ public class DataSeeder implements CommandLineRunner {
                 List<Category> categories = new ArrayList<>();
 
                 // Danh mục cha
-                Category smartphones = Category.builder()
-                                .name("Điện thoại")
-                                .description("Điện thoại thông minh các hãng")
-                                .image("https://cdn.tgdd.vn/Products/Images/42/305658/iphone-15-pro-max-blue-thumbnew-600x600.jpg")
-                                .bannerUrl("https://cdn.tgdd.vn/2024/02/banner/S24-Ultra-2880-800-1920x533.png")
-                                .isActive(true)
-                                .build();
-                smartphones = categoryRepository.save(smartphones);
-
-                Category laptops = Category.builder()
-                                .name("Laptop")
-                                .description("Laptop văn phòng, gaming, đồ họa")
-                                .image("https://cdn.tgdd.vn/Products/Images/44/313018/macbook-pro-m3-pro-14-inch-den-thumb-600x600.jpg")
-                                .bannerUrl("https://cdn.tgdd.vn/2024/03/banner/Mac-NPP-2880-800-1920x533.png")
-                                .isActive(true)
-                                .build();
-                laptops = categoryRepository.save(laptops);
-
-                Category tablets = Category.builder()
-                                .name("Máy tính bảng")
-                                .description("iPad, máy tính bảng Android")
-                                .image("https://cdn.tgdd.vn/Products/Images/52/305537/ipad-air-6-m2-wifi-thumb-600x600.jpg")
-                                .bannerUrl("https://cdn.tgdd.vn/2024/03/banner/ipad-chung-2880-800-1920x533.png")
-                                .isActive(true)
-                                .build();
-                tablets = categoryRepository.save(tablets);
-
-                Category accessories = Category.builder()
-                                .name("Phụ kiện")
-                                .description("Phụ kiện điện thoại, laptop, tablet")
-                                .image("https://cdn.tgdd.vn/Products/Images/54/299691/sac-du-phong-polymer-20000mah-20w-magsafe-aukey-pb-wl03-thumb-1-600x600.jpg")
-                                .bannerUrl("https://cdn.tgdd.vn/2024/03/banner/PK-Apple-2880-800-1920x533.png")
-                                .isActive(true)
-                                .build();
-                accessories = categoryRepository.save(accessories);
-
-                Category audio = Category.builder()
-                                .name("Âm thanh")
-                                .description("Tai nghe, loa bluetooth, thiết bị âm thanh")
-                                .image("https://cdn.tgdd.vn/Products/Images/54/289723/tai-nghe-bluetooth-airpods-pro-2-magsafe-type-c-thumb-1-600x600.jpg")
-                                .bannerUrl("https://cdn.tgdd.vn/2024/03/banner/Phu-kien-AirPods-2880-800-1920x533.png")
-                                .isActive(true)
-                                .build();
-                audio = categoryRepository.save(audio);
-
-                Category wearables = Category.builder()
-                                .name("Đồng hồ thông minh")
-                                .description("Smartwatch, đồng hồ thông minh các hãng")
-                                .image("https://cdn.tgdd.vn/Products/Images/7077/316002/apple-watch-s9-gps-45mm-vien-nhom-day-silicone-thumb-600x600.jpg")
-                                .bannerUrl("https://cdn.tgdd.vn/2024/03/banner/Apple-Watch-2880-800-1920x533.png")
-                                .isActive(true)
-                                .build();
-                wearables = categoryRepository.save(wearables);
+                Category smartphones = updateOrCreateCategory("Điện thoại", "Điện thoại thông minh các hãng",
+                                "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=600&auto=format&fit=crop",
+                                "https://images.unsplash.com/photo-1616348436168-de43ad0db179?q=80&w=1920&auto=format&fit=crop");
+                Category laptops = updateOrCreateCategory("Laptop", "Laptop văn phòng, gaming, đồ họa",
+                                "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=600&auto=format&fit=crop",
+                                "https://images.unsplash.com/photo-1504707748692-419802cf939d?q=80&w=1920&auto=format&fit=crop");
+                Category tablets = updateOrCreateCategory("Máy tính bảng", "iPad, máy tính bảng Android",
+                                "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=600&auto=format&fit=crop",
+                                "https://images.unsplash.com/photo-1561154464-82e9adf32764?q=80&w=1920&auto=format&fit=crop");
+                Category accessories = updateOrCreateCategory("Phụ kiện", "Phụ kiện điện thoại, laptop, tablet",
+                                "https://images.unsplash.com/photo-1608156639585-b3a032ef9689?q=80&w=600&auto=format&fit=crop",
+                                "https://images.unsplash.com/photo-1555664424-778a1bc5e1b3?q=80&w=1920&auto=format&fit=crop");
+                Category audio = updateOrCreateCategory("Âm thanh", "Tai nghe, loa bluetooth, thiết bị âm thanh",
+                                "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=600&auto=format&fit=crop",
+                                "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1920&auto=format&fit=crop");
+                Category wearables = updateOrCreateCategory("Đồng hồ thông minh", "Smartwatch, đồng hồ thông minh các hãng",
+                                "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=600&auto=format&fit=crop",
+                                "https://images.unsplash.com/photo-1434494878577-86c23bdd0639?q=80&w=1920&auto=format&fit=crop");
 
                 // Danh mục con cho Điện thoại
                 categories.add(createSubCategory("iPhone", "Điện thoại Apple iPhone", smartphones));
@@ -248,14 +212,42 @@ public class DataSeeder implements CommandLineRunner {
                 return categories;
         }
 
+        private Category updateOrCreateCategory(String name, String description, String image, String bannerUrl) {
+                return categoryRepository.findByNameIgnoreCase(name)
+                                .map(existing -> {
+                                        existing.setDescription(description);
+                                        existing.setImage(image);
+                                        existing.setBannerUrl(bannerUrl);
+                                        return categoryRepository.save(existing);
+                                })
+                                .orElseGet(() -> {
+                                        Category category = Category.builder()
+                                                        .name(name)
+                                                        .description(description)
+                                                        .image(image)
+                                                        .bannerUrl(bannerUrl)
+                                                        .isActive(true)
+                                                        .build();
+                                        return categoryRepository.save(category);
+                                });
+        }
+
         private Category createSubCategory(String name, String description, Category parent) {
-                Category category = Category.builder()
-                                .name(name)
-                                .description(description)
-                                .parent(parent)
-                                .isActive(true)
-                                .build();
-                return categoryRepository.save(category);
+                return categoryRepository.findByNameIgnoreCase(name)
+                                .map(existing -> {
+                                        existing.setDescription(description);
+                                        existing.setParent(parent);
+                                        return categoryRepository.save(existing);
+                                })
+                                .orElseGet(() -> {
+                                        Category category = Category.builder()
+                                                        .name(name)
+                                                        .description(description)
+                                                        .parent(parent)
+                                                        .isActive(true)
+                                                        .build();
+                                        return categoryRepository.save(category);
+                                });
         }
 
         private List<Product> seedProducts(List<Category> categories) {
@@ -280,199 +272,197 @@ public class DataSeeder implements CommandLineRunner {
                 products.add(createProduct("iPhone 15 Pro Max 256GB",
                                 "iPhone 15 Pro Max với chip A17 Pro, màn hình Super Retina XDR 6.7 inch, camera 48MP, Dynamic Island. Thiết kế titan cao cấp, cổng USB-C.",
                                 new BigDecimal("34990000"), new BigDecimal("32990000"), 50, iphone,
-                                "https://cdn.tgdd.vn/Products/Images/42/305658/iphone-15-pro-max-blue-thumbnew-600x600.jpg",
-                                Arrays.asList("https://cdn.tgdd.vn/Products/Images/42/305658/iphone-15-pro-max-blue-thumbnew-600x600.jpg",
-                                                "https://cdn.tgdd.vn/Products/Images/42/305658/Slider/vi-vn-iphone-15-pro-max-blue-thumbnew-1.jpg")));
+                                "https://images.unsplash.com/photo-1695822822491-d92cee704368?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1695822822491-d92cee704368?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("iPhone 16 Pro Max 256GB",
                                 "iPhone 16 Pro Max cao cấp nhất với Apple Intelligence. Thiết kế Titan viền mỏng siêu cấp, màn hình 6.9 inch, chip A18 Pro mạnh mẽ và Camera Fusion 48MP.",
                                 new BigDecimal("34990000"), new BigDecimal("34490000"), 150, iphone,
-                                "https://cdn.tgdd.vn/Products/Images/42/329149/iphone-16-pro-max-titan-sa-mac-thumb-600x600.jpg",
-                                Arrays.asList("https://cdn.tgdd.vn/Products/Images/42/329149/iphone-16-pro-max-titan-sa-mac-thumb-600x600.jpg",
-                                                "https://cdn.tgdd.vn/Products/Images/42/329149/Slider/vi-vn-iphone-16-pro-max-titan-sa-mac-1-1.jpg")));
+                                "https://images.unsplash.com/photo-1695822822491-d92cee704368?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1695822822491-d92cee704368?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("iPhone 15 Pro 128GB",
                                 "iPhone 15 Pro với chip A17 Pro, màn hình 6.1 inch, camera chuyên nghiệp 48MP, khung titan bền bỉ.",
                                 new BigDecimal("28990000"), new BigDecimal("27490000"), 80, iphone,
-                                "https://cdn2.fptshop.com.vn/unsafe/828x0/filters:format(webp):quality(75)/2023_9_13_638301983456473055_VN_iPhone_15_Pro_Natural_Titanium_PDP_Image_Position-2_Design.jpg",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR9_XPcDid9sZ6sKGbeWmtf7SYBrlMoBEEAFA&s")));
+                                "https://images.unsplash.com/photo-1695822822491-d92cee704368?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1695822822491-d92cee704368?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("iPhone 15 128GB",
                                 "iPhone 15 với Dynamic Island, camera 48MP, chip A16 Bionic, thiết kế mới với mặt lưng kính nhám.",
                                 new BigDecimal("22990000"), new BigDecimal("21490000"), 100, iphone,
-                                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlWcl0it03cHs6rFHs2ec9sM5Uw36t1S3shg&s",
-                                Arrays.asList("https://ishop.gt/cdn/shop/files/IMG-10933066_314d34af-d4aa-4b2f-8af7-f41e1528d1f7.jpg?v=1718925694&width=823")));
+                                "https://images.unsplash.com/photo-1695822822491-d92cee704368?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1695822822491-d92cee704368?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("iPhone 14 128GB",
                                 "iPhone 14 với chip A15 Bionic, màn hình Super Retina XDR 6.1 inch, hệ thống camera kép 12MP.",
                                 new BigDecimal("17990000"), new BigDecimal("16490000"), 120, iphone,
-                                "https://cdn.tgdd.vn/Products/Images/42/240259/iPhone-14-plus-thumb-xanh-600x600.jpg",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSMEKylPyXW8x3J_qImu5vkV4WcGQu3mag-FQ&s")));
+                                "https://images.unsplash.com/photo-1695822822491-d92cee704368?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1695822822491-d92cee704368?q=80&w=1000&auto=format&fit=crop")));
 
                 // Samsung
                 products.add(createProduct("Samsung Galaxy S24 Ultra 256GB",
-                                "Galaxy S24 Ultra với bút S Pen, chip Snapdragon 8 Gen 3, màn hình Dynamic AMOLED 2X 6.8 inch, camera 200MP.",
+                                "Galaxy S24 Ultra with bút S Pen, chip Snapdragon 8 Gen 3, màn hình Dynamic AMOLED 2X 6.8 inch, camera 200MP.",
                                 new BigDecimal("33990000"), new BigDecimal("29990000"), 60, samsung,
-                                "https://cdn.tgdd.vn/Products/Images/42/319665/samsung-galaxy-s24-ultra-grey-thumb-600x600.jpg",
-                                Arrays.asList("https://cdn.tgdd.vn/Products/Images/42/319665/samsung-galaxy-s24-ultra-grey-thumb-600x600.jpg")));
+                                "https://images.unsplash.com/photo-1705585174953-9b2aa8afc174?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1705585174953-9b2aa8afc174?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("Samsung Galaxy Z Flip5 256GB",
                                 "Galaxy Z Flip5 điện thoại gập bản lề Flex tiên tiến, màn hình phụ siêu lớn 3.4 inch, camera cải tiến và thiết kế thời thượng.",
                                 new BigDecimal("25990000"), new BigDecimal("18990000"), 80, samsung,
-                                "https://cdn.tgdd.vn/Products/Images/42/299284/samsung-galaxy-z-flip5-xanh-mint-thumb-600x600.jpg",
-                                Arrays.asList("https://cdn.tgdd.vn/Products/Images/42/299284/samsung-galaxy-z-flip5-xanh-mint-thumb-600x600.jpg")));
+                                "https://images.unsplash.com/photo-1705585174953-9b2aa8afc174?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1705585174953-9b2aa8afc174?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("Samsung Galaxy S24+ 256GB",
                                 "Galaxy S24+ với chip Snapdragon 8 Gen 3, màn hình 6.7 inch, camera 50MP, hỗ trợ Galaxy AI.",
                                 new BigDecimal("26990000"), new BigDecimal("24990000"), 75, samsung,
-                                "https://cdn.techshop.vn/products/samsung-s24-plus.jpg",
-                                Arrays.asList("https://cdn.techshop.vn/products/samsung-s24-plus-1.jpg")));
+                                "https://images.unsplash.com/photo-1705585174953-9b2aa8afc174?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1705585174953-9b2aa8afc174?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("Samsung Galaxy Z Fold5 256GB",
                                 "Galaxy Z Fold5 điện thoại gập với màn hình chính 7.6 inch, màn hình phụ 6.2 inch, chip Snapdragon 8 Gen 2.",
                                 new BigDecimal("41990000"), new BigDecimal("38990000"), 30, samsung,
-                                "https://cdn2.cellphones.com.vn/insecure/rs:fill:0:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/g/a/galaxy-s24-plus-den.png",
-                                Arrays.asList("https://cdn-v2.didongviet.vn/files/products/2024/0/18/1/1705512523638_samsung_galaxy_s24_plus_vang_didongviet.png")));
+                                "https://images.unsplash.com/photo-1705585174953-9b2aa8afc174?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1705585174953-9b2aa8afc174?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("Samsung Galaxy A54 5G 128GB",
                                 "Galaxy A54 5G với chip Exynos 1380, màn hình Super AMOLED 6.4 inch, camera 50MP, chống nước IP67.",
                                 new BigDecimal("10990000"), new BigDecimal("9490000"), 150, samsung,
-                                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQMMw9GLaEaWDAvt5TEFYjsL5Na6yUv2k_PoA&s",
-                                Arrays.asList("https://cdn2.cellphones.com.vn/insecure/rs:fill:0:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/s/a/samsung-galaxy-a54-8gb-256gb.png")));
+                                "https://images.unsplash.com/photo-1705585174953-9b2aa8afc174?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1705585174953-9b2aa8afc174?q=80&w=1000&auto=format&fit=crop")));
 
                 // Xiaomi
                 products.add(createProduct("Xiaomi 14 Ultra 512GB",
                                 "Xiaomi 14 Ultra với camera Leica, chip Snapdragon 8 Gen 3, màn hình AMOLED 6.73 inch 120Hz.",
                                 new BigDecimal("29990000"), new BigDecimal("27990000"), 40, xiaomi,
-                                "https://cdn.techshop.vn/products/xiaomi-14-ultra.jpg",
-                                Arrays.asList("https://cdn.techshop.vn/products/xiaomi-14-ultra-1.jpg")));
+                                "https://images.unsplash.com/photo-1598327105666-5b89351aff97?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1598327105666-5b89351aff97?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("Xiaomi 14 256GB",
                                 "Xiaomi 14 với camera Leica, chip Snapdragon 8 Gen 3, màn hình AMOLED 6.36 inch, sạc nhanh 90W.",
                                 new BigDecimal("18990000"), new BigDecimal("17490000"), 70, xiaomi,
-                                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcThau8nMexAGQ4KmmU1BqqTjplLDZim1Ueplg&s",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQjbzGh9UtEn-UpPhwxUJNWV0HUJjOYu5wXig&s")));
+                                "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("Redmi Note 13 Pro+ 5G 256GB",
                                 "Redmi Note 13 Pro+ với camera 200MP, màn hình AMOLED cong 6.67 inch 120Hz, sạc nhanh 120W.",
                                 new BigDecimal("11990000"), new BigDecimal("10990000"), 200, xiaomi,
-                                "https://cdn2.cellphones.com.vn/insecure/rs:fill:0:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/x/i/xiaomi-redmi-note-13-pro-plus_5_.png",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcThKXx65d51XpNXD--F__Dhy-8GFcOupX910A&s")));
+                                "https://images.unsplash.com/photo-1598327105666-5b89351aff97?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1598327105666-5b89351aff97?q=80&w=1000&auto=format&fit=crop")));
 
                 // MacBook
                 products.add(createProduct("MacBook Pro 14 M3 Pro 512GB",
-                                "MacBook Pro 14 inch với chip M3 Pro, RAM 18GB, màn hình Liquid Retina XDR, thời lượng pin lên đến 17 giờ.",
-                                new BigDecimal("52990000"), new BigDecimal("49990000"), 25, macbook,
-                                "https://cdn.tgdd.vn/Products/Images/44/322359/apple-macbook-pro-14-inch-m3-pro-2023-silver-1-750x500.jpg",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQT6DoCK_zAJD3vGfYBtmx2dSn6stToC00IA&s")));
+                                "MacBook Pro 14 inch với chip M3 Pro, 18GB RAM, 512GB SSD, màn hình Liquid Retina XDR cực đỉnh.",
+                                new BigDecimal("49990000"), new BigDecimal("46990000"), 20, macbook,
+                                "https://images.unsplash.com/photo-1724859234679-964acf07b126?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1724859234679-964acf07b126?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("MacBook Air 15 M3 256GB",
-                                "MacBook Air 15 inch với chip M3, thiết kế siêu mỏng, màn hình Liquid Retina, pin cả ngày.",
-                                new BigDecimal("37990000"), new BigDecimal("35990000"), 35, macbook,
-                                "https://cdn.techshop.vn/products/macbook-air-15-m3.jpg",
-                                Arrays.asList("https://cdn.techshop.vn/products/macbook-air-15-m3-1.jpg")));
+                                "MacBook Air 15 inch với chip M3 mới nhất, thiết kế siêu mỏng, pin lên đến 18 giờ, màn hình Liquid Retina.",
+                                new BigDecimal("32990000"), new BigDecimal("30490000"), 40, macbook,
+                                "https://images.unsplash.com/photo-1611186871348-b1ec696e52c9?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1611186871348-b1ec696e52c9?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("MacBook Air 13 M2 256GB",
                                 "MacBook Air 13 inch với chip M2, thiết kế mỏng nhẹ, màn hình Liquid Retina, không quạt tản nhiệt.",
                                 new BigDecimal("27990000"), new BigDecimal("25990000"), 45, macbook,
-                                "https://cdn2.cellphones.com.vn/insecure/rs:fill:0:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/m/a/macbook-air-m3-15-inch-2024_1_.png",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTgJI2JrVW2RpymCnCroeVVc1S5N-hnOhV2Yg&s")));
+                                "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1541807084-5c52b6b3adef?q=80&w=1000&auto=format&fit=crop")));
 
                 // Dell
                 products.add(createProduct("Dell XPS 15 9530 Core i7",
                                 "Dell XPS 15 với Intel Core i7-13700H, RAM 16GB, SSD 512GB, màn hình OLED 3.5K 15.6 inch.",
                                 new BigDecimal("45990000"), new BigDecimal("42990000"), 20, dell,
-                                "https://cdn.techshop.vn/products/dell-xps-15.jpg",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpXfUDRe6P02i1ERG4wxFlNvhHAccJZKOM6A&s")));
+                                "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1593642632823-8f785ba67e45?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("Dell Inspiron 15 3520",
                                 "Dell Inspiron 15 với Intel Core i5-1235U, RAM 8GB, SSD 512GB, màn hình FHD 15.6 inch.",
                                 new BigDecimal("15990000"), new BigDecimal("14490000"), 60, dell,
-                                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRYIV3NYrS7zeOBD7mGLu5305ky5Ss45qjlvg&s",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0DRtlo6Mfa-HewvrgEs85DaerjgB2Ujwyag&s")));
+                                "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=1000&auto=format&fit=crop")));
 
-                // ASUS
+                // ASUS & Gaming
                 products.add(createProduct("ASUS ROG Strix G16 RTX 4060",
                                 "ASUS ROG Strix G16 Gaming với Intel Core i7-13650HX, RTX 4060 8GB, RAM 16GB, màn hình 165Hz.",
                                 new BigDecimal("35990000"), new BigDecimal("33990000"), 25, asus,
-                                "https://cdn.tgdd.vn/Products/Images/44/304452/asus-rog-strix-g16-g614jv-i7-n3304w-thumb-600x600.jpg",
-                                Arrays.asList("https://cdn.tgdd.vn/Products/Images/44/304452/asus-rog-strix-g16-g614jv-i7-n3304w-thumb-600x600.jpg")));
+                                "https://images.unsplash.com/photo-1603302576837-37561b2e2302?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1603302576837-37561b2e2302?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("MSI Titan GT77 HX RTX 4090",
                                 "Laptop siêu phẩm đồ họa, cấu hình khủng khiếp Intel Core i9-13980HX, NVIDIA RTX 4090 16GB, 64GB RAM DDR5, màn hình 17.3 inch 4K Mini-LED 144Hz.",
                                 new BigDecimal("129990000"), new BigDecimal("124990000"), 5, asus,
-                                "https://cdn.tgdd.vn/Products/Images/44/302452/msi-gaming-titan-gt77-hx-13vi-i9-074vn-thumb-600x600.jpg",
-                                Arrays.asList("https://cdn.tgdd.vn/Products/Images/44/302452/msi-gaming-titan-gt77-hx-13vi-i9-074vn-thumb-600x600.jpg")));
+                                "https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("ASUS Vivobook 15 OLED",
                                 "ASUS Vivobook 15 với AMD Ryzen 7 7730U, RAM 16GB, SSD 512GB, màn hình OLED FHD 15.6 inch.",
                                 new BigDecimal("18990000"), new BigDecimal("17490000"), 50, asus,
-                                "https://cdnv2.tgdd.vn/mwg-static/tgdd/Products/Images/44/328950/asus-vivobook-15-oled-a1505va-i9-ma586ws-170225-112950-659-600x600.jpg",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTP4nQ_NVuZymaqqVhqpHSsrskPTWTYe4Di2w&s")));
+                                "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=1000&auto=format&fit=crop")));
 
                 // Tablets
                 products.add(createProduct("iPad Pro M4 11 inch 256GB WiFi",
                                 "iPad Pro 11 inch với chip M4, màn hình Ultra Retina XDR, hỗ trợ Apple Pencil Pro.",
                                 new BigDecimal("28990000"), new BigDecimal("27490000"), 40, tablets,
-                                "https://cdn.techshop.vn/products/ipad-pro-m4-11.jpg",
-                                Arrays.asList("https://cdn.techshop.vn/products/ipad-pro-m4-11-1.jpg")));
+                                "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("iPad Air M2 11 inch 128GB WiFi",
                                 "iPad Air 11 inch với chip M2, màn hình Liquid Retina, hỗ trợ Apple Pencil Pro.",
                                 new BigDecimal("18990000"), new BigDecimal("17990000"), 55, tablets,
-                                "https://cdn2.cellphones.com.vn/insecure/rs:fill:358:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/i/p/ipad-pro-m5.jpg",
-                                Arrays.asList("https://clickbuy.com.vn/uploads/images/tin%20tuc/Nam/ipad-pro-m5-13-inch-5g.jpg")));
+                                "https://images.unsplash.com/photo-1561154464-82e9adf32764?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1561154464-82e9adf32764?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("Samsung Galaxy Tab S9 FE 128GB WiFi",
                                 "Galaxy Tab S9 FE với chip Exynos 1380, màn hình 10.9 inch, bút S Pen, chống nước IP68.",
                                 new BigDecimal("12490000"), new BigDecimal("11490000"), 70, tablets,
-                                "https://cdn2.cellphones.com.vn/insecure/rs:fill:0:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/s/a/samsung-galaxy-tab-s9-fe-plus-wifi_1_.png",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGrQ2kC0xyBwAr-qFpuHV8N1OoSkbF2kzpoA&s")));
+                                "https://images.unsplash.com/photo-1585517586921-16af729ff75a?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1585517586921-16af729ff75a?q=80&w=1000&auto=format&fit=crop")));
 
                 // Tai nghe Bluetooth
                 products.add(createProduct("AirPods Pro 2 USB-C",
                                 "AirPods Pro thế hệ 2 với cổng USB-C, chống ồn chủ động, âm thanh không gian, chip H2.",
                                 new BigDecimal("6790000"), new BigDecimal("5990000"), 100, earphones,
-                                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQKRABQXX-8K_zyxsKxVdO-tACvBkWi0COl_g&s",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS8ZM1JYFKNuMfeC_g6cIPPqNcU-DdnJMJj7A&s")));
+                                "https://images.unsplash.com/photo-1588423770674-f28e1204b3ed?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1588423770674-f28e1204b3ed?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("Samsung Galaxy Buds2 Pro",
                                 "Galaxy Buds2 Pro với chống ồn chủ động thông minh, âm thanh Hi-Fi 24bit, chống nước IPX7.",
                                 new BigDecimal("4990000"), new BigDecimal("3990000"), 120, earphones,
-                                "https://cdn2.cellphones.com.vn/insecure/rs:fill:0:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/s/a/samsung-galaxy-buds-2-pro-thumb.png",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSnB5cHnVaBPv2j5Ns8_L3uCsI52vMBXzl1BA&s")));
+                                "https://images.unsplash.com/photo-1590664095641-7fa05f689813?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1590664095641-7fa05f689813?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("Sony WF-1000XM5",
                                 "Sony WF-1000XM5 với chống ồn hàng đầu thế giới, âm thanh Hi-Res, pin 8 giờ.",
                                 new BigDecimal("7490000"), new BigDecimal("6490000"), 50, earphones,
-                                "https://cdn.tgdd.vn/Products/Images/2162/286271/bluetooth-jbl-flip-6-2-750x500.jpg",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS9uN1hEFnFH2tp6ePZ868AiV4SWSDhWDWdiQ&s")));
+                                "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?q=80&w=1000&auto=format&fit=crop")));
 
                 // Loa Bluetooth
                 products.add(createProduct("JBL Flip 6",
                                 "JBL Flip 6 với công suất 30W, chống nước IP67, pin 12 giờ, kết nối PartyBoost.",
                                 new BigDecimal("2990000"), new BigDecimal("2490000"), 80, speakers,
-                                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0J-cH3DQrNriXk5YFzwwqPmNuc9U3hsfVDw&s",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRnuSiaRXtt09KaNHAqPoWYWYCgeiuiWnDgSg&s")));
+                                "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("Harman Kardon Onyx Studio 8",
                                 "Harman Kardon Onyx Studio 8 với âm thanh cao cấp, thiết kế sang trọng, pin 8 giờ.",
                                 new BigDecimal("6990000"), new BigDecimal("5990000"), 30, speakers,
-                                "https://cdn.tgdd.vn/Products/Images/2162/293654/loa-bluetooth-harman-kardon-onyx-studio-8-1-750x500.jpg",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5qGICkxDAv_6yGs-mza3VPvJGH-5_86ICOA&s")));
+                                "https://images.unsplash.com/photo-1545454675-3531b543be5d?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1545454675-3531b543be5d?q=80&w=1000&auto=format&fit=crop")));
 
                 // Sạc dự phòng
                 products.add(createProduct("Anker PowerCore 20000mAh PD 65W",
                                 "Anker PowerCore với dung lượng 20000mAh, sạc nhanh PD 65W, có thể sạc laptop.",
                                 new BigDecimal("1490000"), new BigDecimal("1290000"), 150, powerbank,
-                                "https://cdn2.cellphones.com.vn/x/media/catalog/product/1/2/12312313124_1.jpg",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQI__Ti1veDeCpgDnvIXxTDeElvzv2rCuGiew&s")));
+                                "https://images.unsplash.com/photo-1625842268584-8f3bf9ff16a1?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1625842268584-8f3bf9ff16a1?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("Xiaomi Power Bank 3 10000mAh 22.5W",
                                 "Xiaomi Power Bank 10000mAh với sạc nhanh 22.5W, thiết kế nhỏ gọn, 2 cổng USB.",
                                 new BigDecimal("450000"), new BigDecimal("390000"), 300, powerbank,
-                                "https://cdn2.cellphones.com.vn/insecure/rs:fill:0:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/p/i/pin-sac-du-phong-xiaomi-power-bank-3-10000mah-ultra-compact_1_.png",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRUFx87md-6CNiePe5tnF9axd879SqDP6Jfmg&s")));
+                                "https://images.unsplash.com/photo-1619131427655-41d993c130b3?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1619131427655-41d993c130b3?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("Samsung Battery Pack 25W Wireless",
                                 "Samsung Battery Pack 10000mAh với sạc không dây 25W, USB-C PD, thiết kế sang trọng.",
@@ -484,33 +474,33 @@ public class DataSeeder implements CommandLineRunner {
                 products.add(createProduct("Apple MagSafe Silicone Case iPhone 15 Pro Max",
                                 "Ốp lưng silicone chính hãng Apple với MagSafe cho iPhone 15 Pro Max, nhiều màu sắc.",
                                 new BigDecimal("1490000"), new BigDecimal("1290000"), 200, cases,
-                                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTsonK_ltG3u5qfRu1bNY19hDbUjABkczylsA&s",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiAacRjCV9LpPkqVlkpCgZmmphurlqlRY9yQ&s")));
+                                "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1541807084-5c52b6b3adef?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("UAG Monarch iPhone 15 Pro Max",
                                 "Ốp lưng UAG Monarch cao cấp cho iPhone 15 Pro Max, chống sốc tiêu chuẩn quân đội.",
                                 new BigDecimal("1890000"), new BigDecimal("1590000"), 80, cases,
-                                "https://cdn2.cellphones.com.vn/insecure/rs:fill:0:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/o/p/op-lung-iphone-15-pro-max-uag-monarch-carbon-fiber_1_.png",
-                                Arrays.asList("https://m.media-amazon.com/images/I/71LTGS2eD+L._AC_UF894,1000_QL80_.jpg")));
+                                "https://images.unsplash.com/photo-1586776977607-310e9c725c37?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1586776977607-310e9c725c37?q=80&w=1000&auto=format&fit=crop")));
 
                 // Đồng hồ thông minh
                 products.add(createProduct("Apple Watch Series 9 GPS 45mm",
                                 "Apple Watch Series 9 với chip S9, màn hình Always-On Retina, đo SpO2, ECG.",
                                 new BigDecimal("11990000"), new BigDecimal("10990000"), 60, wearables,
-                                "https://cdn.tgdd.vn/Products/Images/7077/316002/apple-watch-s9-vien-nhom-day-the-thao-bac-tb-600x600.jpg",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQf5_J9xETwMjsyH55TajLqaNkIVI_x5DMq4w&s")));
+                                "https://images.unsplash.com/photo-1544117519-31a4b719223d?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1544117519-31a4b719223d?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("Samsung Galaxy Watch6 Classic 47mm",
                                 "Galaxy Watch6 Classic với vòng bezel xoay, màn hình Super AMOLED, đo huyết áp.",
                                 new BigDecimal("10490000"), new BigDecimal("8990000"), 50, wearables,
-                                "https://cdn.tgdd.vn/Products/Images/7077/310858/samsung-galaxy-watch6-classic-47mm-bac-1-750x500.png",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRClSUlC_YrC4xegekv5QX2Re66LWsoYZxKTQ&s")));
+                                "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?q=80&w=1000&auto=format&fit=crop")));
 
                 products.add(createProduct("Garmin Venu 3",
                                 "Garmin Venu 3 với màn hình AMOLED sáng, theo dõi sức khỏe nâng cao, pin lên đến 14 ngày.",
                                 new BigDecimal("12990000"), new BigDecimal("11990000"), 30, wearables,
-                                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQm1YZVAvkZ7XZVULYbhmZo5hr9wScRDbf8vA&s",
-                                Arrays.asList("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQC9u5_jS09jvhIlghVdFS1UIZ4SgOUEwrHQQ&s")));
+                                "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?q=80&w=1000&auto=format&fit=crop",
+                                Arrays.asList("https://images.unsplash.com/photo-1579586337278-3befd40fd17a?q=80&w=1000&auto=format&fit=crop")));
 
                 return productRepository.saveAll(products);
         }
@@ -523,9 +513,20 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         private Product createProduct(String name, String description, BigDecimal price,
-                        BigDecimal discountPrice, int stock, Category category,
-                        String thumbnail, List<String> images) {
-                return Product.builder()
+                                      BigDecimal discountPrice, int stock, Category category,
+                                      String thumbnail, List<String> images) {
+
+                return productRepository.findByName(name)
+                        .map(existing -> {
+                                existing.setDescription(description);
+                                existing.setPrice(price);
+                                existing.setDiscountPrice(discountPrice);
+                                existing.setCategory(category);
+                                existing.setThumbnail(thumbnail);
+                                existing.setImages(new ArrayList<>(images));
+                                return existing;
+                        })
+                        .orElseGet(() -> Product.builder()
                                 .name(name)
                                 .description(description)
                                 .price(price)
@@ -533,12 +534,12 @@ public class DataSeeder implements CommandLineRunner {
                                 .stockQuantity(stock)
                                 .category(category)
                                 .thumbnail(thumbnail)
-                                .images(images)
+                                .images(new ArrayList<>(images))
                                 .status(Product.ProductStatus.ACTIVE)
                                 .averageRating(0.0)
                                 .totalReviews(0)
                                 .soldCount(random.nextInt(500) + 10)
-                                .build();
+                                .build());
         }
 
         private List<Order> seedOrders(List<User> users, List<Product> products) {
@@ -547,8 +548,8 @@ public class DataSeeder implements CommandLineRunner {
 
                 // Lọc customers
                 List<User> customers = users.stream()
-                                .filter(u -> u.getRoles().stream().anyMatch(r -> r.getName().equals("CUSTOMER")))
-                                .toList();
+                        .filter(u -> u.getRoles().stream().anyMatch(r -> r.getName().equals("CUSTOMER")))
+                        .collect(java.util.stream.Collectors.toList());
 
                 Order.OrderStatus[] statuses = {
                                 Order.OrderStatus.PENDING,
@@ -665,8 +666,8 @@ public class DataSeeder implements CommandLineRunner {
                 log.info("Seeding reviews...");
 
                 List<Order> deliveredOrders = orders.stream()
-                                .filter(o -> o.getStatus() == Order.OrderStatus.DELIVERED)
-                                .toList();
+                        .filter(o -> o.getStatus() == Order.OrderStatus.DELIVERED)
+                        .collect(java.util.stream.Collectors.toList());
 
                 String[] positiveComments = {
                                 "Sản phẩm rất tốt, đúng mô tả. Giao hàng nhanh!",

@@ -1,5 +1,6 @@
 import api from "./api";
 import apiCache, { CACHE_TTL } from "../utils/apiCache";
+import storage from "../utils/storage";
 
 const userService = {
   // Get current user profile
@@ -21,9 +22,24 @@ const userService = {
   // Update user profile
   updateProfile: async (profileData) => {
     const response = await api.put("/users/me", profileData);
+    const data = response.data.data;
+    
     // Invalidate cache after update
     apiCache.invalidate("/users/me");
-    return response.data.data;
+    
+    // Update local storage so Header (which listens to auth-change) updates immediately
+    const currentUser = storage.getJSON("user");
+    if (currentUser) {
+      const updatedUser = {
+        ...currentUser,
+        fullName: profileData.fullName || currentUser.fullName,
+        avatar: profileData.avatar || currentUser.avatar
+      };
+      storage.setJSON("user", updatedUser);
+      window.dispatchEvent(new Event('auth-change'));
+    }
+    
+    return data;
   },
 
   // Change password

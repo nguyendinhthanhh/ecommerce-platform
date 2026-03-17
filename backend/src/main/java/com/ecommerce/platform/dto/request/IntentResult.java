@@ -1,6 +1,5 @@
 package com.ecommerce.platform.dto.request;
 
-
 import lombok.Builder;
 import lombok.Data;
 
@@ -16,6 +15,7 @@ public class IntentResult {
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
     private String keyword;
+    private String category;
     private Integer quantity;
     private Double rating;
 
