@@ -27,20 +27,6 @@ public class VnpayUtil {
     }
 
 
-
-    public String hmacSHA256(String key, String data) {
-        try {
-            Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secret_key = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-            sha256_HMAC.init(secret_key);
-            byte[] result = sha256_HMAC.doFinal(data.getBytes(StandardCharsets.UTF_8));
-            return Hex.encodeHexString(result);
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi HMAC SHA256", e);
-        }
-    }
-
-
     public String dataToappendUrl(Map<String, String> params) {
         StringBuilder query = new StringBuilder();
         List<String> filekey = new ArrayList<>(params.keySet());
