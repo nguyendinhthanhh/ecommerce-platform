@@ -390,8 +390,9 @@ public class ChatService {
 
         // ─── Direct Brand Catch (Priority) ──────────────────────────────
         // If query mentions "có không" or is a general brand question, show all models
-        boolean isGeneralListing = raw.contains("có") || raw.contains("liệt kê") || raw.contains("danh sách") || raw.contains("tất cả");
-        
+        boolean isExtremum = raw.contains("đắt nhất") || raw.contains("rẻ nhất") || raw.contains("cao nhất") || raw.contains("thấp nhất");
+        boolean isGeneralListing = (raw.contains("có") && !isExtremum) || raw.contains("liệt kê") || raw.contains("danh sách") || raw.contains("tất cả");
+
         String brandToSearch = null;
         if (raw.contains("iphone")) brandToSearch = "iphone";
         else if (raw.contains("samsung")) brandToSearch = "samsung";
@@ -399,9 +400,9 @@ public class ChatService {
         else if (raw.contains("macbook")) brandToSearch = "macbook";
         else if (raw.contains("apple")) brandToSearch = "apple";
 
-        if (brandToSearch != null && (isGeneralListing || (!raw.contains("đắt nhất") && !raw.contains("rẻ nhất")))) {
+        if (brandToSearch != null && (isGeneralListing || !isExtremum)) {
             // Priority: Search by Category ID (Recursive) for the detected brand
-            java.util.List<Product> brandProducts = searchStrictlyOrderedByPrice(null, brandToSearch, 
+            java.util.List<Product> brandProducts = searchStrictlyOrderedByPrice(null, brandToSearch,
                     intent.getMinPrice(), intent.getMaxPrice(), 10, true);
             if (!brandProducts.isEmpty()) return brandProducts;
         }
@@ -468,10 +469,10 @@ public class ChatService {
 
         // Special fallback: if still no category but raw mentions "điện thoại", treat it as a broad group
         if (categoryName == null || categoryName.isBlank()) {
-             if (raw.contains("điện thoại")) {
+            if (raw.contains("điện thoại")) {
                 categoryName = "điện thoại";
                 keyword = null;
-             }
+            }
         }
 
         // Apply strict search using category AND keyword AND price filters
@@ -520,7 +521,7 @@ public class ChatService {
     }
 
     private List<Product> searchStrictlyOrderedByPrice(String keyword, String categoryName, BigDecimal minPrice,
-            BigDecimal maxPrice, int limit, boolean asc) {
+                                                       BigDecimal maxPrice, int limit, boolean asc) {
         String k = (keyword != null && !keyword.isBlank()) ? keyword.trim() : null;
         boolean hasMin = minPrice != null;
         boolean hasMax = maxPrice != null;
@@ -528,9 +529,9 @@ public class ChatService {
 
         org.springframework.data.domain.Sort sortDir = asc
                 ? org.springframework.data.jpa.domain.JpaSort.unsafe(org.springframework.data.domain.Sort.Direction.ASC,
-                        "COALESCE(p.discountPrice, p.price)")
+                "COALESCE(p.discountPrice, p.price)")
                 : org.springframework.data.jpa.domain.JpaSort.unsafe(
-                        org.springframework.data.domain.Sort.Direction.DESC, "COALESCE(p.discountPrice, p.price)");
+                org.springframework.data.domain.Sort.Direction.DESC, "COALESCE(p.discountPrice, p.price)");
         PageRequest pageRequest = PageRequest.of(0, limit, sortDir);
 
         // ─── Resolve category name → list of category IDs ───────────────
@@ -555,7 +556,7 @@ public class ChatService {
                 collectAllCategoryIdsRecursive(c, categoryIdsSet);
             }
         }
-        
+
         List<Long> categoryIds = new ArrayList<>(categoryIdsSet);
 
 

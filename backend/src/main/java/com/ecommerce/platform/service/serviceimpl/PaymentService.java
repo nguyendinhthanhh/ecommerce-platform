@@ -127,10 +127,29 @@ public class PaymentService {
     // ======================== CALLBACK & SIGNATURE ========================
 
     public Boolean checkSignature(Map<String, String> params) {
-        String secureHash = params.remove("vnp_SecureHash");
+        // 1. Lấy mã hash gửi từ VNPay
+        String vnp_SecureHash = params.get("vnp_SecureHash");
+        System.out.println("--- DEBUG VNPAY SIGNATURE ---");
+        System.out.println("1. Hash tu VNPay: " + vnp_SecureHash);
+
+        // 2. Remove vnp_SecureHash và vnp_SecureHashType trước khi hash
+        params.remove("vnp_SecureHash");
+        params.remove("vnp_SecureHashType");
+
+        // 3. Tạo chuỗi query (phải được sort theo Alphabet - kiểm tra trong vnpayUtil)
         String query = vnpayUtil.dataToappendUrl(params);
-        String expectedHash = vnpayUtil.hmacSHA512(vnpayConfig.getSecretKey(), query);
-        return expectedHash.equals(secureHash);
+        System.out.println("2. Chuoi Data de Hash: " + query);
+
+        // 4. Tính toán hash từ SecretKey của mình
+        String secretKey = vnpayConfig.getSecretKey();
+        String expectedHash = vnpayUtil.hmacSHA512(secretKey, query);
+        System.out.println("3. Hash tinh toan duoc: " + expectedHash);
+
+        boolean isMatch = expectedHash.equalsIgnoreCase(vnp_SecureHash);
+        System.out.println("=> Ket qua so sanh: " + isMatch);
+        System.out.println("-----------------------------");
+
+        return isMatch;
     }
 
     @Transactional
