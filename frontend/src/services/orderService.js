@@ -83,6 +83,12 @@ const orderService = {
     });
     return response.data.data;
   },
+
+  // Confirm order received
+  confirmReceived: async (orderId) => {
+    const response = await api.post(`/orders/${orderId}/confirm-received`);
+    return response.data;
+  },
 };
 
 export default orderService;
