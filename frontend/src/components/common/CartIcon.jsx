@@ -6,18 +6,15 @@ const CartIcon = () => {
   return (
     <button
       onClick={openCart}
-      className="flex flex-col items-center justify-center p-2 text-gray-700 hover:text-primary rounded-lg transition-colors relative group"
-      title={`Giỏ hàng (${totalItemsCount})`}
+      className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors relative group"
+      title={`Shopping Cart (${totalItemsCount} items)`}
     >
-      <div className="relative">
-        <span className="material-symbols-outlined text-[28px]">shopping_cart</span>
-        {totalItemsCount > 0 && (
-          <span className="absolute -top-1 -right-2 bg-primary border-2 border-white text-white text-[10px] rounded-full h-5 w-5 flex items-center justify-center font-bold shadow-sm">
-            {totalItemsCount > 99 ? "99+" : totalItemsCount}
-          </span>
-        )}
-      </div>
-      <span className="text-[11px] font-medium mt-0.5 hidden sm:block">Giỏ hàng</span>
+      <span className="material-symbols-outlined">shopping_cart</span>
+      {totalItemsCount > 0 && (
+        <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+          {totalItemsCount > 99 ? "99+" : totalItemsCount}
+        </span>
+      )}
     </button>
   );
 };
