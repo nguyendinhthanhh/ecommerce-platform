@@ -50,7 +50,8 @@ public class AuthServiceImpl implements AuthService {
 
         String accessToken = tokenProvider.generateAccessToken(authentication);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
-
+        System.err.println("error ngu");
+        System.err.println(user.getRoles().isEmpty() ? "" : user.getRoles().iterator().next().getName());
         return AuthResponse.of(
                 accessToken,
                 refreshToken.getToken(),

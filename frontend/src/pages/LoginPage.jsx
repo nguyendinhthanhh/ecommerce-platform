@@ -57,6 +57,8 @@ const LoginPage = () => {
         formData.password,
       );
       const user = response.data.user;
+      console.log("Login successful:", user);
+      console.log("Login successful:", user.role);
 
       // Check if there's a redirect URL saved (from login prompt)
       const redirectAfterLogin = sessionStorage.getItem("redirectAfterLogin");

@@ -262,4 +262,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         // Count active products grouped by category name
         @Query("SELECT p.category.name, COUNT(p) FROM Product p WHERE p.status = 'ACTIVE' GROUP BY p.category.name")
         List<Object[]> countActiveProductsPerCategory();
+
+        @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY p.soldCount DESC")
+        List<Product> findTopBySoldCount(Pageable pageable);
+
+        List<Product> findByStockQuantityLessThanAndStatusOrderByStockQuantityAsc(Integer threshold, Product.ProductStatus productStatus);
 }

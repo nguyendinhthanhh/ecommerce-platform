@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -89,6 +90,61 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("year") int year,
             @Param("month") Integer month,
             @Param("status") Order.OrderStatus status
+    );
+
+    @Query("SELECT SUM(o.totalAmount) FROM Order o " +
+            "WHERE (:year IS NULL OR YEAR(o.createdAt) = :year) " +
+            "AND (:month IS NULL OR MONTH(o.createdAt) = :month) " +
+            "AND o.payment.status = com.ecommerce.platform.entity.Payment.PaymentStatus.COMPLETED")
+    BigDecimal calculateTotalRevenue(Integer year, Integer month);
+
+    @Query("SELECT p.status, COUNT(p) FROM Payment p " +
+            "WHERE (:year IS NULL OR YEAR(p.createdAt) = :year) " +
+            "AND (:month IS NULL OR MONTH(p.createdAt) = :month) " +
+            "GROUP BY p.status")
+    List<Object[]> countPaymentStatusByDate(Integer year, Integer month);
+
+    @Query("SELECT MONTH(o.createdAt), SUM(o.totalAmount) FROM Order o " +
+            "WHERE YEAR(o.createdAt) = :year " +
+            "AND o.payment.status = com.ecommerce.platform.entity.Payment.PaymentStatus.COMPLETED " +
+            "GROUP BY MONTH(o.createdAt) " +
+            "ORDER BY MONTH(o.createdAt)")
+    List<Object[]> getMonthlyRevenueByYear(@Param("year") int year);
+
+    @Query("SELECT MONTH(o.createdAt), SUM(o.totalAmount) FROM Order o " +
+            "WHERE o.createdAt >= :startDate AND o.createdAt <= :endDate " +
+            "AND o.payment.status = com.ecommerce.platform.entity.Payment.PaymentStatus.COMPLETED " +
+            "GROUP BY MONTH(o.createdAt) ORDER BY MONTH(o.createdAt)")
+    List<Object[]> getMonthlyRevenueByRange(@Param("startDate") LocalDateTime startDate,
+                                            @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT SUM(o.totalAmount) FROM Order o " +
+            "WHERE o.createdAt >= :startDate AND o.createdAt <= :endDate " +
+            "AND o.payment.status = com.ecommerce.platform.entity.Payment.PaymentStatus.COMPLETED")
+    BigDecimal calculateRevenueByRange(@Param("startDate") LocalDateTime startDate,
+                                       @Param("endDate") LocalDateTime endDate);
+
+    @Query("""
+        SELECT p.status, COUNT(p) 
+        FROM Order o JOIN o.payment p 
+        WHERE o.createdAt BETWEEN :startDate AND :endDate 
+        GROUP BY p.status
+    """)
+    List<Object[]> countPaymentStatusRange(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+    // Thêm query tính tổng doanh thu theo khoảng thời gian
+    @Query("""
+        SELECT SUM(o.totalAmount) 
+        FROM Order o 
+        WHERE o.createdAt BETWEEN :startDate AND :endDate 
+          AND o.payment.status = com.ecommerce.platform.entity.Payment.PaymentStatus.COMPLETED
+    """)
+    BigDecimal calculateTotalRevenueRange(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
     );
 
 }
