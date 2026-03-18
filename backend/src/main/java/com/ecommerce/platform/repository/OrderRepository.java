@@ -125,23 +125,22 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                                        @Param("endDate") LocalDateTime endDate);
 
     @Query("""
-        SELECT p.status, COUNT(p) 
-        FROM Order o JOIN o.payment p 
-        WHERE o.createdAt BETWEEN :startDate AND :endDate 
-        GROUP BY p.status
-    """)
+    SELECT COALESCE(p.status, 'PENDING'), COUNT(o) 
+    FROM Order o 
+    LEFT JOIN o.payment p 
+    WHERE o.createdAt BETWEEN :startDate AND :endDate 
+    GROUP BY p.status
+""")
     List<Object[]> countPaymentStatusRange(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
 
-    // Thêm query tính tổng doanh thu theo khoảng thời gian
     @Query("""
-        SELECT SUM(o.totalAmount) 
-        FROM Order o 
-        WHERE o.createdAt BETWEEN :startDate AND :endDate 
-          AND o.payment.status = com.ecommerce.platform.entity.Payment.PaymentStatus.COMPLETED
-    """)
+    SELECT SUM(o.totalAmount) 
+    FROM Order o 
+    WHERE o.createdAt BETWEEN :startDate AND :endDate
+""")
     BigDecimal calculateTotalRevenueRange(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate

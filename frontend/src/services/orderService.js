@@ -62,19 +62,32 @@ const orderService = {
   },
 
   // Initiate payment
-  createPayment: async (paymentMethod, orderCode) => {
-    // Map internal payment method to API path
-    const pathMap = {
-      'VNPAY': 'vn_pay',
-      'MOMO': 'momo'
-    };
+  // createPayment: async (paymentMethod, orderCode) => {
+  //   // Map internal payment method to API path
+  //   const pathMap = {
+  //     'VNPAY': 'vn-pay-callback',
+  //     'MOMO': 'momo'
+  //   };
 
-    const path = pathMap[paymentMethod] || 'vn_pay';
-    const response = await api.post(`/payment/${path}`, null, {
-      params: { orderCode }
+  //   const path = pathMap[paymentMethod] || 'vn-pay-callback';
+  //   const response = await api.get(`/payment/${path}`, {
+  //     params: { orderCode }
+  //   });
+  //   return response.data; // Should return the payment URL string or an object containing it
+  // },
+
+  createPayment: async (paymentMethod, orderCode) => {
+    // ĐÚNG: Gọi endpoint tạo URL
+    const response = await api.post(`/payment/create_url`, null, {
+        params: { 
+            orderCode: orderCode,
+            method: paymentMethod // Truyền VNPAY hoặc MOMO
+        }
     });
-    return response.data; // Should return the payment URL string or an object containing it
-  },
+    
+    // Vì Backend trả về Map { "paymentUrl": "..." }
+    return response.data.paymentUrl; 
+},
 
   // Get all orders (for admins/staff)
   getAllOrders: async (status = null, page = 0, size = 10) => {
