@@ -1,3 +1,5 @@
+<div align="center">
+  
 # 🛒 E-Commerce Platform
 
 [![Java](https://img.shields.io/badge/Java-21-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
@@ -7,6 +9,51 @@
 [![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-4.x-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
 **A premium, AI-enhanced e-commerce solution integrating Customers, Sellers, Admins, and Staff with advanced features like RAG Chatbot and eKYC.**
+
+</div>
+
+---
+
+## 👥 The Team
+
+<div align="center">
+<table>
+  <tr>
+    <td align="center" width="160">
+      <img src="https://ui-avatars.com/api/?name=Phan+Van+Huy&background=4F46E5&color=fff&size=64&bold=true&rounded=true" alt="Phan Văn Huy"/><br/>
+      <b>Phan Văn Huy</b><br/>
+      <code>SE184969</code><br/>
+    </td>
+    <td align="center" width="160">
+      <img src="https://ui-avatars.com/api/?name=Tran+Quoc+Cong&background=7C3AED&color=fff&size=64&bold=true&rounded=true" alt="Trần Quốc Công"/><br/>
+      <b>Trần Quốc Công</b><br/>
+      <code>SE180709</code><br/>
+    </td>
+    <td align="center" width="160">
+      <img src="https://ui-avatars.com/api/?name=Tran+Nhat+Huy&background=EC4899&color=fff&size=64&bold=true&rounded=true" alt="Trần Nhật Huy"/><br/>
+      <b>Trần Nhật Huy</b><br/>
+      <code>SE180369</code><br/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="160">
+      <img src="https://ui-avatars.com/api/?name=Duong+Xuan+Son&background=F59E0B&color=fff&size=64&bold=true&rounded=true" alt="Dương Xuân Sơn"/><br/>
+      <b>Dương Xuân Sơn</b><br/>
+      <code>SE181792</code><br/>
+    </td>
+    <td align="center" width="160">
+      <img src="https://ui-avatars.com/api/?name=Nguyen+Trung+Tin&background=10B981&color=fff&size=64&bold=true&rounded=true" alt="Nguyễn Trung Tín"/><br/>
+      <b>Nguyễn Trung Tín</b><br/>
+      <code>SE181711</code><br/>
+    </td>
+    <td align="center" width="160">
+      <img src="https://ui-avatars.com/api/?name=Nguyen+Dinh+Thanh&background=06B6D4&color=fff&size=64&bold=true&rounded=true" alt="Nguyễn Đình Thanh"/><br/>
+      <b>Nguyễn Đình Thanh</b><br/>
+      <code>SE182854</code><br/>
+    </td>
+  </tr>
+</table>
+</div>
 
 ---
 
@@ -27,27 +74,66 @@ The **E-Commerce Platform** is a sophisticated marketplace application built for
 - **💳 Integrated Payments**:
   - Native integration with **VNPAY** for secure online transactions.
 - **📊 Real-time Analytics**:
-  - Dynamic dashboards for Sellers (sales analytics) and Admins (user/system health monitoring) using **Chart.js**.
+  - Dynamic dashboards for Sellers (sales analytics)
 
 ---
 
-## 🛠️ Tech Stack
+## 🏗️ Architecture & Workflows
 
-### Backend
-- **Core**: Java 21, Spring Boot 3.5.10
-- **Data**: Spring Data JPA, Hibernate, **PostgreSQL** (AWS RDS), **PGVector**
-- **AI**: Spring AI 1.1.2 (Gemini, Transformers, Vector Store)
-- **Migrations**: Flyway
-- **Security**: Spring Security, JWT (JJWT 0.12.5)
-- **Documentation**: Springdoc OpenAPI (Swagger UI)
-- **Utilities**: MapStruct, Lombok, Apache POI (Excel reporting)
+### 🤖 AI RAG Workflow
+The platform uses a sophisticated Retrieval-Augmented Generation (RAG) pipeline for its AI features.
 
-### Frontend
-- **Framework**: React 19, Vite 7
-- **Styling**: TailwindCSS 4
-- **Routing**: React Router 7
-- **State/API**: Axios, Custom Hooks
-- **UI/UX**: React Hot Toast, Chart.js, Lucide Icons
+```mermaid
+graph TD
+    A[User Message] --> B{Intent Classifier}
+    B -->|Factual Query| C[SQL Database Search]
+    B -->|Semantic Query| D[PGVector Similarity Search]
+    C --> E[Template-based Response]
+    D --> F[RAG Context Injection]
+    F --> G[Gemini LLM Generation]
+    E --> H[Final AI Response]
+    G --> H
+    H --> I[Product Suggestions]
+```
+
+### 📦 Order Life Cycle
+Orders follow a strict state machine to ensure consistency across Customer and Seller dashboards.
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING: Order Placed
+    PENDING --> CONFIRMED: Seller Accepts
+    CONFIRMED --> PROCESSING: Preparing Items
+    PROCESSING --> SHIPPING: Shipped
+    SHIPPING --> DELIVERED: Received
+    DELIVERED --> COMPLETED: Finalized
+    PENDING --> CANCELLED: Cancelled
+    CONFIRMED --> CANCELLED: Cancelled
+    COMPLETED --> [*]
+    CANCELLED --> [*]
+```
+
+---
+
+## 🛠️ Tech Stack & Key Technologies
+
+### 💻 Backend
+- **Core Framework**: Spring Boot 3.5.10 (Java 21)
+- **AI Intelligence**:
+  - **LLM**: Google Gemini (Gemma 3) via `spring-ai-google-genai`.
+  - **Embeddings**: Local ONNX execution of `all-MiniLM-L6-v2`.
+  - **Vector Store**: **pgvector** on PostgreSQL for high-speed semantic search.
+- **Data Layer**:
+  - **Main DB**: PostgreSQL (AWS RDS).
+  - **Migrations**: Flyway (Schema versioning).
+- **Security**: Spring Security + JWT (Stateless authentication).
+- **Reporting**: Apache POI for generating Excel sales reports.
+
+### 🎨 Frontend
+- **Framework**: React 19 + Vite 7 (V3 Versioning).
+- **Router**: React Router 7 (Single Page Application).
+- **Styling**: TailwindCSS 4 (Utility-first with PostCSS).
+- **Visualization**: Chart.js for real-time analytics dashboards.
 
 ---
 
@@ -57,13 +143,13 @@ The **E-Commerce Platform** is a sophisticated marketplace application built for
 .
 ├── backend/                # Spring Boot application
 │   ├── src/main/java/      # Source code (ai, security, controller, service, etc.)
-│   ├── src/main/resources/ # Configuration and database migrations
+│   ├── src/main/resources/ # Configuration and database migrations (Flyway)
 │   └── pom.xml             # Maven dependencies
 ├── frontend/               # React Vite application
 │   ├── src/pages/          # Role-based pages (admin, seller, customer, staff)
-│   ├── src/services/       # API interaction layer
+│   ├── src/services/       # axios API layer
 │   └── package.json        # Frontend dependencies
-└── docker-compose.yml      # Local infrastructure (PostgreSQL with PGVector)
+└── docker-compose.yml      # Local dev infra (PostgreSQL + pgvector)
 ```
 
 ---
@@ -74,33 +160,29 @@ The **E-Commerce Platform** is a sophisticated marketplace application built for
 - **JDK 21** or higher
 - **Node.js 20+**
 - **Maven 3.9+**
-- **Docker** (for local database)
+- **Docker** (for local database & vector search)
 
 ### Installation & Run
 
-#### 1. Database Setup (Local)
-Use the provided `docker-compose.yml` to start a PostgreSQL instance with `pgvector`:
+#### 1. Infrastructure Setup (Local)
+Start the PostgreSQL instance with `pgvector` support:
 ```bash
 docker-compose up -d
 ```
 
 #### 2. Backend Setup
 1. Navigate to `/backend`.
-2. Configure `src/main/resources/application.properties` with your database credentials and API keys (Gemini, VNPAY, VNPT).
-3. Run the application:
+2. Configure `application.properties` with your database credentials and API keys.
+3. Run:
 ```bash
 ./mvnw spring-boot:run
 ```
-*API available at: `http://localhost:8080`*
 
 #### 3. Frontend Setup
 1. Navigate to `/frontend`.
-2. Install dependencies:
+2. Install & Run:
 ```bash
 npm install
-```
-3. Start the development server:
-```bash
 npm run dev
 ```
 
