@@ -1,18 +1,4 @@
-<div align="center">
-  
-# 🛒 E-Commerce Platform
-
-[![Java](https://img.shields.io/badge/Java-21-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5.10-%236DB33F.svg?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![React](https://img.shields.io/badge/React-19-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-7.x-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-4.x-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-
-**A premium, AI-enhanced e-commerce solution integrating Customers, Sellers, Admins, and Staff with advanced features like RAG Chatbot and eKYC.**
-
-</div>
-
----
+# 🛒 E-Commerce Platform — SWD392 Capstone Project
 
 ## 👥 The Team
 
@@ -55,85 +41,50 @@
 </table>
 </div>
 
----
-
-## 📖 Overview
-
-The **E-Commerce Platform** is a sophisticated marketplace application built for the **SWD392 Capstone Project at FPT University**. It leverages a modern tech stack to provide a secure, scalable, and intelligent shopping experience.
-
-### 🌟 Key Features
-
-- **🤖 AI-Powered Intelligence**:
-  - **Smart Chatbot**: Integrated with **Google Gemini (Gemma 3)** for natural language customer support.
-  - **RAG (Retrieval-Augmented Generation)**: Uses **PGVector** for semantic search and context-aware product recommendations.
-  - **Local Embeddings**: High-performance local text processing using ONNX models (`all-MiniLM-L6-v2`).
-- **🛡️ Advanced Security & Identity**:
-  - **VNPT eKYC**: Seamless integration for user identity verification.
-  - **Role-Based Access Control (RBAC)**: Secure access for Admins, Sellers, Staff, and Customers.
-  - **JWT Authentication**: Secure, stateless session management with access and refresh tokens.
-- **💳 Integrated Payments**:
-  - Native integration with **VNPAY** for secure online transactions.
-- **📊 Real-time Analytics**:
-  - Dynamic dashboards for Sellers (sales analytics)
+A premium, AI-enhanced e-commerce solution designed for multi-actor marketplace management (Admin, Seller, Staff, Customer). This project integrates advanced Retrieval-Augmented Generation (RAG) for customer support and secure eKYC for user identity verification.
 
 ---
 
-## 🏗️ Architecture & Workflows
+## 📊 Project Status
 
-### 🤖 AI RAG Workflow
-The platform uses a sophisticated Retrieval-Augmented Generation (RAG) pipeline for its AI features.
-
-```mermaid
-graph TD
-    A[User Message] --> B{Intent Classifier}
-    B -->|Factual Query| C[SQL Database Search]
-    B -->|Semantic Query| D[PGVector Similarity Search]
-    C --> E[Template-based Response]
-    D --> F[RAG Context Injection]
-    F --> G[Gemini LLM Generation]
-    E --> H[Final AI Response]
-    G --> H
-    H --> I[Product Suggestions]
-```
-
-### 📦 Order Life Cycle
-Orders follow a strict state machine to ensure consistency across Customer and Seller dashboards.
-
-```mermaid
-stateDiagram-v2
-    [*] --> PENDING: Order Placed
-    PENDING --> CONFIRMED: Seller Accepts
-    CONFIRMED --> PROCESSING: Preparing Items
-    PROCESSING --> SHIPPING: Shipped
-    SHIPPING --> DELIVERED: Received
-    DELIVERED --> COMPLETED: Finalized
-    PENDING --> CANCELLED: Cancelled
-    CONFIRMED --> CANCELLED: Cancelled
-    COMPLETED --> [*]
-    CANCELLED --> [*]
-```
+| Module | Status | Notes |
+| :--- | :--- | :--- |
+| **Security & Identity** | ✅ Completed | JWT Auth, RBAC, and VNPT eKYC integration. |
+| **Product & Stock** | ✅ Completed | Full CRUD with real-time stock adjustment on orders. |
+| **AI RAG Chatbot** | ✅ Completed | Intent-based routing with Gemini & PGVector. |
+| **Order Management** | ✅ Completed | 7-stage state machine with automated transitions. |
+| **Payment (VNPay)** | ✅ Completed | Integrated with callback and secure signature verification. |
+| **Payment (Momo)** | ⚠️ In Progress | Backend service implemented; sandbox testing pending. |
+| **Sales Analytics** | ✅ Completed | Seller dashboards with Chart.js and Excel reporting. |
+| **Review System** | ✅ Completed | Customer reviews with automated rating aggregation. |
 
 ---
 
-## 🛠️ Tech Stack & Key Technologies
+## 🛠️ Tech Stack
 
-### 💻 Backend
-- **Core Framework**: Spring Boot 3.5.10 (Java 21)
-- **AI Intelligence**:
-  - **LLM**: Google Gemini (Gemma 3) via `spring-ai-google-genai`.
-  - **Embeddings**: Local ONNX execution of `all-MiniLM-L6-v2`.
-  - **Vector Store**: **pgvector** on PostgreSQL for high-speed semantic search.
-- **Data Layer**:
-  - **Main DB**: PostgreSQL (AWS RDS).
-  - **Migrations**: Flyway (Schema versioning).
-- **Security**: Spring Security + JWT (Stateless authentication).
-- **Reporting**: Apache POI for generating Excel sales reports.
+### Backend (Spring Boot 3.5.10 / Java 21)
+- **AI Intelligence**: Spring AI 1.1.2 (Google Gemini Gemma 3).
+- **Vector Search**: PostgreSQL with **pgvector** extension.
+- **Local Embeddings**: ONNX-based `all-MiniLM-L6-v2` for local processing.
+- **Reporting**: Apache POI (Excel generation).
+- **Persistence**: Spring Data JPA / Hibernate / Flyway (Migrations).
+- **Security**: Spring Security + JJWT 0.12.5.
 
-### 🎨 Frontend
-- **Framework**: React 19 + Vite 7 (V3 Versioning).
-- **Router**: React Router 7 (Single Page Application).
-- **Styling**: TailwindCSS 4 (Utility-first with PostCSS).
-- **Visualization**: Chart.js for real-time analytics dashboards.
+### Frontend (React 19 / Vite 7)
+- **Routing**: React Router 7 (SPA).
+- **Styling**: TailwindCSS 4 (PostCSS / Utility-first).
+- **Visuals**: Chart.js / Lucide Icons / React Hot Toast.
+- **Networking**: Axios with custom interceptors for token refresh.
+
+---
+
+## ✨ Key Features (Code Verified)
+
+- **🤖 AI RAG Chatbot**: Automatically classifies user intent (search, stock, price, review) and provides context-aware answers using product data and vector embeddings.
+- **🛡️ Secure Identity (eKYC)**: Integration with VNPT eKYC to verify seller/staff identities.
+- **💳 Financial Integration**: Support for VNPAY, Momo, and Cash on Delivery (COD).
+- **📊 Business Intelligence**: Real-time sales charts, revenue tracking per category, and the ability to export reports.
+- **📦 Reliable Fulfillment**: Order tracking through PENDING, CONFIRMED, PROCESSING, SHIPPING, DELIVERED, COMPLETED, and CANCELLED states.
 
 ---
 
@@ -141,51 +92,82 @@ stateDiagram-v2
 
 ```text
 .
-├── backend/                # Spring Boot application
-│   ├── src/main/java/      # Source code (ai, security, controller, service, etc.)
-│   ├── src/main/resources/ # Configuration and database migrations (Flyway)
-│   └── pom.xml             # Maven dependencies
-├── frontend/               # React Vite application
-│   ├── src/pages/          # Role-based pages (admin, seller, customer, staff)
-│   ├── src/services/       # axios API layer
-│   └── package.json        # Frontend dependencies
-└── docker-compose.yml      # Local dev infra (PostgreSQL + pgvector)
+├── backend/                # Java Spring Boot Service
+│   ├── src/main/java/.../ai/       # Intent classification & RAG logic
+│   ├── src/main/java/.../security/ # JWT & RBAC configuration
+│   ├── src/main/java/.../entity/   # Hibernate ORM Models
+│   └── src/main/resources/db/      # Flyway SQL migrations
+├── frontend/               # React Vite SPA
+│   ├── src/pages/          # Role-based dashboard views
+│   ├── src/services/       # API integration layer (Axios)
+│   └── src/components/     # Reusable UI widgets
+└── docker-compose.yml      # Managed infrastructure (Postgres + pgvector)
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Installation & Local Development
 
 ### Prerequisites
-- **JDK 21** or higher
+- **OpenJDK 21**
 - **Node.js 20+**
-- **Maven 3.9+**
-- **Docker** (for local database & vector search)
+- **Docker** (Required for the database and vector engine)
 
-### Installation & Run
-
-#### 1. Infrastructure Setup (Local)
-Start the PostgreSQL instance with `pgvector` support:
+### Infrastructure Setup
+Spin up the local PostgreSQL instance with pgvector support:
 ```bash
 docker-compose up -d
 ```
 
-#### 2. Backend Setup
-1. Navigate to `/backend`.
-2. Configure `application.properties` with your database credentials and API keys.
-3. Run:
+### Backend Setup
+1. Enter the `backend` directory.
+2. Ensure you have a valid local or cloud PostgreSQL instance running.
+3. Run the development server:
 ```bash
 ./mvnw spring-boot:run
 ```
 
-#### 3. Frontend Setup
-1. Navigate to `/frontend`.
-2. Install & Run:
+### Frontend Setup
+1. Enter the `frontend` directory.
+2. Install dependencies:
 ```bash
 npm install
+```
+3. Start the Vite dev server:
+```bash
 npm run dev
 ```
 
-Made with ❤️ by **SWD392 Team** at **FPT University**
+---
 
+## 📖 API & Documentation
+
+- **Swagger UI**: Access interactive documentation at `http://localhost:8080/swagger-ui.html`
+- **Database**: Port `5432` (default via Docker Compose)
+- **Frontend**: Port `5173` (Vite default)
+
+---
+
+## 📐 Architecture Flow
+
+### AI Retrieval-Augmented Generation (RAG)
+1. **Classifier**: Incoming queries are categorized by the `IntentClassifierService`.
+2. **Retrieval**: 
+   - Factual data (price/stock) is pulled via standard SQL.
+   - Semantic data (recommendations) is pulled via `pgvector` similarity search.
+3. **Augmentation**: Context is injected into the Gemma 3 model prompt.
+4. **Generation**: The LLM generates a natural language response with clickable product suggestions.
+
+---
+
+## ⚠️ Limitations & Known Issues
+
+- **Security Isolation**: Environment variables are currently managed via `application.properties`; moving to an external secrets manager is recommended for production.
+- **First Startup**: The system will download a ~500MB embedding model during the first AI interaction.
+- **Sandbox Keys**: Payment and eKYC integrations currently use sandbox credentials; production keys are required for real transactions.
+- **Dockerization**: The application services themselves (Backend/Frontend) are not yet containerized; only infrastructure is managed via Docker.
+
+---
+<div align="center">
+  Generated by Senior Engineering Audit Team | SWD392 FPT University
 </div>
